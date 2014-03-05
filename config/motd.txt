@@ -1,5 +1,10 @@
-<!-- Most valid html will work in here, excluding images. -->
-
-<h1>Welcome to Space Station 13!</h1>
-
-<i>This server is running a /tg/station 13 SVN build.</i>
+<h1><font face=arial> Welcome to <font color=red>Anarchy Station</h1></font>
+<br><br>
+In case you are not aware of it. This station does not hold any rules.
+<br>- No Rules.
+<br>- No Admins.
+<br>- No Adminhelp.
+<br>- Respawn enabled.
+<br>
+<br>Current Version: anarchystation_v1-0.dmg
+<br>Download Link: Not yet available!
