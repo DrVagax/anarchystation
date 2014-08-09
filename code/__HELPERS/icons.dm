@@ -216,6 +216,16 @@ world
 #define TO_HEX_DIGIT(n) ascii2text((n&15) + ((n&15)<10 ? 48 : 87))
 
 icon
+	proc/MakeLying()
+		var/icon/I = new(src,dir=SOUTH)
+		I.BecomeLying()
+		return I
+
+	proc/BecomeLying()
+		Turn(90)
+		Shift(SOUTH,6)
+		Shift(EAST,1)
+
 	// Multiply all alpha values by this float
 	proc/ChangeOpacity(opacity = 1.0)
 		MapColors(1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,opacity, 0,0,0,0)
@@ -625,9 +635,9 @@ The _flatIcons list is a cache for generated icon files.
 */
 
 proc // Creates a single icon from a given /atom or /image.  Only the first argument is required.
-	getFlatIcon(image/A, defdir=A.dir, deficon=A.icon, defstate=A.icon_state, defblend=A.blend_mode)
+	getFlatIcon(image/A, defdir=2, deficon=null, defstate="", defblend=BLEND_DEFAULT)
 		// We start with a blank canvas, otherwise some icon procs crash silently
-		var/icon/flat = icon('icons/effects/effects.dmi', "nothing") // Final flattened icon
+		var/icon/flat = icon('icons/effects/effects.dmi', "icon_state"="nothing") // Final flattened icon
 		if(!A)
 			return flat
 		if(A.alpha <= 0)
@@ -656,7 +666,7 @@ proc // Creates a single icon from a given /atom or /image.  Only the first argu
 				noIcon = TRUE // Do not render this object.
 
 		var/curdir
-		if(A.dir)
+		if(A.dir != 2)
 			curdir = A.dir
 		else
 			curdir = defdir
@@ -733,6 +743,24 @@ proc // Creates a single icon from a given /atom or /image.  Only the first argu
 			if(I == copy) // 'I' is an /image based on the object being flattened.
 				curblend = BLEND_OVERLAY
 				add = icon(I:icon, I:icon_state, I:dir)
+				// This checks for a silent failure mode of the icon routine. If the requested dir
+				// doesn't exist in this icon state it returns a 32x32 icon with 0 alpha.
+				if (I:dir != SOUTH && add.Width() == 32 && add.Height() == 32)
+					// Check every pixel for blank (computationally expensive, but the process is limited
+					// by the amount of film on the station, only happens when we hit something that's
+					// turned, and bails at the very first pixel it sees.
+					var/blankpixel;
+					for(var/y;y<=32;y++)
+						for(var/x;x<32;x++)
+							blankpixel = isnull(add.GetPixel(x,y))
+							if(!blankpixel)
+								break
+						if(!blankpixel)
+							break
+					// If we ALWAYS returned a null (which happens when GetPixel encounters something with alpha 0)
+					if (blankpixel)
+						// Pull the default direction.
+						add = icon(I:icon, I:icon_state)
 			else // 'I' is an appearance object.
 				add = getFlatIcon(new/image(I), curdir, curicon, curstate, curblend)
 
@@ -798,3 +826,32 @@ proc // Creates a single icon from a given /atom or /image.  Only the first argu
 		var/image/I = O
 		composite.Blend(icon(I.icon, I.icon_state, I.dir, 1), ICON_OVERLAY)
 	return composite
+
+proc/adjust_brightness(var/color, var/value)
+	if (!color) return "#FFFFFF"
+	if (!value) return color
+
+	var/list/RGB = ReadRGB(color)
+	RGB[1] = Clamp(RGB[1]+value,0,255)
+	RGB[2] = Clamp(RGB[2]+value,0,255)
+	RGB[3] = Clamp(RGB[3]+value,0,255)
+	return rgb(RGB[1],RGB[2],RGB[3])
+
+proc/sort_atoms_by_layer(var/list/atoms)
+	// Comb sort icons based on levels
+	var/list/result = atoms.Copy()
+	var/gap = result.len
+	var/swapped = 1
+	while (gap > 1 || swapped)
+		swapped = 0
+		if(gap > 1)
+			gap = round(gap / 1.3) // 1.3 is the emperic comb sort coefficient
+		if(gap < 1)
+			gap = 1
+		for(var/i = 1; gap + i <= result.len; i++)
+			var/atom/l = result[i]		//Fucking hate
+			var/atom/r = result[gap+i]	//how lists work here
+			if(l.layer > r.layer)		//no "result[i].layer" for me
+				result.Swap(i, gap + i)
+				swapped = 1
+	return result

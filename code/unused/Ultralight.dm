@@ -44,7 +44,7 @@ atom
 	var/ul_Extinguished = UL_I_ONZERO
 
 	proc
-		ul_SetLuminosity(var/Red, var/Green = Red, var/Blue = Red)
+		sd_SetLuminosity(var/Red, var/Green = Red, var/Blue = Red)
 
 			if(LuminosityRed == Red && LuminosityGreen == Green && LuminosityBlue == Blue)
 				return //No point doing all that work if it won't have any effect anyways...

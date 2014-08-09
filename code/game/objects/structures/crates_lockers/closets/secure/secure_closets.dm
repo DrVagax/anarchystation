@@ -5,7 +5,9 @@
 	icon_state = "secure1"
 	density = 1
 	opened = 0
-	locked = 1
+	var/locked = 1
+	var/broken = 0
+	var/large = 1
 	icon_closed = "secure"
 	var/icon_locked = "secure1"
 	icon_opened = "secureopen"
@@ -15,15 +17,17 @@
 	health = 200
 
 /obj/structure/closet/secure_closet/can_open()
-	if(src.locked || src.welded)
+	if(src.locked)
 		return 0
-	return 1
+	return ..()
 
 /obj/structure/closet/secure_closet/close()
-	..()
-	if(broken)
-		icon_state = src.icon_off
-	return 1
+	if(..())
+		if(broken)
+			icon_state = src.icon_off
+		return 1
+	else
+		return 0
 
 /obj/structure/closet/secure_closet/emp_act(severity)
 	for(var/obj/O in src)
@@ -41,29 +45,36 @@
 	..()
 
 /obj/structure/closet/secure_closet/proc/togglelock(mob/user as mob)
+	if(src.opened)
+		user << "<span class='notice'>Close the locker first.</span>"
+		return
+	if(src.broken)
+		user << "<span class='warning'>The locker appears to be broken.</span>"
+		return
+	if(user.loc == src)
+		user << "<span class='notice'>You can't reach the lock from inside.</span>"
+		return
 	if(src.allowed(user))
 		src.locked = !src.locked
 		for(var/mob/O in viewers(user, 3))
 			if((O.client && !( O.blinded )))
 				O << "<span class='notice'>The locker has been [locked ? null : "un"]locked by [user].</span>"
-		if(src.locked)
-			src.icon_state = src.icon_locked
-		else
-			src.icon_state = src.icon_closed
+		update_icon()
 	else
 		user << "<span class='notice'>Access Denied</span>"
 
-/obj/structure/closet/secure_closet/place(var/mob/user, var/obj/item/I)
-	if(!src.opened)
-		togglelock(user)
-		return 1
-	return 0
-
 /obj/structure/closet/secure_closet/attackby(obj/item/weapon/W as obj, mob/user as mob)
-
-	if(!src.opened && src.broken)
-		user << "<span class='notice'>The locker appears to be broken.</span>"
-		return
+	if(src.opened)
+		if(istype(W, /obj/item/weapon/grab))
+			if(src.large)
+				src.MouseDrop_T(W:affecting, user)	//act like they were dragged onto the closet
+			else
+				user << "<span class='notice'>The locker is too small to stuff [W:affecting] into!</span>"
+		if(isrobot(user))
+			return
+		user.drop_item()
+		if(W)
+			W.loc = src.loc
 	else if((istype(W, /obj/item/weapon/card/emag)||istype(W, /obj/item/weapon/melee/energy/blade)) && !src.broken)
 		broken = 1
 		locked = 0
@@ -81,28 +92,17 @@
 		else
 			for(var/mob/O in viewers(user, 3))
 				O.show_message("<span class='warning'>The locker has been broken by [user] with an electromagnetic card!</span>", 1, "You hear a faint electrical spark.", 2)
+	else if(istype(W,/obj/item/weapon/packageWrap) || istype(W,/obj/item/weapon/weldingtool))
+		return ..(W,user)
 	else
-		..(W, user)
-
-/obj/structure/closet/secure_closet/relaymove(mob/user as mob)
-	if(user.stat || !isturf(src.loc))
-		return
-
-	if(!(src.locked))
-		open()
-	else
-		user << "<span class='notice'>The locker is locked!</span>"
-		if(world.time > lastbang+5)
-			lastbang = world.time
-			for(var/mob/M in hearers(src, null))
-				M << "<FONT size=[max(0, 5 - get_dist(src, M))]>BANG, bang!</FONT>"
-	return
+		togglelock(user)
 
 /obj/structure/closet/secure_closet/attack_hand(mob/user as mob)
 	src.add_fingerprint(user)
-
-	if(!src.toggle())
-		return src.attackby(null, user)
+	if(src.locked)
+		src.togglelock(user)
+	else
+		src.toggle(user)
 
 /obj/structure/closet/secure_closet/attack_paw(mob/user as mob)
 	return src.attack_hand(user)
@@ -115,15 +115,9 @@
 	if(!usr.canmove || usr.stat || usr.restrained()) // Don't use it if you're not able to! Checks for stuns, ghost and restrain
 		return
 
-	if(get_dist(usr, src) != 1)
-		return
-
-	if(src.broken)
-		return
-
-	if (ishuman(usr))
-		if (!opened)
-			togglelock(usr)
+	if(ishuman(usr))
+		src.add_fingerprint(usr)
+		src.togglelock(usr)
 	else
 		usr << "<span class='warning'>This mob type can't use this verb.</span>"
 

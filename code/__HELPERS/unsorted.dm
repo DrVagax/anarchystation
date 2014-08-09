@@ -20,15 +20,27 @@
 	var/r = hex2num(textr)
 	var/g = hex2num(textg)
 	var/b = hex2num(textb)
-	textr = num2hex(255 - r, 2)
-	textg = num2hex(255 - g, 2)
-	textb = num2hex(255 - b, 2)
+	textr = num2hex(255 - r)
+	textg = num2hex(255 - g)
+	textb = num2hex(255 - b)
+	if (length(textr) < 2)
+		textr = text("0[]", textr)
+	if (length(textg) < 2)
+		textr = text("0[]", textg)
+	if (length(textb) < 2)
+		textr = text("0[]", textb)
 	return text("#[][][]", textr, textg, textb)
 	return
 
 //Returns the middle-most value
 /proc/dd_range(var/low, var/high, var/num)
 	return max(low,min(high,num))
+
+//Returns whether or not A is the middle most value
+/proc/InRange(var/A, var/lower, var/upper)
+	if(A < lower) return 0
+	if(A > upper) return 0
+	return 1
 
 
 /proc/Get_Angle(atom/movable/start,atom/movable/end)//For beams.
@@ -177,6 +189,9 @@ Turf and target are seperate in case you want to teleport some distance from a t
 			return 1
 	return 0
 
+/proc/sign(x)
+	return x!=0?x/abs(x):0
+
 /proc/getline(atom/M,atom/N)//Ultra-Fast Bresenham Line-Drawing Algorithm
 	var/px=M.x		//starting x
 	var/py=M.y
@@ -236,7 +251,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 
 
 
-//This will update a mob's name, real_name, mind.name, data_core records, pda, id and traitor text
+//This will update a mob's name, real_name, mind.name, data_core records, pda and id
 //Calling this proc without an oldname will only update the mob and skip updating the pda, id and records ~Carn
 /mob/proc/fully_replace_character_name(var/oldname,var/newname)
 	if(!newname)	return 0
@@ -244,16 +259,16 @@ Turf and target are seperate in case you want to teleport some distance from a t
 	name = newname
 	if(mind)
 		mind.name = newname
-	if(istype(src, /mob/living/carbon))
-		var/mob/living/carbon/C = src
-		if(C.dna)
-			C.dna.real_name = real_name
+	if(dna)
+		dna.real_name = real_name
 
 	if(oldname)
 		//update the datacore records! This is goig to be a bit costly.
 		for(var/list/L in list(data_core.general,data_core.medical,data_core.security,data_core.locked))
-			var/datum/data/record/R = find_record("name", oldname, L)
-			if(R)	R.fields["name"] = newname
+			for(var/datum/data/record/R in L)
+				if(R.fields["name"] == oldname)
+					R.fields["name"] = newname
+					break
 
 		//update our pda and id if we have them on our person
 		var/list/searching = GetAllContents(searchDepth = 3)
@@ -276,13 +291,6 @@ Turf and target are seperate in case you want to teleport some distance from a t
 					PDA.name = "PDA-[newname] ([PDA.ownjob])"
 					if(!search_id)	break
 					search_pda = 0
-
-		for(var/datum/mind/T in ticker.minds)
-			for(var/datum/objective/obj in T.objectives)
-				// Only update if this player is a target
-				if(obj.target && obj.target.current && obj.target.current.real_name == name)
-					obj.update_explanation_text()
-
 	return 1
 
 
@@ -337,21 +345,23 @@ Turf and target are seperate in case you want to teleport some distance from a t
 
 //Picks a string of symbols to display as the law number for hacked or ion laws
 /proc/ionnum()
-	return "[pick("!","@","#","$","%","^","&")][pick("!","@","#","$","%","^","&","*")][pick("!","@","#","$","%","^","&","*")][pick("!","@","#","$","%","^","&","*")]"
+	return "[pick("!","@","#","$","%","^","&","*")][pick("!","@","#","$","%","^","&","*")][pick("!","@","#","$","%","^","&","*")][pick("!","@","#","$","%","^","&","*")]"
 
-//Returns a list of unslaved cyborgs
-/proc/active_free_borgs()
-	. = list()
-	for(var/mob/living/silicon/robot/R in living_mob_list)
-		if(R.connected_ai)
+//When an AI is activated, it can choose from a list of non-slaved borgs to have as a slave.
+/proc/freeborg()
+	var/select = null
+	var/list/borgs = list()
+	for (var/mob/living/silicon/robot/A in player_list)
+		if (A.stat == 2 || A.connected_ai || A.scrambledcodes || istype(A,/mob/living/silicon/robot/drone))
 			continue
-		if(R.stat == DEAD)
-			continue
-		if(R.emagged || R.scrambledcodes || R.syndicate)
-			continue
-		. += R
+		var/name = "[A.real_name] ([A.modtype] [A.braintype])"
+		borgs[name] = A
 
-//Returns a list of AI's
+	if (borgs.len)
+		select = input("Unshackled borg signals detected:", "Borg selection", null, null) as null|anything in borgs
+		return borgs[select]
+
+//When a borg is activated, it can choose which AI it wants to be slaved to
 /proc/active_ais()
 	. = list()
 	for(var/mob/living/silicon/ai/A in living_mob_list)
@@ -372,19 +382,40 @@ Turf and target are seperate in case you want to teleport some distance from a t
 
 	return selected
 
-/proc/select_active_free_borg(var/mob/user)
-	var/list/borgs = active_free_borgs()
-	if(borgs.len)
-		if(user)	. = input(user,"Unshackled cyborg signals detected:", "Cyborg Selection", borgs[1]) in borgs
-		else		. = pick(borgs)
-	return .
-
 /proc/select_active_ai(var/mob/user)
 	var/list/ais = active_ais()
 	if(ais.len)
-		if(user)	. = input(user,"AI signals detected:", "AI Selection", ais[1]) in ais
+		if(user)	. = input(usr,"AI signals detected:", "AI selection") in ais
 		else		. = pick(ais)
 	return .
+
+/proc/get_sorted_mobs()
+	var/list/old_list = getmobs()
+	var/list/AI_list = list()
+	var/list/Dead_list = list()
+	var/list/keyclient_list = list()
+	var/list/key_list = list()
+	var/list/logged_list = list()
+	for(var/named in old_list)
+		var/mob/M = old_list[named]
+		if(issilicon(M))
+			AI_list |= M
+		else if(isobserver(M) || M.stat == 2)
+			Dead_list |= M
+		else if(M.key && M.client)
+			keyclient_list |= M
+		else if(M.key)
+			key_list |= M
+		else
+			logged_list |= M
+		old_list.Remove(named)
+	var/list/new_list = list()
+	new_list += AI_list
+	new_list += keyclient_list
+	new_list += key_list
+	new_list += logged_list
+	new_list += Dead_list
+	return new_list
 
 //Returns a list of all mobs with their name
 /proc/getmobs()
@@ -417,8 +448,6 @@ Turf and target are seperate in case you want to teleport some distance from a t
 	var/list/moblist = list()
 	var/list/sortmob = sortAtom(mob_list)
 	for(var/mob/living/silicon/ai/M in sortmob)
-		moblist.Add(M)
-	for(var/mob/camera/M in sortmob)
 		moblist.Add(M)
 	for(var/mob/living/silicon/pai/M in sortmob)
 		moblist.Add(M)
@@ -456,71 +485,70 @@ Turf and target are seperate in case you want to teleport some distance from a t
 	var/M = E/(SPEED_OF_LIGHT_SQ)
 	return M
 
-/proc/key_name(var/whom, var/include_link = null, var/include_name = 1)
+//Forces a variable to be posative
+/proc/modulus(var/M)
+	if(M >= 0)
+		return M
+	if(M < 0)
+		return -M
+
+
+/proc/key_name(var/whom, var/include_link = null, var/include_name = 1, var/highlight_special_characters = 1)
 	var/mob/M
 	var/client/C
 	var/key
-	var/ckey
 
 	if(!whom)	return "*null*"
 	if(istype(whom, /client))
 		C = whom
 		M = C.mob
 		key = C.key
-		ckey = C.ckey
 	else if(ismob(whom))
 		M = whom
 		C = M.client
 		key = M.key
-		ckey = M.ckey
-	else if(istext(whom))
-		key = whom
-		ckey = ckey(whom)
-		C = directory[ckey]
-		if(C)
-			M = C.mob
+	else if(istype(whom, /datum))
+		var/datum/D = whom
+		return "*invalid:[D.type]*"
 	else
 		return "*invalid*"
 
 	. = ""
 
-	if(!ckey)
-		include_link = 0
-
 	if(key)
-		if(include_link)
-			. += "<a href='?priv_msg=[ckey]'>"
+		if(include_link && C)
+			. += "<a href='?priv_msg=\ref[C]'>"
 
 		if(C && C.holder && C.holder.fakekey && !include_name)
 			. += "Administrator"
 		else
 			. += key
-		if(!C)
-			. += "\[DC\]"
 
 		if(include_link)
-			. += "</a>"
+			if(C)	. += "</a>"
+			else	. += " (DC)"
 	else
 		. += "*no key*"
 
 	if(include_name && M)
+		var/name
+
 		if(M.real_name)
-			. += "/([M.real_name])"
+			name = M.real_name
 		else if(M.name)
-			. += "/([M.name])"
+			name = M.name
+
+
+		if(include_link && is_special_character(M) && highlight_special_characters)
+			. += "/(<font color='#FFA500'>[name]</font>)" //Orange
+		else
+			. += "/([name])"
 
 	return .
 
 /proc/key_name_admin(var/whom, var/include_name = 1)
 	return key_name(whom, 1, include_name)
 
-// Returns the atom sitting on the turf.
-// For example, using this on a disk, which is in a bag, on a mob, will return the mob because it's on the turf.
-/proc/get_atom_on_turf(var/atom/movable/M)
-	var/atom/loc = M
-	while(loc && loc.loc && !istype(loc.loc, /turf/))
-		loc = loc.loc
-	return loc
 
 // returns the turf located at the map edge in the specified direction relative to A
 // used for mass driver
@@ -571,10 +599,27 @@ Turf and target are seperate in case you want to teleport some distance from a t
 	var/y = min(world.maxy, max(1, A.y + dy))
 	return locate(x,y,A.z)
 
+//Makes sure MIDDLE is between LOW and HIGH. If not, it adjusts it. Returns the adjusted value.
+/proc/between(var/low, var/middle, var/high)
+	return max(min(middle, high), low)
+
 proc/arctan(x)
 	var/y=arcsin(x/sqrt(1+x*x))
 	return y
 
+//returns random gauss number
+proc/GaussRand(var/sigma)
+  var/x,y,rsq
+  do
+    x=2*rand()-1
+    y=2*rand()-1
+    rsq=x*x+y*y
+  while(rsq>1 || !rsq)
+  return sigma*y*sqrt(-2*log(rsq)/rsq)
+
+//returns random gauss number, rounded to 'roundto'
+proc/GaussRandRound(var/sigma,var/roundto)
+	return round(GaussRand(sigma),roundto)
 
 proc/anim(turf/location as turf,target as mob|obj,a_icon,a_icon_state as text,flick_anim as text,sleeptime = 0,direction as num)
 //This proc throws up either an icon or an animation for a specified amount of time.
@@ -593,47 +638,16 @@ proc/anim(turf/location as turf,target as mob|obj,a_icon,a_icon_state as text,fl
 	sleep(max(sleeptime, 15))
 	del(animation)
 
+//Will return the contents of an atom recursivly to a depth of 'searchDepth'
+/atom/proc/GetAllContents(searchDepth = 5)
+	var/list/toReturn = list()
 
-atom/proc/GetAllContents()
-	var/list/processing_list = list(src)
-	var/list/processed = list()
-	var/list/assembled = list()
+	for(var/atom/part in contents)
+		toReturn += part
+		if(part.contents.len && searchDepth)
+			toReturn += part.GetAllContents(searchDepth - 1)
 
-	while(processing_list.len)
-		var/atom/A = processing_list[1]
-		processing_list -= A
-
-		for(var/atom/a in A)
-			if(!(a in processed))
-				processing_list += a
-
-		if(!(A in assembled))
-			assembled += A
-
-	return assembled
-
-atom/proc/GetTypeInAllContents(typepath)
-	var/list/processing_list = list(src)
-	var/list/processed = list()
-
-	var/atom/found = null
-
-	while(processing_list.len && found==null)
-		var/atom/A = processing_list[1]
-		if(istype(A, typepath))
-			found = A
-
-		processing_list -= A
-
-		for(var/atom/a in A)
-			if(!(a in processed))
-				processing_list += a
-
-		if(!(A in processed))
-			processed += A
-
-	return found
-
+	return toReturn
 
 //Step-towards method of determining whether one atom can see another. Similar to viewers()
 /proc/can_see(var/atom/source, var/atom/target, var/length=5) // I couldnt be arsed to do actual raycasting :I This is horribly inaccurate.
@@ -706,14 +720,15 @@ atom/proc/GetTypeInAllContents(typepath)
 		return 0
 
 	var/delayfraction = round(delay/numticks)
-	var/turf/T = user.loc
+	var/original_loc = user.loc
+	var/original_turf = get_turf(user)
 	var/holding = user.get_active_hand()
 
 	for(var/i = 0, i<numticks, i++)
 		sleep(delayfraction)
 
 
-		if(!user || user.stat || user.weakened || user.stunned || !(user.loc == T))
+		if(!user || user.stat || user.weakened || user.stunned || user.loc != original_loc || get_turf(user) != original_turf)
 			return 0
 		if(needhand && !(user.get_active_hand() == holding))	//Sometimes you don't want the user to have to keep their active hand
 			return 0
@@ -728,9 +743,10 @@ atom/proc/GetTypeInAllContents(typepath)
 
 //Returns: all the areas in the world
 /proc/return_areas()
-	. = list()
+	var/list/area/areas = list()
 	for(var/area/A in world)
-		. += A
+		areas += A
+	return areas
 
 //Returns: all the areas in the world, sorted.
 /proc/return_sorted_areas()
@@ -840,16 +856,18 @@ atom/proc/GetTypeInAllContents(typepath)
 					var/old_icon_state1 = T.icon_state
 					var/old_icon1 = T.icon
 
-					var/turf/X = new T.type(B)
+					var/turf/X = B.ChangeTurf(T.type)
 					X.dir = old_dir1
 					X.icon_state = old_icon_state1
 					X.icon = old_icon1 //Shuttle floors are in shuttle.dmi while the defaults are floors.dmi
 
-
-					// Give the new turf our air, if simulated
-					if(istype(X, /turf/simulated) && istype(T, /turf/simulated))
-						var/turf/simulated/sim = X
-						sim.copy_air_with_tile(T)
+					var/turf/simulated/ST = T
+					if(istype(ST) && ST.zone)
+						var/turf/simulated/SX = X
+						if(!SX.air)
+							SX.make_air()
+						SX.air.copy_from(ST.zone.air)
+						ST.zone.remove(ST)
 
 					/* Quick visual fix for some weird shuttle corner artefacts when on transit space tiles */
 					if(direction && findtext(X.icon_state, "swall_s"))
@@ -887,8 +905,7 @@ atom/proc/GetTypeInAllContents(typepath)
 						if(!istype(O,/obj)) continue
 						O.loc = X
 					for(var/mob/M in T)
-						if(!M.move_on_shuttle)
-							continue
+						if(!istype(M,/mob) || istype(M, /mob/aiEye)) continue // If we need to check for more mobs, I'll add a variable
 						M.loc = X
 
 //					var/area/AR = X.loc
@@ -900,16 +917,7 @@ atom/proc/GetTypeInAllContents(typepath)
 					toupdate += X
 
 					if(turftoleave)
-						var/turf/ttl = new turftoleave(T)
-
-//						var/area/AR2 = ttl.loc
-
-//						if(AR2.lighting_use_dynamic)						//TODO: rewrite this code so it's not messed by lighting ~Carn
-//							ttl.opacity = !ttl.opacity
-//							ttl.sd_SetOpacity(!ttl.opacity)
-
-						fromupdate += ttl
-
+						fromupdate += T.ChangeTurf(turftoleave)
 					else
 						T.ChangeTurf(/turf/space)
 
@@ -917,18 +925,28 @@ atom/proc/GetTypeInAllContents(typepath)
 					refined_trg -= B
 					continue moving
 
+	var/list/doors = new/list()
 
 	if(toupdate.len)
 		for(var/turf/simulated/T1 in toupdate)
-			air_master.remove_from_active(T1)
-			T1.CalculateAdjacentTurfs()
-			air_master.add_to_active(T1,1)
+			for(var/obj/machinery/door/D2 in T1)
+				doors += D2
+			/*if(T1.parent)
+				air_master.groups_to_rebuild += T1.parent
+			else
+				air_master.tiles_to_update += T1*/
 
 	if(fromupdate.len)
 		for(var/turf/simulated/T2 in fromupdate)
-			air_master.remove_from_active(T2)
-			T2.CalculateAdjacentTurfs()
-			air_master.add_to_active(T2,1)
+			for(var/obj/machinery/door/D2 in T2)
+				doors += D2
+			/*if(T2.parent)
+				air_master.groups_to_rebuild += T2.parent
+			else
+				air_master.tiles_to_update += T2*/
+
+	for(var/obj/O in doors)
+		O:update_nearby_tiles(1)
 
 
 
@@ -1038,8 +1056,8 @@ proc/DuplicateObject(obj/original, var/perfectcopy = 0 , var/sameloc = 0)
 						O.loc = X
 
 					for(var/mob/M in T)
-						if(!M.move_on_shuttle)
-							continue
+
+						if(!istype(M,/mob) || istype(M, /mob/aiEye)) continue // If we need to check for more mobs, I'll add a variable
 						mobs += M
 
 					for(var/mob/M in mobs)
@@ -1070,10 +1088,23 @@ proc/DuplicateObject(obj/original, var/perfectcopy = 0 , var/sameloc = 0)
 					continue moving
 
 
+
+
+	var/list/doors = new/list()
+
 	if(toupdate.len)
 		for(var/turf/simulated/T1 in toupdate)
-			T1.CalculateAdjacentTurfs()
-			air_master.add_to_active(T1,1)
+			for(var/obj/machinery/door/D2 in T1)
+				doors += D2
+			/*if(T1.parent)
+				air_master.groups_to_rebuild += T1.parent
+			else
+				air_master.tiles_to_update += T1*/
+
+	for(var/obj/O in doors)
+		O:update_nearby_tiles(1)
+
+
 
 
 	return copiedobjs
@@ -1105,6 +1136,14 @@ proc/oview_or_orange(distance = world.view , center = usr , type)
 			. = orange(distance,center)
 	return
 
+proc/get_mob_with_client_list()
+	var/list/mobs = list()
+	for(var/mob/M in mob_list)
+		if (M.client)
+			mobs += M
+	return mobs
+
+
 /proc/parse_zone(zone)
 	if(zone == "r_hand") return "right hand"
 	else if (zone == "l_hand") return "left hand"
@@ -1114,14 +1153,20 @@ proc/oview_or_orange(distance = world.view , center = usr , type)
 	else if (zone == "r_leg") return "right leg"
 	else if (zone == "l_foot") return "left foot"
 	else if (zone == "r_foot") return "right foot"
+	else if (zone == "l_hand") return "left hand"
+	else if (zone == "r_hand") return "right hand"
+	else if (zone == "l_foot") return "left foot"
+	else if (zone == "r_foot") return "right foot"
 	else return zone
 
-
-/proc/get_turf(atom/movable/AM)
-	if(istype(AM))
-		return locate(/turf) in AM.locs
-	else if(isturf(AM))
-		return AM
+//gets the turf the atom is located in (or itself, if it is a turf).
+//returns null if the atom is not in a turf.
+/proc/get_turf(atom/location)
+	while(location)
+		if(isturf(location))
+			return location
+		location = location.loc
+	return null
 
 /proc/get(atom/loc, type)
 	while(loc)
@@ -1130,9 +1175,13 @@ proc/oview_or_orange(distance = world.view , center = usr , type)
 		loc = loc.loc
 	return null
 
+/proc/get_turf_or_move(turf/location)
+	return get_turf(location)
+
+
 //Quick type checks for some tools
 var/global/list/common_tools = list(
-/obj/item/stack/cable_coil,
+/obj/item/weapon/cable_coil,
 /obj/item/weapon/wrench,
 /obj/item/weapon/weldingtool,
 /obj/item/weapon/screwdriver,
@@ -1142,6 +1191,46 @@ var/global/list/common_tools = list(
 
 /proc/istool(O)
 	if(O && is_type_in_list(O, common_tools))
+		return 1
+	return 0
+
+/proc/iswrench(O)
+	if(istype(O, /obj/item/weapon/wrench))
+		return 1
+	return 0
+
+/proc/iswelder(O)
+	if(istype(O, /obj/item/weapon/weldingtool))
+		return 1
+	return 0
+
+/proc/iscoil(O)
+	if(istype(O, /obj/item/weapon/cable_coil))
+		return 1
+	return 0
+
+/proc/iswirecutter(O)
+	if(istype(O, /obj/item/weapon/wirecutters))
+		return 1
+	return 0
+
+/proc/isscrewdriver(O)
+	if(istype(O, /obj/item/weapon/screwdriver))
+		return 1
+	return 0
+
+/proc/ismultitool(O)
+	if(istype(O, /obj/item/device/multitool))
+		return 1
+	return 0
+
+/proc/iscrowbar(O)
+	if(istype(O, /obj/item/weapon/crowbar))
+		return 1
+	return 0
+
+/proc/iswire(O)
+	if(istype(O, /obj/item/weapon/cable_coil))
 		return 1
 	return 0
 
@@ -1177,30 +1266,70 @@ proc/is_hot(obj/item/W as obj)
 
 	return 0
 
-//Is this even used for anything besides balloons? Yes I took out the W:lit stuff because : really shouldnt be used.
-/proc/is_sharp(obj/item/W as obj)		// For the record, WHAT THE HELL IS THIS METHOD OF DOING IT?
+//Whether or not the given item counts as sharp in terms of dealing damage
+/proc/is_sharp(obj/O as obj)
+	if (!O) return 0
+	if (O.sharp) return 1
+	if (O.edge) return 1
+	return 0
+
+//Whether or not the given item counts as cutting with an edge in terms of removing limbs
+/proc/has_edge(obj/O as obj)
+	if (!O) return 0
+	if (O.edge) return 1
+	return 0
+
+//Returns 1 if the given item is capable of popping things like balloons, inflatable barriers, or cutting police tape.
+/proc/can_puncture(obj/item/W as obj)		// For the record, WHAT THE HELL IS THIS METHOD OF DOING IT?
+	if(!W) return 0
+	if(W.sharp) return 1
 	return ( \
+		W.sharp													  || \
 		istype(W, /obj/item/weapon/screwdriver)                   || \
 		istype(W, /obj/item/weapon/pen)                           || \
 		istype(W, /obj/item/weapon/weldingtool)					  || \
 		istype(W, /obj/item/weapon/lighter/zippo)				  || \
 		istype(W, /obj/item/weapon/match)            		      || \
 		istype(W, /obj/item/clothing/mask/cigarette) 		      || \
-		istype(W, /obj/item/weapon/wirecutters)                   || \
-		istype(W, /obj/item/weapon/circular_saw)                  || \
-		istype(W, /obj/item/weapon/melee/energy/sword)            || \
-		istype(W, /obj/item/weapon/melee/energy/blade)            || \
-		istype(W, /obj/item/weapon/shovel)                        || \
-		istype(W, /obj/item/weapon/kitchenknife)                  || \
-		istype(W, /obj/item/weapon/butch)						  || \
-		istype(W, /obj/item/weapon/scalpel)                       || \
-		istype(W, /obj/item/weapon/kitchen/utensil/knife)         || \
-		istype(W, /obj/item/weapon/shard)                         || \
-		istype(W, /obj/item/weapon/broken_bottle)				  || \
-		istype(W, /obj/item/weapon/reagent_containers/syringe)    || \
-		istype(W, /obj/item/weapon/kitchen/utensil/fork) && W.icon_state != "forkloaded" || \
-		istype(W, /obj/item/weapon/twohanded/fireaxe) \
+		istype(W, /obj/item/weapon/shovel) \
 	)
+
+/proc/is_surgery_tool(obj/item/W as obj)
+	return (	\
+	istype(W, /obj/item/weapon/scalpel)			||	\
+	istype(W, /obj/item/weapon/hemostat)		||	\
+	istype(W, /obj/item/weapon/retractor)		||	\
+	istype(W, /obj/item/weapon/cautery)			||	\
+	istype(W, /obj/item/weapon/bonegel)			||	\
+	istype(W, /obj/item/weapon/bonesetter)
+	)
+
+//check if mob is lying down on something we can operate him on.
+/proc/can_operate(mob/living/carbon/M)
+	return (locate(/obj/machinery/optable, M.loc) && M.resting) || \
+	(locate(/obj/structure/stool/bed/roller, M.loc) && 	\
+	(M.buckled || M.lying || M.weakened || M.stunned || M.paralysis || M.sleeping || M.stat)) && prob(75) || 	\
+	(locate(/obj/structure/table/, M.loc) && 	\
+	(M.lying || M.weakened || M.stunned || M.paralysis || M.sleeping || M.stat) && prob(66))
+
+/proc/reverse_direction(var/dir)
+	switch(dir)
+		if(NORTH)
+			return SOUTH
+		if(NORTHEAST)
+			return SOUTHWEST
+		if(EAST)
+			return WEST
+		if(SOUTHEAST)
+			return NORTHWEST
+		if(SOUTH)
+			return NORTH
+		if(SOUTHWEST)
+			return NORTHEAST
+		if(WEST)
+			return EAST
+		if(NORTHWEST)
+			return SOUTHEAST
 
 /*
 Checks if that loc and dir has a item on the wall
@@ -1249,43 +1378,7 @@ var/list/WALLITEMS = list(
 /proc/format_text(text)
 	return replacetext(replacetext(text,"\proper ",""),"\improper ","")
 
-/obj/proc/atmosanalyzer_scan(var/datum/gas_mixture/air_contents, mob/user, var/obj/target = src)
-	var/obj/icon = target
-	user.visible_message("\red [user] has used the analyzer on \icon[icon] [target].</span>")
-	var/pressure = air_contents.return_pressure()
-	var/total_moles = air_contents.total_moles()
-
-	user << "\blue Results of analysis of \icon[icon] [target]."
-	if(total_moles>0)
-		var/o2_concentration = air_contents.oxygen/total_moles
-		var/n2_concentration = air_contents.nitrogen/total_moles
-		var/co2_concentration = air_contents.carbon_dioxide/total_moles
-		var/plasma_concentration = air_contents.toxins/total_moles
-
-		var/unknown_concentration =  1-(o2_concentration+n2_concentration+co2_concentration+plasma_concentration)
-
-		user << "\blue Pressure: [round(pressure,0.1)] kPa"
-		user << "\blue Nitrogen: [round(n2_concentration*100)]%"
-		user << "\blue Oxygen: [round(o2_concentration*100)]%"
-		user << "\blue CO2: [round(co2_concentration*100)]%"
-		user << "\blue Plasma: [round(plasma_concentration*100)]%"
-		if(unknown_concentration>0.01)
-			user << "\red Unknown: [round(unknown_concentration*100)]%"
-		user << "\blue Temperature: [round(air_contents.temperature-T0C)]&deg;C"
-	else
-		user << "\blue [target] is empty!"
-	return
-
-proc/check_target_facings(mob/living/initator, mob/living/target)
-	/*This can be used to add additional effects on interactions between mobs depending on how the mobs are facing each other, such as adding a crit damage to blows to the back of a guy's head.
-	Given how click code currently works (Nov '13), the initiating mob will be facing the target mob most of the time
-	That said, this proc should not be used if the change facing proc of the click code is overriden at the same time*/
-	if(!ismob(target) || target.lying)
-	//Make sure we are not doing this for things that can't have a logical direction to the players given that the target would be on their side
-		return
-	if(initator.dir == target.dir) //mobs are facing the same direction
-		return 1
-	if(initator.dir + 4 == target.dir || initator.dir - 4 == target.dir) //mobs are facing each other
-		return 2
-	if(initator.dir + 2 == target.dir || initator.dir - 2 == target.dir || initator.dir + 6 == target.dir || initator.dir - 6 == target.dir) //Initating mob is looking at the target, while the target mob is looking in a direction perpendicular to the 1st
-		return 3
+/proc/topic_link(var/datum/D, var/arglist, var/content)
+	if(istype(arglist,/list))
+		arglist = list2params(arglist)
+	return "<a href='?src=\ref[D];[arglist]'>[content]</a>"

@@ -1,5 +1,5 @@
 /obj/machinery/portable_atmospherics/scrubber
-	name = "portable air scrubber"
+	name = "Portable Air Scrubber"
 
 	icon = 'icons/obj/atmos.dmi'
 	icon_state = "pscrubber:0"
@@ -22,7 +22,7 @@
 	..(severity)
 
 /obj/machinery/portable_atmospherics/scrubber/huge
-	name = "huge air scrubber"
+	name = "Huge Air Scrubber"
 	icon_state = "scrubber:0"
 	anchored = 1
 	volume = 50000
@@ -63,7 +63,7 @@
 		..()
 
 /obj/machinery/portable_atmospherics/scrubber/huge/stationary
-	name = "stationary air scrubber"
+	name = "Stationary Air Scrubber"
 
 	attackby(var/obj/item/weapon/W as obj, var/mob/user as mob)
 		if(istype(W, /obj/item/weapon/wrench))
@@ -114,8 +114,8 @@
 			filtered_out.temperature = removed.temperature
 
 
-			filtered_out.toxins = removed.toxins
-			removed.toxins = 0
+			filtered_out.phoron = removed.phoron
+			removed.phoron = 0
 
 			filtered_out.carbon_dioxide = removed.carbon_dioxide
 			removed.carbon_dioxide = 0

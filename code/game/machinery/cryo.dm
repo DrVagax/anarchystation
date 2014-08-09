@@ -4,118 +4,78 @@
 	icon_state = "cell-off"
 	density = 1
 	anchored = 1.0
-	layer = 4
+	layer = 2.8
 
 	var/on = 0
 	var/temperature_archived
-	var/obj/item/weapon/reagent_containers/beaker = null
-	var/next_trans = 0
+	var/mob/living/carbon/occupant = null
+	var/obj/item/weapon/reagent_containers/glass/beaker = null
+
 	var/current_heat_capacity = 50
-	state_open = 0
-	var/efficiency
 
 /obj/machinery/atmospherics/unary/cryo_cell/New()
 	..()
 	initialize_directions = dir
-	initialize()
-	component_parts = list()
-	component_parts += new /obj/item/weapon/circuitboard/cryo_tube(null)
-	component_parts += new /obj/item/weapon/stock_parts/matter_bin(null)
-	component_parts += new /obj/item/weapon/stock_parts/console_screen(null)
-	component_parts += new /obj/item/weapon/stock_parts/console_screen(null)
-	component_parts += new /obj/item/weapon/stock_parts/console_screen(null)
-	component_parts += new /obj/item/weapon/stock_parts/console_screen(null)
-	component_parts += new /obj/item/stack/cable_coil(null, 1)
-	RefreshParts()
 
-/obj/machinery/atmospherics/unary/cryo_cell/RefreshParts()
-	var/C
-	for(var/obj/item/weapon/stock_parts/matter_bin/M in component_parts)
-		C += M.rating
-	current_heat_capacity = 50 * C
-	efficiency = C
-
-/obj/machinery/atmospherics/unary/cryo_cell/Del()
-	var/turf/T = loc
-	T.contents += contents
-	..()
-	var/obj/item/weapon/reagent_containers/glass/B = beaker
-	if(beaker)
-		B.loc = get_step(loc, SOUTH) //Beaker is carefully ejected from the wreckage of the cryotube
-	..()
+/obj/machinery/atmospherics/unary/cryo_cell/initialize()
+	if(node) return
+	var/node_connect = dir
+	for(var/obj/machinery/atmospherics/target in get_step(src,node_connect))
+		if(target.initialize_directions & get_dir(target,src))
+			node = target
+			break
 
 /obj/machinery/atmospherics/unary/cryo_cell/process()
 	..()
 	if(!node)
 		return
 	if(!on)
-		updateDialog()
+		updateUsrDialog()
 		return
+
+	if(occupant)
+		if(occupant.stat != 2)
+			process_occupant()
 
 	if(air_contents)
 		temperature_archived = air_contents.temperature
 		heat_gas_contents()
 		expel_gas()
 
-		if(occupant)
-			if(occupant.stat != 2)
-				process_occupant()
-
 	if(abs(temperature_archived-air_contents.temperature) > 1)
 		network.update = 1
 
-	updateDialog()
+	updateUsrDialog()
 	return 1
 
-/obj/machinery/atmospherics/unary/cryo_cell/MouseDrop_T(mob/target, mob/user)
-	if(user.stat || user.lying || !Adjacent(user) || !target.Adjacent(user) || !iscarbon(target))
-		return
-	close_machine(target)
 
 /obj/machinery/atmospherics/unary/cryo_cell/allow_drop()
 	return 0
 
-/obj/machinery/atmospherics/unary/cryo_cell/relaymove(var/mob/user)
-	..()
-	open_machine()
 
-/obj/machinery/atmospherics/unary/cryo_cell/container_resist()
-	if(stat & DEAD)
+/obj/machinery/atmospherics/unary/cryo_cell/relaymove(mob/user as mob)
+	if(user.stat)
 		return
-	sleep(usr.stat * 1200)
-	open_machine()
+	go_out()
 	return
-
-/obj/machinery/atmospherics/unary/cryo_cell/examine()
-	..()
-
-	if(in_range(usr, src))
-		usr << "You can just about make out some loose objects floating in the murk:"
-		for(var/obj/O in src)
-			if(O != beaker)
-				usr << O.name
-		for(var/mob/M in src)
-			if(M != occupant)
-				usr << M.name
-	else
-		usr << "<span class='notice'>Too far away to view contents.</span>"
 
 /obj/machinery/atmospherics/unary/cryo_cell/attack_hand(mob/user)
 	ui_interact(user)
 
-
  /**
   * The ui_interact proc is used to open and update Nano UIs
   * If ui_interact is not used then the UI will not update correctly
-  * ui_interact is currently defined for /atom/movable
+  * ui_interact is currently defined for /atom/movable (which is inherited by /obj and /mob)
   *
   * @param user /mob The mob who is interacting with this ui
   * @param ui_key string A string key to use for this ui. Allows for multiple unique uis on one obj/mob (defaut value "main")
+  * @param ui /datum/nanoui This parameter is passed by the nanoui process() proc when updating an open ui
   *
   * @return nothing
   */
-/obj/machinery/atmospherics/unary/cryo_cell/ui_interact(mob/user, ui_key = "main")
-	if(user == occupant || user.stat || panel_open)
+/obj/machinery/atmospherics/unary/cryo_cell/ui_interact(mob/user, ui_key = "main", var/datum/nanoui/ui = null)
+
+	if(user == occupant || user.stat)
 		return
 
 	// this is the data which will be sent to the ui
@@ -124,18 +84,7 @@
 	data["hasOccupant"] = occupant ? 1 : 0
 
 	var/occupantData[0]
-	if (!occupant)
-		occupantData["name"] = null
-		occupantData["stat"] = null
-		occupantData["health"] = null
-		occupantData["maxHealth"] = null
-		occupantData["minHealth"] = null
-		occupantData["bruteLoss"] = null
-		occupantData["oxyLoss"] = null
-		occupantData["toxLoss"] = null
-		occupantData["fireLoss"] = null
-		occupantData["bodyTemperature"] = null
-	else
+	if (occupant)
 		occupantData["name"] = occupant.name
 		occupantData["stat"] = occupant.stat
 		occupantData["health"] = occupant.health
@@ -148,7 +97,6 @@
 		occupantData["bodyTemperature"] = occupant.bodytemperature
 	data["occupant"] = occupantData;
 
-	data["isOpen"] = state_open
 	data["cellTemperature"] = round(air_contents.temperature)
 	data["cellTemperatureStatus"] = "good"
 	if(air_contents.temperature > T0C) // if greater than 273.15 kelvin (0 celcius)
@@ -157,146 +105,123 @@
 		data["cellTemperatureStatus"] = "average"
 
 	data["isBeakerLoaded"] = beaker ? 1 : 0
+	/* // Removing beaker contents list from front-end, replacing with a total remaining volume
 	var beakerContents[0]
-	if(beaker && beaker:reagents && beaker:reagents.reagent_list.len)
-		for(var/datum/reagent/R in beaker:reagents.reagent_list)
+	if(beaker && beaker.reagents && beaker.reagents.reagent_list.len)
+		for(var/datum/reagent/R in beaker.reagents.reagent_list)
 			beakerContents.Add(list(list("name" = R.name, "volume" = R.volume))) // list in a list because Byond merges the first list...
 	data["beakerContents"] = beakerContents
+	*/
+	data["beakerLabel"] = null
+	data["beakerVolume"] = 0
+	if(beaker)
+		data["beakerLabel"] = beaker.label_text ? beaker.label_text : null
+		if (beaker.reagents && beaker.reagents.reagent_list.len)
+			for(var/datum/reagent/R in beaker.reagents.reagent_list)
+				data["beakerVolume"] += R.volume
 
-	var/datum/nanoui/ui = nanomanager.get_open_ui(user, src, ui_key)
+	// update the ui if it exists, returns null if no ui is passed/found
+	ui = nanomanager.try_update_ui(user, src, ui_key, ui, data)	
 	if (!ui)
-		// the ui does not exist, so we'll create a new one
+		// the ui does not exist, so we'll create a new() one
+        // for a list of parameters and their descriptions see the code docs in \code\modules\nano\nanoui.dm
 		ui = new(user, src, ui_key, "cryo.tmpl", "Cryo Cell Control System", 520, 410)
-		// When the UI is first opened this is the data it will use
-		ui.set_initial_data(data)
+		// when the ui is first opened this is the data it will use
+		ui.set_initial_data(data)		
+		// open the new ui window
 		ui.open()
-		// Auto update every Master Controller tick
+		// auto update every Master Controller tick
 		ui.set_auto_update(1)
-	else
-		// The UI is already open so push the new data to it
-		ui.push_data(data)
-		return
-	//user.set_machine(src)
 
 /obj/machinery/atmospherics/unary/cryo_cell/Topic(href, href_list)
-	if(usr == occupant || panel_open)
+	if(usr == occupant)
 		return 0 // don't update UIs attached to this object
 
 	if(..())
 		return 0 // don't update UIs attached to this object
 
 	if(href_list["switchOn"])
-		if(!state_open)
-			on = 1
+		on = 1
+		update_icon()
 
-	if(href_list["open"])
-		on = 0
-		open_machine()
-
-	if(href_list["close"])
-		if(close_machine() == usr)
-			var/datum/nanoui/ui = nanomanager.get_open_ui(usr, src, "main")
-			ui.close()
-			on = 1
 	if(href_list["switchOff"])
 		on = 0
+		update_icon()
 
 	if(href_list["ejectBeaker"])
 		if(beaker)
-			var/obj/item/weapon/reagent_containers/glass/B = beaker
-			B.loc = get_step(loc, SOUTH)
+			beaker.loc = get_step(loc, SOUTH)
 			beaker = null
-	update_icon()
+
+	if(href_list["ejectOccupant"])
+		if(!occupant || isslime(usr) || ispAI(usr))
+			return 0 // don't update UIs attached to this object
+		go_out()
+
 	add_fingerprint(usr)
 	return 1 // update UIs attached to this object
 
-/obj/machinery/atmospherics/unary/cryo_cell/attackby(obj/item/I, mob/user)
-	if(istype(I, /obj/item/weapon/reagent_containers/glass))
+/obj/machinery/atmospherics/unary/cryo_cell/attackby(var/obj/item/weapon/G as obj, var/mob/user as mob)
+	if(istype(G, /obj/item/weapon/reagent_containers/glass))
 		if(beaker)
-			user << "<span class='notice'>A beaker is already loaded into [src].</span>"
+			user << "\red A beaker is already loaded into the machine."
 			return
 
-		beaker = I
+		beaker =  G
 		user.drop_item()
-		I.loc = src
-		user.visible_message("<span class='notice'>[user] places [I] in [src].</span>", \
-							"<span class='notice'>You place [I] in [src].</span>")
-
-	if(!(on || occupant || state_open))
-		if(default_deconstruction_screwdriver(user, "cell-o", "cell-off", I))
+		G.loc = src
+		user.visible_message("[user] adds \a [G] to \the [src]!", "You add \a [G] to \the [src]!")
+	else if(istype(G, /obj/item/weapon/grab))
+		if(!ismob(G:affecting))
 			return
-
-	if(default_change_direction_wrench(user, I))
-		if(node)
-			disconnect(node)
-		initialize()
-		if(node)
-			node.update_icon()
-		return
-
-	if(exchange_parts(user, I))
-		return
-
-	default_deconstruction_crowbar(I)
-
-/obj/machinery/atmospherics/unary/cryo_cell/open_machine()
-	if(!state_open && !panel_open)
-		layer = 3
-		..()
-		if(beaker)
-			beaker.loc = src
-
-/obj/machinery/atmospherics/unary/cryo_cell/close_machine(mob/living/carbon/M)
-	if(state_open && !panel_open)
-		layer = 4
-		..(M)
-		return occupant
+		for(var/mob/living/carbon/slime/M in range(1,G:affecting))
+			if(M.Victim == G:affecting)
+				usr << "[G:affecting:name] will not fit into the cryo because they have a slime latched onto their head."
+				return
+		var/mob/M = G:affecting
+		if(put_mob(M))
+			del(G)
+	updateUsrDialog()
+	return
 
 /obj/machinery/atmospherics/unary/cryo_cell/update_icon()
-	if(panel_open)
-		icon_state = "cell-o"
-		return
-	if(state_open)
-		icon_state = "cell-open"
-		return
 	if(on)
 		if(occupant)
 			icon_state = "cell-occupied"
-		else
-			icon_state = "cell-on"
-	else
-		icon_state = "cell-off"
-
+			return
+		icon_state = "cell-on"
+		return
+	icon_state = "cell-off"
 
 /obj/machinery/atmospherics/unary/cryo_cell/proc/process_occupant()
 	if(air_contents.total_moles() < 10)
 		return
 	if(occupant)
-		if(occupant.stat == 2 || occupant.health >= 100)  //Why waste energy on dead or healthy people
+		if(occupant.stat == 2)
 			return
-		occupant.bodytemperature += 2*(air_contents.temperature - occupant.bodytemperature) * current_heat_capacity / (current_heat_capacity + air_contents.heat_capacity())
+		occupant.bodytemperature += 2*(air_contents.temperature - occupant.bodytemperature)*current_heat_capacity/(current_heat_capacity + air_contents.heat_capacity())
 		occupant.bodytemperature = max(occupant.bodytemperature, air_contents.temperature) // this is so ugly i'm sorry for doing it i'll fix it later i promise
+		occupant.stat = 1
 		if(occupant.bodytemperature < T0C)
-			occupant.sleeping = max(5/efficiency, (1 / occupant.bodytemperature)*2000/efficiency)
-			occupant.Paralyse(max(5/efficiency, (1 / occupant.bodytemperature)*3000/efficiency))
+			occupant.sleeping = max(5, (1/occupant.bodytemperature)*2000)
+			occupant.Paralyse(max(5, (1/occupant.bodytemperature)*3000))
 			if(air_contents.oxygen > 2)
 				if(occupant.getOxyLoss()) occupant.adjustOxyLoss(-1)
 			else
 				occupant.adjustOxyLoss(-1)
 			//severe damage should heal waaay slower without proper chemicals
 			if(occupant.bodytemperature < 225)
-				if(occupant.getToxLoss())
-					occupant.adjustToxLoss(max(-efficiency, (-20*(efficiency ** 2)) / occupant.getToxLoss()))
-				var/heal_brute = occupant.getBruteLoss() ? min(efficiency, 20*(efficiency**2) / occupant.getBruteLoss()) : 0
-				var/heal_fire = occupant.getFireLoss() ? min(efficiency, 20*(efficiency**2) / occupant.getFireLoss()) : 0
+				if (occupant.getToxLoss())
+					occupant.adjustToxLoss(max(-1, -20/occupant.getToxLoss()))
+				var/heal_brute = occupant.getBruteLoss() ? min(1, 20/occupant.getBruteLoss()) : 0
+				var/heal_fire = occupant.getFireLoss() ? min(1, 20/occupant.getFireLoss()) : 0
 				occupant.heal_organ_damage(heal_brute,heal_fire)
-		if(beaker && next_trans == 0)
+		var/has_cryo = occupant.reagents.get_reagent_amount("cryoxadone") >= 1
+		var/has_clonexa = occupant.reagents.get_reagent_amount("clonexadone") >= 1
+		var/has_cryo_medicine = has_cryo || has_clonexa
+		if(beaker && !has_cryo_medicine)
 			beaker.reagents.trans_to(occupant, 1, 10)
 			beaker.reagents.reaction(occupant)
-	next_trans++
-	if(next_trans == 10)
-		next_trans = 0
-
 
 /obj/machinery/atmospherics/unary/cryo_cell/proc/heat_gas_contents()
 	if(air_contents.total_moles() < 1)
@@ -304,16 +229,100 @@
 	var/air_heat_capacity = air_contents.heat_capacity()
 	var/combined_heat_capacity = current_heat_capacity + air_heat_capacity
 	if(combined_heat_capacity > 0)
-		var/combined_energy = T20C * current_heat_capacity + air_heat_capacity * air_contents.temperature
+		var/combined_energy = T20C*current_heat_capacity + air_heat_capacity*air_contents.temperature
 		air_contents.temperature = combined_energy/combined_heat_capacity
-
 
 /obj/machinery/atmospherics/unary/cryo_cell/proc/expel_gas()
 	if(air_contents.total_moles() < 1)
 		return
-	var/datum/gas_mixture/expel_gas = new
-	var/remove_amount = air_contents.total_moles() / 100
-	expel_gas = air_contents.remove(remove_amount)
-	expel_gas.temperature = T20C	//Lets expel hot gas and see if that helps people not die as they are removed
-	loc.assume_air(expel_gas)
-	air_update_turf()
+//	var/datum/gas_mixture/expel_gas = new
+//	var/remove_amount = air_contents.total_moles()/50
+//	expel_gas = air_contents.remove(remove_amount)
+
+	// Just have the gas disappear to nowhere.
+	//expel_gas.temperature = T20C // Lets expel hot gas and see if that helps people not die as they are removed
+	//loc.assume_air(expel_gas)
+
+/obj/machinery/atmospherics/unary/cryo_cell/proc/go_out()
+	if(!( occupant ))
+		return
+	//for(var/obj/O in src)
+	//	O.loc = loc
+	if (occupant.client)
+		occupant.client.eye = occupant.client.mob
+		occupant.client.perspective = MOB_PERSPECTIVE
+	occupant.loc = get_step(loc, SOUTH)	//this doesn't account for walls or anything, but i don't forsee that being a problem.
+	if (occupant.bodytemperature < 261 && occupant.bodytemperature >= 70) //Patch by Aranclanos to stop people from taking burn damage after being ejected
+		occupant.bodytemperature = 261									  // Changed to 70 from 140 by Zuhayr due to reoccurance of bug.
+//	occupant.metabslow = 0
+	occupant = null
+	update_icon()
+	return
+/obj/machinery/atmospherics/unary/cryo_cell/proc/put_mob(mob/living/carbon/M as mob)
+	if (!istype(M))
+		usr << "\red <B>The cryo cell cannot handle such a lifeform!</B>"
+		return
+	if (occupant)
+		usr << "\red <B>The cryo cell is already occupied!</B>"
+		return
+	if (M.abiotic())
+		usr << "\red Subject may not have abiotic items on."
+		return
+	if(!node)
+		usr << "\red The cell is not correctly connected to its pipe network!"
+		return
+	if (M.client)
+		M.client.perspective = EYE_PERSPECTIVE
+		M.client.eye = src
+	M.stop_pulling()
+	M.loc = src
+	if(M.health > -100 && (M.health < 0 || M.sleeping))
+		M << "\blue <b>You feel a cold liquid surround you. Your skin starts to freeze up.</b>"
+	occupant = M
+//	M.metabslow = 1
+	add_fingerprint(usr)
+	update_icon()
+	return 1
+
+/obj/machinery/atmospherics/unary/cryo_cell/verb/move_eject()
+	set name = "Eject occupant"
+	set category = "Object"
+	set src in oview(1)
+	if(usr == occupant)//If the user is inside the tube...
+		if (usr.stat == 2)//and he's not dead....
+			return
+		usr << "\blue Release sequence activated. This will take two minutes."
+		sleep(1200)
+		if(!src || !usr || !occupant || (occupant != usr)) //Check if someone's released/replaced/bombed him already
+			return
+		go_out()//and release him from the eternal prison.
+	else
+		if (usr.stat != 0)
+			return
+		go_out()
+	add_fingerprint(usr)
+	return
+
+/obj/machinery/atmospherics/unary/cryo_cell/verb/move_inside()
+	set name = "Move Inside"
+	set category = "Object"
+	set src in oview(1)
+	for(var/mob/living/carbon/slime/M in range(1,usr))
+		if(M.Victim == usr)
+			usr << "You're too busy getting your life sucked out of you."
+			return
+	if (usr.stat != 0 || stat & (NOPOWER|BROKEN))
+		return
+	put_mob(usr)
+	return
+
+
+
+/datum/data/function/proc/reset()
+	return
+
+/datum/data/function/proc/r_input(href, href_list, mob/user as mob)
+	return
+
+/datum/data/function/proc/display()
+	return

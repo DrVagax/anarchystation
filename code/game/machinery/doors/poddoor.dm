@@ -1,90 +1,78 @@
 /obj/machinery/door/poddoor
-	name = "blast door"
-	desc = "A heavy duty blast door that opens mechanically."
-	icon = 'icons/obj/doors/blastdoor.dmi'
-	icon_state = "closed"
+	name = "Podlock"
+	desc = "That looks like it doesn't open easily."
+	icon = 'icons/obj/doors/rapid_pdoor.dmi'
+	icon_state = "pdoor1"
+	var/id = 1.0
+	dir = 1
 	explosion_resistance = 25
-	var/id = 1
-	var/auto_close = 0 // Time in seconds to automatically close when opened, 0 if it doesn't.
 
-/obj/machinery/door/poddoor/preopen
-	icon_state = "open"
-	density = 0
-	opacity = 0
-
+/obj/machinery/door/poddoor/New()
+	. = ..()
+	if(density)
+		layer = 3.3		//to override door.New() proc
+	else
+		layer = initial(layer)
+	return
 
 /obj/machinery/door/poddoor/Bumped(atom/AM)
-	if(density)
-		return 0
-	else
-		return ..()
-
-
-/obj/machinery/door/poddoor/attackby(obj/item/I, mob/user)
-	add_fingerprint(user)
-
-	if(!istype(I, /obj/item/weapon/crowbar))
-		return
-	if(istype(I, /obj/item/weapon/twohanded/fireaxe))
-		var/obj/item/weapon/twohanded/fireaxe/F = I
-		if(!F.wielded)
-			return
-
-	if(stat & NOPOWER)
-		open(1)	//ignore the usual power requirement.
-
-
-/obj/machinery/door/poddoor/open(ignorepower = 0)
-	if(operating)
-		return
 	if(!density)
-		return
-	if(!ignorepower && (stat & NOPOWER))
-		return
+		return ..()
+	else
+		return 0
 
-	operating = 1
-	flick("opening", src)
-	icon_state = "open"
-	SetOpacity(0)
+/obj/machinery/door/poddoor/attackby(obj/item/weapon/C as obj, mob/user as mob)
+	src.add_fingerprint(user)
+	if (!( istype(C, /obj/item/weapon/crowbar) || (istype(C, /obj/item/weapon/twohanded/fireaxe) && C:wielded == 1) ))
+		return
+	if ((src.density && (stat & NOPOWER) && !( src.operating )))
+		spawn( 0 )
+			src.operating = 1
+			flick("pdoorc0", src)
+			src.icon_state = "pdoor0"
+			src.SetOpacity(0)
+			sleep(15)
+			src.density = 0
+			src.operating = 0
+			return
+	return
+
+/obj/machinery/door/poddoor/open()
+	if (src.operating == 1) //doors can still open when emag-disabled
+		return
+	if (!ticker)
+		return 0
+	if(!src.operating) //in case of emag
+		src.operating = 1
+	flick("pdoorc0", src)
+	src.icon_state = "pdoor0"
+	src.SetOpacity(0)
 	sleep(10)
+	layer = initial(layer)
+	src.density = 0
+	update_nearby_tiles()
 
-	density = 0
-	explosion_resistance = 0
-	air_update_turf(1)
-	update_freelook_sight()
-	operating = 0
-
-	if(auto_close)
-		spawn(auto_close)
-			// Checks for being able to close are in close().
-			close()
-
+	if(operating == 1) //emag again
+		src.operating = 0
+	if(autoclose)
+		spawn(150)
+			autoclose()
 	return 1
 
+/obj/machinery/door/poddoor/close()
+	if (src.operating)
+		return
+	src.operating = 1
+	layer = 3.3
+	flick("pdoorc1", src)
+	src.icon_state = "pdoor1"
+	src.density = 1
+	src.SetOpacity(initial(opacity))
+	update_nearby_tiles()
 
-/obj/machinery/door/poddoor/close(ignorepower = 0)
-	if(operating)
-		return
-	if(density)
-		return
-	if(!ignorepower && (stat & NOPOWER))
-		return
-
-	operating = 1
-	flick("closing", src)
-	crush()
-	icon_state = "closed"
-	density = 1
-	explosion_resistance = initial(explosion_resistance)
-	SetOpacity(1)
-	air_update_turf(1)
-	update_freelook_sight()
 	sleep(10)
-
-	operating = 0
-
-
-
+	src.operating = 0
+	return
 
 /*
 /obj/machinery/door/poddoor/two_tile_hor/open()
@@ -393,9 +381,7 @@
 		del f3
 		del f4
 		..()
-
+*/
 /obj/machinery/door/poddoor/filler_object
 	name = ""
 	icon_state = ""
-
-*/

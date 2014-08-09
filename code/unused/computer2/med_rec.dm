@@ -2,7 +2,7 @@
 	name = "Medical Records"
 	size = 32.0
 	active_icon = "dna"
-	req_access = list(access_medical)
+	req_access = list(ACCESS_MEDICAL)
 	var/authenticated = null
 	var/rank = null
 	var/screen = null
@@ -191,7 +191,7 @@
 <BR><b>Possible Cure:</b> Inaprovaline
 <BR><b>Affected Species:</b> Human and Monkey
 <BR>
-<BR><b>Notes:</b> With this disease the victim will need plasma to breathe.
+<BR><b>Notes:</b> With this disease the victim will need phoron to breathe.
 <BR>
 <BR><b>Severity:</b> Major"}
 				if("dna")
@@ -409,7 +409,7 @@
 			var/counter = 1
 			while(src.active2.fields[text("com_[]", counter)])
 				counter++
-			src.active2.fields[text("com_[]", counter)] = text("Made by [] ([]) on [], 2053<BR>[]", src.authenticated, src.rank, time2text(world.realtime, "DDD MMM DD hh:mm:ss"), t1)
+			src.active2.fields[text("com_[]", counter)] = text("Made by [] ([]) on [], 2556<BR>[]", src.authenticated, src.rank, time2text(world.realtime, "DDD MMM DD hh:mm:ss"), t1)
 
 		if (href_list["del_c"])
 			if ((istype(src.active2, /datum/data/record) && src.active2.fields[text("com_[]", href_list["del_c"])]))

@@ -174,7 +174,7 @@
 		W.loc = src
 		if(user.client)
 			user.client.screen -= W
-		user.unEquip(W)
+		user.u_equip(W)
 		user.update_icons()
 		user.visible_message("[user.name] loads an [W.name] into the [src.name].", \
 				"You load an [W.name].", \
@@ -276,7 +276,7 @@
 	dat += "Status: [(active?"Injecting":"Standby")] <BR>"
 	dat += "<A href='?src=\ref[src];togglestatus=1'>Toggle Status</A><BR>"
 
-	dat += "Stability: [stability]%<BR>"
+	dat += "Instability: [stability]%<BR>"
 	dat += "Reactor parts: [linked_shielding.len]<BR>"//TODO: perhaps add some sort of stability check
 	dat += "Cores: [linked_cores.len]<BR><BR>"
 	dat += "-Current Efficiency: [reported_core_efficiency]<BR>"
@@ -300,7 +300,11 @@
 
 
 /obj/machinery/power/am_control_unit/Topic(href, href_list)
-	if(..())
+	..()
+	//Ignore input if we are broken or guy is not touching us, AI can control from a ways away
+	if(stat & (BROKEN|NOPOWER) || (get_dist(src, usr) > 1 && !istype(usr, /mob/living/silicon/ai)))
+		usr.unset_machine()
+		usr << browse(null, "window=AMcontrol")
 		return
 
 	if(href_list["close"])

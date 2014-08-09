@@ -12,15 +12,17 @@
 /obj/structure/closet/syndicate/personal/New()
 	..()
 	sleep(2)
-	new /obj/item/weapon/tank/jetpack/oxygen/harness(src)
+	new /obj/item/weapon/tank/jetpack/oxygen(src)
 	new /obj/item/clothing/mask/gas/syndicate(src)
 	new /obj/item/clothing/under/syndicate(src)
 	new /obj/item/clothing/head/helmet/space/rig/syndi(src)
 	new /obj/item/clothing/suit/space/rig/syndi(src)
-	new /obj/item/weapon/storage/belt/military(src)
 	new /obj/item/weapon/crowbar/red(src)
-	new /obj/item/weapon/stock_parts/cell/high(src)
+	new /obj/item/weapon/cell/high(src)
+	new /obj/item/weapon/card/id/syndicate(src)
 	new /obj/item/device/multitool(src)
+	new /obj/item/weapon/shield/energy(src)
+	new /obj/item/clothing/shoes/magboots(src)
 
 
 /obj/structure/closet/syndicate/nuclear
@@ -29,14 +31,13 @@
 /obj/structure/closet/syndicate/nuclear/New()
 	..()
 	sleep(2)
-	new /obj/item/ammo_box/magazine/m10mm(src)
-	new /obj/item/ammo_box/magazine/m10mm(src)
-	new /obj/item/ammo_box/magazine/m10mm(src)
-	new /obj/item/ammo_box/magazine/m10mm(src)
-	new /obj/item/ammo_box/magazine/m10mm(src)
+	new /obj/item/ammo_magazine/a12mm(src)
+	new /obj/item/ammo_magazine/a12mm(src)
+	new /obj/item/ammo_magazine/a12mm(src)
+	new /obj/item/ammo_magazine/a12mm(src)
+	new /obj/item/ammo_magazine/a12mm(src)
 	new /obj/item/weapon/storage/box/handcuffs(src)
 	new /obj/item/weapon/storage/box/flashbangs(src)
-	new /obj/item/weapon/storage/box/teargas(src)
 	new /obj/item/weapon/gun/energy/gun(src)
 	new /obj/item/weapon/gun/energy/gun(src)
 	new /obj/item/weapon/gun/energy/gun(src)
@@ -48,6 +49,8 @@
 	new /obj/item/weapon/pinpointer/nukeop(src)
 	new /obj/item/weapon/pinpointer/nukeop(src)
 	new /obj/item/device/pda/syndicate(src)
+	var/obj/item/device/radio/uplink/U = new(src)
+	U.hidden_uplink.uses = 40
 	return
 
 /obj/structure/closet/syndicate/resources/
@@ -79,13 +82,13 @@
 		if(pickednum >= 5)
 			new /obj/item/stack/sheet/glass(src, rand(common_min, common_max))
 
-		//Plasteel (common ore) Because it has a million more uses then plasma
+		//Plasteel (common ore) Because it has a million more uses then phoron
 		if(pickednum >= 10)
 			new /obj/item/stack/sheet/plasteel(src, rand(common_min, common_max))
 
-		//Plasma (rare ore)
+		//Phoron (rare ore)
 		if(pickednum >= 15)
-			new /obj/item/stack/sheet/mineral/plasma(src, rand(rare_min, rare_max))
+			new /obj/item/stack/sheet/mineral/phoron(src, rand(rare_min, rare_max))
 
 		//Silver (rare ore)
 		if(pickednum >= 20)
@@ -118,10 +121,9 @@
 		/obj/item/stack/sheet/glass,
 		/obj/item/stack/sheet/mineral/gold,
 		/obj/item/stack/sheet/mineral/silver,
-		/obj/item/stack/sheet/mineral/plasma,
+		/obj/item/stack/sheet/mineral/phoron,
 		/obj/item/stack/sheet/mineral/uranium,
 		/obj/item/stack/sheet/mineral/diamond,
-		/obj/item/stack/sheet/mineral/clown,
 		/obj/item/stack/sheet/plasteel,
 		/obj/item/stack/rods
 		)

@@ -9,6 +9,9 @@
 		..()
 		name = "floor"
 
+/turf/simulated/floor/airless/ceiling
+	icon_state = "rockvault"
+
 /turf/simulated/floor/light
 	name = "Light floor"
 	luminosity = 5
@@ -30,11 +33,6 @@
 	name = "floor"
 	icon_state = "wood"
 	floor_tile = new/obj/item/stack/tile/wood
-
-/turf/simulated/floor/goonplaque
-	name = "Commemorative Plaque"
-	icon_state = "plaque"
-	desc = "\"This is a plaque in honour of our comrades on the G4407 Stations. Hopefully TG4407 model can live up to your fame and fortune.\" Scratched in beneath that is a crude image of a meteor and a spaceman. The spaceman is laughing. The meteor is exploding."
 
 /turf/simulated/floor/vault
 	icon_state = "rockvault"
@@ -78,11 +76,11 @@
 
 /turf/simulated/floor/engine/n20
 	New()
-		..()
+		. = ..()
 		var/datum/gas_mixture/adding = new
 		var/datum/gas/sleeping_agent/trace_gas = new
 
-		trace_gas.moles = 6000
+		trace_gas.moles = 2000
 		adding.trace_gases += trace_gas
 		adding.temperature = T20C
 
@@ -144,10 +142,19 @@
 	icon = 'icons/turf/floors.dmi'
 	icon_state = "plating"
 
+/turf/simulated/shuttle/plating/vox	//Vox skipjack plating
+	oxygen = 0
+	nitrogen = MOLES_N2STANDARD + MOLES_O2STANDARD
+
 /turf/simulated/shuttle/floor4 // Added this floor tile so that I have a seperate turf to check in the shuttle -- Polymorph
 	name = "Brig floor"        // Also added it into the 2x3 brig area of the shuttle.
 	icon_state = "floor4"
 
+/turf/simulated/shuttle/floor4/vox	//Vox skipjack floors
+	name = "skipjack floor"
+	oxygen = 0
+	nitrogen = MOLES_N2STANDARD + MOLES_O2STANDARD
+	
 /turf/simulated/floor/beach
 	name = "Beach"
 	icon = 'icons/misc/beach.dmi'
@@ -165,6 +172,9 @@
 	name = "Water"
 	icon_state = "water"
 
+/turf/simulated/floor/beach/water/New()
+	..()
+	overlays += image("icon"='icons/misc/beach.dmi',"icon_state"="water5","layer"=MOB_LAYER+0.1)
 
 /turf/simulated/floor/grass
 	name = "Grass patch"

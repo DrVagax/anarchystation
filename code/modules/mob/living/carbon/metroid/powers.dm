@@ -11,12 +11,12 @@
 
 	var/list/choices = list()
 	for(var/mob/living/C in view(1,src))
-		if(C!=src && !istype(C,/mob/living/carbon/slime) && Adjacent(C))
+		if(C!=src && !istype(C,/mob/living/carbon/slime))
 			choices += C
 
 	var/mob/living/carbon/M = input(src,"Who do you wish to feed on?") in null|choices
 	if(!M) return
-	if(Adjacent(M))
+	if(M in view(1, src))
 
 		if(!istype(src, /mob/living/carbon/brain))
 			if(!istype(M, /mob/living/carbon/slime))
@@ -49,7 +49,7 @@
 	anchored = 1
 	var/lastnut = nutrition
 	//if(M.client) M << "\red You legs become paralyzed!"
-	if(is_adult)
+	if(istype(src, /mob/living/carbon/slime/adult))
 		icon_state = "[colour] adult slime eat"
 	else
 		icon_state = "[colour] baby slime eat"
@@ -58,7 +58,7 @@
 		// M.canmove = 0
 		canmove = 0
 
-		if(Adjacent(M))
+		if(M in view(1, src))
 			loc = M.loc
 
 			if(prob(15) && M.client && istype(M, /mob/living/carbon))
@@ -96,7 +96,7 @@
 						if(powerlevel > 10)
 							powerlevel = 10
 
-				if(is_adult)
+				if(istype(src, /mob/living/carbon/slime/adult))
 					if(nutrition > 1200)
 						nutrition = 1200
 				else
@@ -119,11 +119,11 @@
 			break
 
 	if(stat == 2)
-		if(!is_adult)
+		if(!istype(src, /mob/living/carbon/slime/adult))
 			icon_state = "[colour] baby slime dead"
 
 	else
-		if(is_adult)
+		if(istype(src, /mob/living/carbon/slime/adult))
 			icon_state = "[colour] adult slime"
 		else
 			icon_state = "[colour] baby slime"
@@ -173,13 +173,16 @@
 	if(stat)
 		src << "<i>I must be conscious to do this...</i>"
 		return
-	if(!is_adult)
+	if(!istype(src, /mob/living/carbon/slime/adult))
 		if(amount_grown >= 10)
-			is_adult = 1
-			maxHealth = 200
-			amount_grown = 0
-			regenerate_icons()
-			name = text("[colour] [is_adult ? "adult" : "baby"] slime ([rand(1, 1000)])")
+			var/mob/living/carbon/slime/adult/new_slime = new adulttype(loc)
+			new_slime.nutrition = nutrition
+			new_slime.powerlevel = max(0, powerlevel-1)
+			new_slime.a_intent = "hurt"
+			new_slime.key = key
+			new_slime.universal_speak = universal_speak
+			new_slime << "<B>You are now an adult slime.</B>"
+			del(src)
 		else
 			src << "<i>I am not ready to evolve yet...</i>"
 	else
@@ -187,14 +190,15 @@
 
 /mob/living/carbon/slime/verb/Reproduce()
 	set category = "Slime"
-	set desc = "This will make you split into four Slimes."
+	set desc = "This will make you split into four Slimes. NOTE: this will KILL you, but you will be transferred into one of the babies."
 
 	if(stat)
 		src << "<i>I must be conscious to do this...</i>"
 		return
 
-	if(is_adult)
+	if(istype(src, /mob/living/carbon/slime/adult))
 		if(amount_grown >= 10)
+			//if(input("Are you absolutely sure you want to reproduce? Your current body will cease to be, but your consciousness will be transferred into a produced slime.") in list("Yes","No")=="Yes")
 			if(stat)
 				src << "<i>I must be conscious to do this...</i>"
 				return
@@ -203,26 +207,57 @@
 			var/new_nutrition = round(nutrition * 0.9)
 			var/new_powerlevel = round(powerlevel / 4)
 			for(var/i=1,i<=4,i++)
-				var/mob/living/carbon/slime/M = new /mob/living/carbon/slime/(loc)
-				if(prob(70))
-					M.colour = colour
+				if(prob(80))
+					var/mob/living/carbon/slime/M = new primarytype(loc)
+					M.nutrition = new_nutrition
+					M.powerlevel = new_powerlevel
+					if(i != 1) step_away(M,src)
+					babies += M
 				else
-					M.colour = slime_mutation[rand(1,4)]
-				if(ckey)	M.nutrition = new_nutrition //Player slimes are more robust at spliting. Once an oversight of poor copypasta, now a feature!
-				M.powerlevel = new_powerlevel
-				if(i != 1) step_away(M,src)
-				babies += M
-				feedback_add_details("slime_babies_born","slimebirth_[replacetext(M.colour," ","_")]")
+					var/mutations = pick("one","two","three","four")
+					switch(mutations)
+						if("one")
+							var/mob/living/carbon/slime/M = new mutationone(loc)
+							M.nutrition = new_nutrition
+							M.powerlevel = new_powerlevel
+							if(i != 1) step_away(M,src)
+							babies += M
+						if("two")
+							var/mob/living/carbon/slime/M = new mutationtwo(loc)
+							M.nutrition = new_nutrition
+							M.powerlevel = new_powerlevel
+							if(i != 1) step_away(M,src)
+							babies += M
+						if("three")
+							var/mob/living/carbon/slime/M = new mutationthree(loc)
+							M.nutrition = new_nutrition
+							M.powerlevel = new_powerlevel
+							if(i != 1) step_away(M,src)
+							babies += M
+						if("four")
+							var/mob/living/carbon/slime/M = new mutationfour(loc)
+							M.nutrition = new_nutrition
+							M.powerlevel = new_powerlevel
+							if(i != 1) step_away(M,src)
+							babies += M
 
 			var/mob/living/carbon/slime/new_slime = pick(babies)
-			new_slime.a_intent = "harm"
+			new_slime.a_intent = "hurt"
 			new_slime.universal_speak = universal_speak
-			if(src.mind)
-				src.mind.transfer_to(new_slime)
-			else
-				new_slime.key = src.key
+			new_slime.key = key
+
+			new_slime << "<B>You are now a slime!</B>"
 			del(src)
 		else
 			src << "<i>I am not ready to reproduce yet...</i>"
 	else
 		src << "<i>I am not old enough to reproduce yet...</i>"
+
+
+
+/mob/living/carbon/slime/verb/ventcrawl()
+	set name = "Crawl through Vent"
+	set desc = "Enter an air vent and crawl through the pipe system."
+	set category = "Slime"
+	if(Victim)	return
+	handle_ventcrawl()

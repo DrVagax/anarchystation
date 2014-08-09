@@ -30,8 +30,8 @@ var/list/solars_list = list()
 	var/health = 10
 	var/obscured = 0
 	var/sunfrac = 0
-	var/adir = SOUTH // actual dir
-	var/ndir = SOUTH // target dir
+	var/adir = SOUTH
+	var/ndir = SOUTH
 	var/turn_angle = 0
 	var/obj/machinery/power/solar_control/control = null
 
@@ -63,7 +63,7 @@ var/list/solars_list = list()
 
 /obj/machinery/power/solar/attackby(obj/item/weapon/W, mob/user)
 
-	if(istype(W, /obj/item/weapon/crowbar))
+	if(iscrowbar(W))
 		playsound(src.loc, 'sound/machines/click.ogg', 50, 1)
 		if(do_after(user, 50))
 			var/obj/item/solar_assembly/S = locate() in src
@@ -218,13 +218,13 @@ var/list/solars_list = list()
 /obj/item/solar_assembly/attackby(var/obj/item/weapon/W, var/mob/user)
 
 	if(!anchored && isturf(loc))
-		if(istype(W, /obj/item/weapon/wrench))
+		if(iswrench(W))
 			anchored = 1
 			user.visible_message("<span class='notice'>[user] wrenches the solar assembly into place.</span>")
 			playsound(src.loc, 'sound/items/Ratchet.ogg', 75, 1)
 			return 1
 	else
-		if(istype(W, /obj/item/weapon/wrench))
+		if(iswrench(W))
 			anchored = 0
 			user.visible_message("<span class='notice'>[user] unwrenches the solar assembly from it's place.</span>")
 			playsound(src.loc, 'sound/items/Ratchet.ogg', 75, 1)
@@ -251,7 +251,7 @@ var/list/solars_list = list()
 			user.visible_message("<span class='notice'>[user] inserts the electronics into the solar assembly.</span>")
 			return 1
 	else
-		if(istype(W, /obj/item/weapon/crowbar))
+		if(iscrowbar(W))
 			new /obj/item/weapon/tracker_electronics(src.loc)
 			tracker = 0
 			user.visible_message("<span class='notice'>[user] takes out the electronics from the solar assembly.</span>")
@@ -277,10 +277,10 @@ var/list/solars_list = list()
 	var/cdir = 0
 	var/gen = 0
 	var/lastgen = 0
-	var/track = 0			// 0= off  1=timed  2=auto (tracker)
-	var/trackrate = 600		// 300-900 seconds
-	var/trackdir = 1		// 0 =CCW, 1=CW
-	var/nexttime = 0
+	var/track = 0			// 0=off  1=manual  2=automatic
+	var/trackrate = 60		// Measured in tenths of degree per minute (i.e. defaults to 6.0 deg/min)
+	var/trackdir = 1		// -1=CCW, 1=CW
+	var/nexttime = 0		// Next clock time that manual tracking will move the array
 
 
 /obj/machinery/power/solar_control/New()
@@ -314,7 +314,7 @@ var/list/solars_list = list()
 		return
 	icon_state = "solar"
 	overlays.Cut()
-	if(cdir > -1)
+	if(cdir > 0)
 		overlays += image('icons/obj/computer.dmi', "solcon-o", FLY_LAYER, angle2dir(cdir))
 	return
 
@@ -370,11 +370,14 @@ var/list/solars_list = list()
 	if(stat & (NOPOWER | BROKEN))
 		return
 
-	use_power(250)
-	if(track==1 && nexttime < world.timeofday && trackrate)
-		nexttime = world.timeofday + 3600/abs(trackrate)
-		cdir = (cdir+trackrate/abs(trackrate)+360)%360
+	//use_power(250)
+	if(track==1 && nexttime < world.time && trackdir*trackrate)
+		// Increments nexttime using itself and not world.time to prevent drift
+		nexttime = nexttime + 6000/trackrate
+		// Nudges array 1 degree in desired direction
+		cdir = (cdir+trackdir+360)%360
 		set_panels(cdir)
+		update_icon()
 
 	src.updateDialog()
 
@@ -385,13 +388,14 @@ var/list/solars_list = list()
 		return
 	cdir = angle
 	set_panels(cdir)
+	update_icon()
 	src.updateDialog()
 
 
 /obj/machinery/power/solar_control/interact(mob/user)
 	if(stat & (BROKEN | NOPOWER)) return
 	if ( (get_dist(src, user) > 1 ))
-		if (!istype(user, /mob/living/silicon/ai))
+		if (!istype(user, /mob/living/silicon))
 			user.unset_machine()
 			user << browse(null, "window=solcon")
 			return
@@ -400,19 +404,28 @@ var/list/solars_list = list()
 	user.set_machine(src)
 
 	var/t = "<TT><B>Solar Generator Control</B><HR><PRE>"
-	t += "Generated power : [round(lastgen)] W<BR><BR>"
-	t += "<B>Orientation</B>: [rate_control(src,"cdir","[cdir]&deg",1,15)] ([angle2text(cdir)])<BR><BR><BR>"
-	t += "<BR><HR><BR><BR>"
+	t += "<B>Generated power</B> : [round(lastgen)] W<BR>"
+	t += "Station Rotational Period: [60/abs(sun.rate)] minutes<BR>"
+	t += "Station Rotational Direction: [sun.rate<0 ? "CCW" : "CW"]<BR>"
+	t += "Star Orientation: [sun.angle]&deg ([angle2text(sun.angle)])<BR>"
+	t += "Array Orientation: [rate_control(src,"cdir","[cdir]&deg",1,10,60)] ([angle2text(cdir)])<BR>"
+	t += "<BR><HR><BR>"
 	t += "Tracking: "
 	switch(track)
 		if(0)
-			t += "<B>Off</B> <A href='?src=\ref[src];track=1'>Timed</A> <A href='?src=\ref[src];track=2'>Auto</A><BR>"
+			t += "<B>Off</B> <A href='?src=\ref[src];track=1'>Manual</A> <A href='?src=\ref[src];track=2'>Automatic</A><BR>"
 		if(1)
-			t += "<A href='?src=\ref[src];track=0'>Off</A> <B>Timed</B> <A href='?src=\ref[src];track=2'>Auto</A><BR>"
+			t += "<A href='?src=\ref[src];track=0'>Off</A> <B>Manual</B> <A href='?src=\ref[src];track=2'>Automatic</A><BR>"
 		if(2)
-			t += "<A href='?src=\ref[src];track=0'>Off</A> <A href='?src=\ref[src];track=1'>Timed</A> <B>Auto</B><BR>"
+			t += "<A href='?src=\ref[src];track=0'>Off</A> <A href='?src=\ref[src];track=1'>Manual</A> <B>Automatic</B><BR>"
 
-	t += "Tracking Rate: [rate_control(src,"tdir","[trackrate] deg/h ([trackrate<0 ? "CCW" : "CW"])",5,30,180)]<BR><BR>"
+	t += "Manual Tracking Rate: [rate_control(src,"tdir","[trackrate/10]&deg/min ([trackdir<0 ? "CCW" : "CW"])",1,10)]<BR>"
+	t += "Manual Tracking Direction: "
+	switch(trackdir)
+		if(-1)
+			t += "<A href='?src=\ref[src];trackdir=1'>CW</A> <B>CCW</B><BR>"
+		if(1)
+			t += "<B>CW</B> <A href='?src=\ref[src];trackdir=-1'>CCW</A><BR>"
 	t += "<A href='?src=\ref[src];close=1'>Close</A></TT>"
 	user << browse(t, "window=solcon")
 	onclose(user, "solcon")
@@ -432,26 +445,34 @@ var/list/solars_list = list()
 	if(href_list["dir"])
 		cdir = text2num(href_list["dir"])
 		set_panels(cdir)
+		update_icon()
 
 	if(href_list["rate control"])
 		if(href_list["cdir"])
 			src.cdir = dd_range(0,359,(360+src.cdir+text2num(href_list["cdir"]))%360)
 			spawn(1)
 				set_panels(cdir)
+				update_icon()
 		if(href_list["tdir"])
-			src.trackrate = dd_range(-7200,7200,src.trackrate+text2num(href_list["tdir"]))
-			if(src.trackrate) nexttime = world.timeofday + 3600/abs(trackrate)
+			src.trackrate = dd_range(0,360,src.trackrate+text2num(href_list["tdir"]))
+			if(src.trackrate) nexttime = world.time + 6000/trackrate
 
 	if(href_list["track"])
-		if(src.trackrate) nexttime = world.timeofday + 3600/abs(trackrate)
+		if(src.trackrate) nexttime = world.time + 6000/trackrate
 		track = text2num(href_list["track"])
 		if(powernet && (track == 2))
+			if(!solars_list.Find(src,1,0))
+				solars_list.Add(src)
 			for(var/obj/machinery/power/tracker/T in get_solars_powernet())
 				if(powernet.nodes[T])
 					cdir = T.sun_angle
 					break
 
+	if(href_list["trackdir"])
+		trackdir = text2num(href_list["trackdir"])
+
 	set_panels(cdir)
+	update_icon()
 	src.updateUsrDialog()
 	return
 
@@ -464,7 +485,6 @@ var/list/solars_list = list()
 				if(!S.control)
 					S.control = src
 				S.ndir = cdir
-	update_icon()
 
 
 /obj/machinery/power/solar_control/power_change()
@@ -514,10 +534,4 @@ var/list/solars_list = list()
 
 /obj/item/weapon/paper/solar
 	name = "paper- 'Going green! Setup your own solar array instructions.'"
-	info = "<h1>Welcome</h1><p>At greencorps we love the environment, and space. With this package you are able to help mother nature and produce energy without any usage of fossil fuel or plasma! Singularity energy is dangerous while solar energy is safe, which is why it's better. Now here is how you setup your own solar array.</p><p>You can make a solar panel by wrenching the solar assembly onto a cable node. Adding a glass panel, reinforced or regular glass will do, will finish the construction of your solar panel. It is that easy!.</p><p>Now after setting up 19 more of these solar panels you will want to create a solar tracker to keep track of our mother nature's gift, the sun. These are the same steps as before except you insert the tracker equipment circuit into the assembly before performing the final step of adding the glass. You now have a tracker! Now the last step is to add a computer to calculate the sun's movements and to send commands to the solar panels to change direction with the sun. Setting up the solar computer is the same as setting up any computer, so you should have no trouble in doing that. You do need to put a wire node under the computer, and the wire needs to be connected to the tracker.</p><p>Congratulations, you should have a working solar array. If you are having trouble, here are some tips. Make sure all solar equipment are on a cable node, even the computer. You can always deconstruct your creations if you make a mistake.</p><p>That's all to it, be safe, be green!</p>"
-
-/proc/rate_control(var/S, var/V, var/C, var/Min=1, var/Max=5, var/Limit=null) //How not to name vars
-	var/href = "<A href='?src=\ref[S];rate control=1;[V]"
-	var/rate = "[href]=-[Max]'>-</A>[href]=-[Min]'>-</A> [(C?C : 0)] [href]=[Min]'>+</A>[href]=[Max]'>+</A>"
-	if(Limit) return "[href]=-[Limit]'>-</A>"+rate+"[href]=[Limit]'>+</A>"
-	return rate
+	info = "<h1>Welcome</h1><p>At greencorps we love the environment, and space. With this package you are able to help mother nature and produce energy without any usage of fossil fuel or phoron! Singularity energy is dangerous while solar energy is safe, which is why it's better. Now here is how you setup your own solar array.</p><p>You can make a solar panel by wrenching the solar assembly onto a cable node. Adding a glass panel, reinforced or regular glass will do, will finish the construction of your solar panel. It is that easy!.</p><p>Now after setting up 19 more of these solar panels you will want to create a solar tracker to keep track of our mother nature's gift, the sun. These are the same steps as before except you insert the tracker equipment circuit into the assembly before performing the final step of adding the glass. You now have a tracker! Now the last step is to add a computer to calculate the sun's movements and to send commands to the solar panels to change direction with the sun. Setting up the solar computer is the same as setting up any computer, so you should have no trouble in doing that. You do need to put a wire node under the computer, and the wire needs to be connected to the tracker.</p><p>Congratulations, you should have a working solar array. If you are having trouble, here are some tips. Make sure all solar equipment are on a cable node, even the computer. You can always deconstruct your creations if you make a mistake.</p><p>That's all to it, be safe, be green!</p>"

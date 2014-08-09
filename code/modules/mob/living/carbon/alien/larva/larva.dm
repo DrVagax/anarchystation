@@ -15,7 +15,9 @@
 
 //This is fine right now, if we're adding organ specific damage this needs to be updated
 /mob/living/carbon/alien/larva/New()
-	create_reagents(100)
+	var/datum/reagents/R = new/datum/reagents(100)
+	reagents = R
+	R.my_atom = src
 	if(name == "alien larva")
 		name = "alien larva ([rand(1, 1000)])"
 	real_name = name
@@ -24,24 +26,35 @@
 
 //This is fine, works the same as a human
 /mob/living/carbon/alien/larva/Bump(atom/movable/AM as mob|obj, yes)
-	if ((!( yes ) || now_pushing))
-		return
-	now_pushing = 1
-	if(ismob(AM))
-		var/mob/tmob = AM
-		tmob.LAssailant = src
 
-	now_pushing = 0
-	..()
-	if (!istype(AM, /atom/movable))
-		return
-	if (!( now_pushing ))
+	spawn( 0 )
+		if ((!( yes ) || now_pushing))
+			return
 		now_pushing = 1
-		if (!( AM.anchored ))
-			var/t = get_dir(src, AM)
-			step(AM, t)
-		now_pushing = null
+		if(ismob(AM))
+			var/mob/tmob = AM
+			if(istype(tmob, /mob/living/carbon/human) && (FAT in tmob.mutations))
+				if(prob(70))
+					src << "\red <B>You fail to push [tmob]'s fat ass out of the way.</B>"
+					now_pushing = 0
+					return
+				if(!(tmob.status_flags & CANPUSH))
+					now_pushing = 0
+					return
+			tmob.LAssailant = src
 
+		now_pushing = 0
+		..()
+		if (!( istype(AM, /atom/movable) ))
+			return
+		if (!( now_pushing ))
+			now_pushing = 1
+			if (!( AM.anchored ))
+				var/t = get_dir(src, AM)
+				step(AM, t)
+			now_pushing = null
+		return
+	return
 
 //This needs to be fixed
 /mob/living/carbon/alien/larva/Stat()
@@ -55,12 +68,14 @@
 
 
 /mob/living/carbon/alien/larva/ex_act(severity)
-	..()
+	if(!blinded)
+		flick("flash", flash)
 
 	var/b_loss = null
 	var/f_loss = null
 	switch (severity)
 		if (1.0)
+			b_loss += 500
 			gib()
 			return
 
@@ -124,6 +139,7 @@
 		updatehealth()
 	return
 
+
 /mob/living/carbon/alien/larva/attack_animal(mob/living/simple_animal/M as mob)
 	if(M.melee_damage_upper == 0)
 		M.emote("[M.friendly] [src]")
@@ -132,7 +148,8 @@
 			O.show_message("\red <B>[M]</B> [M.attacktext] [src]!", 1)
 		var/damage = rand(M.melee_damage_lower, M.melee_damage_upper)
 		adjustBruteLoss(damage)
-		add_logs(M, src, "attacked", admin=0)
+		M.attack_log += text("\[[time_stamp()]\] <font color='red'>attacked [src.name] ([src.ckey])</font>")
+		src.attack_log += text("\[[time_stamp()]\] <font color='orange'>was attacked by [M.name] ([M.ckey])</font>")
 		updatehealth()
 
 
@@ -160,7 +177,7 @@
 				playsound(loc, 'sound/weapons/bite.ogg', 50, 1, -1)
 				for(var/mob/O in viewers(src, null))
 					if ((O.client && !( O.blinded )))
-						O.show_message(text("<span class='danger'>[M.name] bites [src]!</span>"), 1)
+						O.show_message(text("\red <B>[M.name] has bit [src]!</B>"), 1)
 				adjustBruteLoss(rand(1, 3))
 				updatehealth()
 	return
@@ -181,7 +198,7 @@
 
 		var/damage = rand(1, 3)
 
-		if(M.is_adult)
+		if(istype(src, /mob/living/carbon/slime/adult))
 			damage = rand(20, 40)
 		else
 			damage = rand(5, 35)
@@ -204,18 +221,55 @@
 
 	..()
 
+	if(M.gloves && istype(M.gloves,/obj/item/clothing/gloves))
+		var/obj/item/clothing/gloves/G = M.gloves
+		if(G.cell)
+			if(M.a_intent == "hurt")//Stungloves. Any contact will stun the alien.
+				if(G.cell.charge >= 2500)
+					G.cell.use(2500)
+
+					Weaken(5)
+					if (stuttering < 5)
+						stuttering = 5
+					Stun(5)
+
+					for(var/mob/O in viewers(src, null))
+						if ((O.client && !( O.blinded )))
+							O.show_message("\red <B>[src] has been touched with the stun gloves by [M]!</B>", 1, "\red You hear someone fall.", 2)
+					return
+				else
+					M << "\red Not enough charge! "
+					return
+
 	switch(M.a_intent)
 
 		if ("help")
-			help_shake_act(M)
+			if (health > 0)
+				help_shake_act(M)
+			else
+				if (M.health >= -75.0)
+					if ((M.head && M.head.flags & 4) || (M.wear_mask && !( M.wear_mask.flags & 32 )) )
+						M << "\blue <B>Remove that mask!</B>"
+						return
+					var/obj/effect/equip_e/human/O = new /obj/effect/equip_e/human(  )
+					O.source = M
+					O.target = src
+					O.s_loc = M.loc
+					O.t_loc = loc
+					O.place = "CPR"
+					requests += O
+					spawn( 0 )
+						O.process()
+						return
 
 		if ("grab")
-			if (M == src || anchored)
+			if (M == src)
 				return
-			var/obj/item/weapon/grab/G = new /obj/item/weapon/grab(M, src )
+			var/obj/item/weapon/grab/G = new /obj/item/weapon/grab( M, M, src )
 
 			M.put_in_active_hand(G)
 
+			grabbed_by += G
 			G.synch()
 
 			LAssailant = M
@@ -238,9 +292,9 @@
 				playsound(loc, "punch", 25, 1, -1)
 				for(var/mob/O in viewers(src, null))
 					if ((O.client && !( O.blinded )))
-						O.show_message(text("\red <B>[] has kicked []!</B>", M, src), 1)
-				if ((stat != DEAD) && (damage > 4.9))
-					Weaken(rand(5,10))
+						O.show_message(text("\red <B>[] has punched []!</B>", M, src), 1)
+				if (damage > 4.9)
+					Weaken(rand(10,15))
 					for(var/mob/O in viewers(M, null))
 						if ((O.client && !( O.blinded )))
 							O.show_message(text("\red <B>[] has weakened []!</B>", M, src), 1, "\red You hear someone fall.", 2)
@@ -250,7 +304,7 @@
 				playsound(loc, 'sound/weapons/punchmiss.ogg', 25, 1, -1)
 				for(var/mob/O in viewers(src, null))
 					if ((O.client && !( O.blinded )))
-						O.show_message(text("\red <B>[] has attempted to kick []!</B>", M, src), 1)
+						O.show_message(text("\red <B>[] has attempted to punch []!</B>", M, src), 1)
 	return
 
 /mob/living/carbon/alien/larva/attack_alien(mob/living/carbon/alien/humanoid/M as mob)
@@ -282,7 +336,7 @@
 				var/damage = rand(1, 3)
 				for(var/mob/O in viewers(src, null))
 					if ((O.client && !( O.blinded )))
-						O.show_message(text("<span class='danger'>[M.name] bites []!</span>", src), 1)
+						O.show_message(text("\red <B>[M.name] has bit []!</B>", src), 1)
 				adjustBruteLoss(damage)
 				updatehealth()
 			else
@@ -299,10 +353,16 @@
 // now constructs damage icon for each organ from mask * damage field
 
 
-/mob/living/carbon/alien/larva/show_inv(mob/user)
-	return
+/mob/living/carbon/alien/larva/show_inv(mob/user as mob)
 
-/mob/living/carbon/alien/larva/toggle_throw_mode()
+	user.set_machine(src)
+	var/dat = {"
+	<B><HR><FONT size=3>[name]</FONT></B>
+	<BR><HR><BR>
+	<BR><A href='?src=\ref[user];mach_close=mob[name]'>Close</A>
+	<BR>"}
+	user << browse(dat, text("window=mob[name];size=340x480"))
+	onclose(user, "mob[name]")
 	return
 
 /* Commented out because it's duplicated in life.dm

@@ -44,19 +44,15 @@ datum/pipe_network
 	proc/merge(datum/pipe_network/giver)
 		if(giver==src) return 0
 
-		normal_members -= giver.normal_members
-		normal_members += giver.normal_members
+		normal_members |= giver.normal_members
 
-		line_members -= giver.line_members
-		line_members += giver.line_members
+		line_members |= giver.line_members
 
 		for(var/obj/machinery/atmospherics/normal_member in giver.normal_members)
 			normal_member.reassign_network(giver, src)
 
 		for(var/datum/pipeline/line_member in giver.line_members)
 			line_member.network = src
-
-		del(giver)
 
 		update_network_gases()
 		return 1
@@ -84,7 +80,7 @@ datum/pipe_network
 
 		air_transient.oxygen = 0
 		air_transient.nitrogen = 0
-		air_transient.toxins = 0
+		air_transient.phoron = 0
 		air_transient.carbon_dioxide = 0
 
 
@@ -92,12 +88,13 @@ datum/pipe_network
 
 		for(var/datum/gas_mixture/gas in gases)
 			air_transient.volume += gas.volume
-			total_thermal_energy += gas.thermal_energy()
-			total_heat_capacity += gas.heat_capacity()
+			var/temp_heatcap = gas.heat_capacity()
+			total_thermal_energy += gas.temperature*temp_heatcap
+			total_heat_capacity += temp_heatcap
 
 			air_transient.oxygen += gas.oxygen
 			air_transient.nitrogen += gas.nitrogen
-			air_transient.toxins += gas.toxins
+			air_transient.phoron += gas.phoron
 			air_transient.carbon_dioxide += gas.carbon_dioxide
 
 			if(gas.trace_gases.len)
@@ -125,7 +122,7 @@ datum/pipe_network
 			for(var/datum/gas_mixture/gas in gases)
 				gas.oxygen = air_transient.oxygen*gas.volume/air_transient.volume
 				gas.nitrogen = air_transient.nitrogen*gas.volume/air_transient.volume
-				gas.toxins = air_transient.toxins*gas.volume/air_transient.volume
+				gas.phoron = air_transient.phoron*gas.volume/air_transient.volume
 				gas.carbon_dioxide = air_transient.carbon_dioxide*gas.volume/air_transient.volume
 
 				gas.temperature = air_transient.temperature
@@ -138,6 +135,8 @@ datum/pipe_network
 							gas.trace_gases += corresponding
 
 						corresponding.moles = trace_gas.moles*gas.volume/air_transient.volume
+				gas.update_values()
+		air_transient.update_values()
 		return 1
 
 proc/equalize_gases(datum/gas_mixture/list/gases)
@@ -150,19 +149,20 @@ proc/equalize_gases(datum/gas_mixture/list/gases)
 
 	var/total_oxygen = 0
 	var/total_nitrogen = 0
-	var/total_toxins = 0
+	var/total_phoron = 0
 	var/total_carbon_dioxide = 0
 
 	var/list/total_trace_gases = list()
 
 	for(var/datum/gas_mixture/gas in gases)
 		total_volume += gas.volume
-		total_thermal_energy += gas.thermal_energy()
-		total_heat_capacity += gas.heat_capacity()
+		var/temp_heatcap = gas.heat_capacity()
+		total_thermal_energy += gas.temperature*temp_heatcap
+		total_heat_capacity += temp_heatcap
 
 		total_oxygen += gas.oxygen
 		total_nitrogen += gas.nitrogen
-		total_toxins += gas.toxins
+		total_phoron += gas.phoron
 		total_carbon_dioxide += gas.carbon_dioxide
 
 		if(gas.trace_gases.len)
@@ -186,7 +186,7 @@ proc/equalize_gases(datum/gas_mixture/list/gases)
 		for(var/datum/gas_mixture/gas in gases)
 			gas.oxygen = total_oxygen*gas.volume/total_volume
 			gas.nitrogen = total_nitrogen*gas.volume/total_volume
-			gas.toxins = total_toxins*gas.volume/total_volume
+			gas.phoron = total_phoron*gas.volume/total_volume
 			gas.carbon_dioxide = total_carbon_dioxide*gas.volume/total_volume
 
 			gas.temperature = temperature
@@ -199,5 +199,6 @@ proc/equalize_gases(datum/gas_mixture/list/gases)
 						gas.trace_gases += corresponding
 
 					corresponding.moles = trace_gas.moles*gas.volume/total_volume
+			gas.update_values()
 
 	return 1

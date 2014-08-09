@@ -75,6 +75,21 @@ var/list/wood_icons = list("wood","wood-broken")
 				src.hotspot_expose(1000,CELL_VOLUME)
 	return
 
+/turf/simulated/floor/fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume)
+	if(!burnt && prob(5))
+		burn_tile()
+	else if(prob(1) && !is_plating())
+		make_plating()
+		burn_tile()
+	return
+
+/turf/simulated/floor/adjacent_fire_act(turf/simulated/floor/adj_turf, datum/gas_mixture/adj_air, adj_temp, adj_volume)
+	var/dir_to = get_dir(src, adj_turf)
+
+	for(var/obj/structure/window/W in src)
+		if(W.dir == dir_to || W.is_fulltile()) //Same direction or diagonal (full tile)
+			W.fire_act(adj_air, adj_temp, adj_volume)
+
 /turf/simulated/floor/blob_act()
 	return
 
@@ -93,14 +108,14 @@ turf/simulated/floor/proc/update_icon()
 			switch(T.state)
 				if(0)
 					icon_state = "light_on"
-					SetLuminosity(1)
+					SetLuminosity(5)
 				if(1)
 					var/num = pick("1","2","3","4")
 					icon_state = "light_on_flicker[num]"
-					SetLuminosity(1)
+					SetLuminosity(5)
 				if(2)
 					icon_state = "light_on_broken"
-					SetLuminosity(1)
+					SetLuminosity(5)
 				if(3)
 					icon_state = "light_off"
 					SetLuminosity(0)
@@ -113,7 +128,7 @@ turf/simulated/floor/proc/update_icon()
 				icon_state = "grass[pick("1","2","3","4")]"
 	else if(is_carpet_floor())
 		if(!broken && !burnt)
-			if(icon_state == "carpet")
+			if(icon_state != "carpetsymbol")
 				var/connectdir = 0
 				for(var/direction in cardinal)
 					if(istype(get_step(src,direction),/turf/simulated/floor))
@@ -159,10 +174,10 @@ turf/simulated/floor/proc/update_icon()
 			if( !(icon_state in wood_icons) )
 				icon_state = "wood"
 				//world << "[icon_state]y's got [icon_state]"
-	spawn(1)
+	/*spawn(1)
 		if(istype(src,/turf/simulated/floor)) //Was throwing runtime errors due to a chance of it changing to space halfway through.
 			if(air)
-				update_visuals(air)
+				update_visuals(air)*/
 
 /turf/simulated/floor/return_siding_icon_state()
 	..()
@@ -186,7 +201,26 @@ turf/simulated/floor/proc/update_icon()
 		var/obj/item/stack/tile/light/T = floor_tile
 		T.on = !T.on
 		update_icon()
-	..()
+	if ((!( user.canmove ) || user.restrained() || !( user.pulling )))
+		return
+	if (user.pulling.anchored || !isturf(user.pulling.loc))
+		return
+	if ((user.pulling.loc != user.loc && get_dist(user, user.pulling) > 1))
+		return
+	if (ismob(user.pulling))
+		var/mob/M = user.pulling
+
+//		if(M==user)					//temporary hack to stop runtimes. ~Carn
+//			user.stop_pulling()		//but...fixed the root of the problem
+//			return					//shoudn't be needed now, unless somebody fucks with pulling again.
+
+		var/mob/t = M.pulling
+		M.stop_pulling()
+		step(user.pulling, get_dir(user.pulling.loc, src))
+		M.start_pulling(t)
+	else
+		step(user.pulling, get_dir(user.pulling.loc, src))
+	return
 
 /turf/simulated/floor/proc/gets_drilled()
 	return
@@ -257,7 +291,7 @@ turf/simulated/floor/proc/update_icon()
 
 /turf/simulated/floor/proc/burn_tile()
 	if(istype(src,/turf/simulated/floor/engine)) return
-	if(istype(src,/turf/simulated/floor/plating/asteroid/airless)) return//Asteroid tiles don't burn
+	if(istype(src,/turf/simulated/floor/plating/airless/asteroid)) return//Asteroid tiles don't burn
 	if(broken || burnt) return
 	if(is_plasteel_floor())
 		src.icon_state = "damaged[pick(1,2,3,4,5)]"
@@ -296,14 +330,9 @@ turf/simulated/floor/proc/update_icon()
 						var/turf/simulated/floor/FF = get_step(src,direction)
 						FF.update_icon() //so siding get updated properly
 
-	if (icon_plating)
-		icon_state = icon_plating
-	else
-		icon_state = "plating" //Nothing is defined, so just make it plating
-		icon_plating = "plating"
-	if(floor_tile)
-		del(floor_tile)
-
+	if(!floor_tile) return
+	del(floor_tile)
+	icon_plating = "plating"
 	SetLuminosity(0)
 	floor_tile = null
 	intact = 0
@@ -328,14 +357,14 @@ turf/simulated/floor/proc/update_icon()
 				icon_state = icon_regular_floor
 			else
 				icon_state = "floor"
-				icon_regular_floor = "floor"
+				icon_regular_floor = icon_state
 			update_icon()
 			levelupdate()
 			return
-	//if you gave a valid parameter, it won't get this far.
+	//if you gave a valid parameter, it won't get thisf ar.
 	floor_tile = new/obj/item/stack/tile/plasteel
 	icon_state = "floor"
-	icon_regular_floor = "floor"
+	icon_regular_floor = icon_state
 
 	update_icon()
 	levelupdate()
@@ -422,7 +451,7 @@ turf/simulated/floor/proc/update_icon()
 		if(is_light_floor())
 			var/obj/item/stack/tile/light/T = floor_tile
 			if(T.state)
-				user.drop_item()
+				user.drop_item(C)
 				del(C)
 				T.state = C //fixing it by bashing it with a light bulb, fun eh?
 				update_icon()
@@ -503,13 +532,9 @@ turf/simulated/floor/proc/update_icon()
 				user << "\blue This section is too damaged to support a tile. Use a welder to fix the damage."
 
 
-	if(istype(C, /obj/item/stack/cable_coil))
+	if(istype(C, /obj/item/weapon/cable_coil))
 		if(is_plating())
-			var/obj/item/stack/cable_coil/coil = C
-			for(var/obj/structure/cable/LC in src)
-				if((LC.d1==0)||(LC.d2==0))
-					LC.attackby(C,user)
-					return
+			var/obj/item/weapon/cable_coil/coil = C
 			coil.turf_place(src, user)
 		else
 			user << "\red You must remove the plating first."
@@ -530,7 +555,7 @@ turf/simulated/floor/proc/update_icon()
 				if(welder.remove_fuel(0,user))
 					user << "\red You fix some dents on the broken plating."
 					playsound(src, 'sound/items/Welder.ogg', 80, 1)
-					icon_state = icon_plating
+					icon_state = "plating"
 					burnt = 0
 					broken = 0
 				else

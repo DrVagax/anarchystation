@@ -1,11 +1,12 @@
 /obj/mecha/working/ripley
 	desc = "Autonomous Power Loader Unit. The workhorse of the exosuit world."
-	name = "\improper APLU \"Ripley\""
+	name = "APLU \"Ripley\""
 	icon_state = "ripley"
+	initial_icon = "ripley"
 	step_in = 6
 	max_temperature = 20000
 	health = 200
-	wreckage = /obj/structure/mecha_wreckage/ripley
+	wreckage = /obj/effect/decal/mecha_wreckage/ripley
 	var/list/cargo = new
 	var/cargo_capacity = 15
 
@@ -17,22 +18,23 @@
 
 /obj/mecha/working/ripley/firefighter
 	desc = "Standart APLU chassis was refitted with additional thermal protection and cistern."
-	name = "\improper APLU \"Firefighter\""
+	name = "APLU \"Firefighter\""
 	icon_state = "firefighter"
+	initial_icon = "firefighter"
 	max_temperature = 65000
 	health = 250
 	lights_power = 8
 	damage_absorption = list("fire"=0.5,"bullet"=0.8,"bomb"=0.5)
-	wreckage = /obj/structure/mecha_wreckage/ripley/firefighter
+	wreckage = /obj/effect/decal/mecha_wreckage/ripley/firefighter
 
 /obj/mecha/working/ripley/deathripley
 	desc = "OH SHIT IT'S THE DEATHSQUAD WE'RE ALL GONNA DIE"
-	name = "\improper DEATH-RIPLEY"
+	name = "DEATH-RIPLEY"
 	icon_state = "deathripley"
-	step_in = 3
+	step_in = 2
 	opacity=0
 	lights_power = 60
-	wreckage = /obj/structure/mecha_wreckage/ripley/deathripley
+	wreckage = /obj/effect/decal/mecha_wreckage/ripley/deathripley
 	step_energy_drain = 0
 
 /obj/mecha/working/ripley/deathripley/New()
@@ -43,7 +45,7 @@
 
 /obj/mecha/working/ripley/mining
 	desc = "An old, dusty mining ripley."
-	name = "\improper APLU \"Miner\""
+	name = "APLU \"Miner\""
 
 /obj/mecha/working/ripley/mining/New()
 	..()
@@ -108,6 +110,3 @@
 		step_rand(A)
 	..()
 	return
-
-
-

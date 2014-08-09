@@ -17,7 +17,8 @@
 	icon_state= "bolter"
 	damage = 50
 	flag = "bullet"
-
+	sharp = 1
+	edge = 1
 
 	on_hit(var/atom/target, var/blocked = 0)
 		explosion(target, -1, 0, 2)
@@ -30,7 +31,7 @@
 	damage_type = BURN
 	nodamage = 1
 	flag = "energy"
-	var/temperature = 100
+	var/temperature = 300
 
 
 	on_hit(var/atom/target, var/blocked = 0)//These two could likely check temp protection on the mob
@@ -38,10 +39,6 @@
 			var/mob/M = target
 			M.bodytemperature = temperature
 		return 1
-
-/obj/item/projectile/temp/hot
-	name = "heat beam"
-	temperature = 400
 
 /obj/item/projectile/meteor
 	name = "meteor"
@@ -68,7 +65,7 @@
 				for(var/mob/M in range(10, src))
 					if(!M.stat && !istype(M, /mob/living/silicon/ai))\
 						shake_camera(M, 3, 1)
-				delete()
+				del(src)
 				return 1
 		else
 			return 0
@@ -82,9 +79,11 @@
 	flag = "energy"
 
 	on_hit(var/atom/target, var/blocked = 0)
-		if(iscarbon(target))
-			var/mob/living/carbon/M = target
-			if(check_dna_integrity(M) && M.dna.mutantrace == "plant") //Plantmen possibly get mutated and damaged by the rays.
+		var/mob/living/M = target
+//		if(ishuman(target) && M.dna && M.dna.mutantrace == "plant") //Plantmen possibly get mutated and damaged by the rays.
+		if(ishuman(target))
+			var/mob/living/carbon/human/H = M
+			if((H.species.flags & IS_PLANT) && (M.nutrition < 500))
 				if(prob(15))
 					M.apply_effect((rand(30,80)),IRRADIATE)
 					M.Weaken(5)
@@ -104,10 +103,12 @@
 					M.show_message("\red The radiation beam singes you!")
 				//	for (var/mob/V in viewers(src))
 				//		V.show_message("\red [M] is singed by the radiation beam.", 3, "\red You hear the crackle of burning leaves.", 2)
-			else
-			//	for (var/mob/V in viewers(src))
-			//		V.show_message("The radiation beam dissipates harmlessly through [M]", 3)
-				M.show_message("\blue The radiation beam dissipates harmlessly through your body.")
+		else if(istype(target, /mob/living/carbon/))
+		//	for (var/mob/V in viewers(src))
+		//		V.show_message("The radiation beam dissipates harmlessly through [M]", 3)
+			M.show_message("\blue The radiation beam dissipates harmlessly through your body.")
+		else
+			return 1
 
 /obj/item/projectile/energy/florayield
 	name = "beta somatoray"
@@ -117,12 +118,15 @@
 	nodamage = 1
 	flag = "energy"
 
-	on_hit(mob/living/carbon/target, var/blocked = 0)
-		if(iscarbon(target))
-			if(ishuman(target) && target.dna && target.dna.mutantrace == "plant")	//These rays make plantmen fat.
-				target.nutrition = min(target.nutrition+30, 500)
-			else
-				target.show_message("\blue The radiation beam dissipates harmlessly through your body.")
+	on_hit(var/atom/target, var/blocked = 0)
+		var/mob/M = target
+//		if(ishuman(target) && M.dna && M.dna.mutantrace == "plant") //These rays make plantmen fat.
+		if(ishuman(target)) //These rays make plantmen fat.
+			var/mob/living/carbon/human/H = M
+			if((H.species.flags & IS_PLANT) && (M.nutrition < 500))
+				M.nutrition += 30
+		else if (istype(target, /mob/living/carbon/))
+			M.show_message("\blue The radiation beam dissipates harmlessly through your body.")
 		else
 			return 1
 
@@ -135,46 +139,3 @@
 			var/mob/living/carbon/human/M = target
 			M.adjustBrainLoss(20)
 			M.hallucination += 20
-
-/obj/item/projectile/kinetic
-	name = "kinetic force"
-	icon_state = null
-	damage = 15
-	damage_type = BRUTE
-	flag = "bomb"
-	var/range = 2
-
-obj/item/projectile/kinetic/New()
-	var/turf/proj_turf = get_turf(src)
-	if(!istype(proj_turf, /turf))
-		return
-	var/datum/gas_mixture/environment = proj_turf.return_air()
-	var/pressure = environment.return_pressure()
-	if(pressure < 50)
-		name = "full strength kinetic force"
-		damage = 30
-	..()
-
-/obj/item/projectile/kinetic/Range()
-	range--
-	if(range <= 0)
-		new /obj/item/effect/kinetic_blast(src.loc)
-		delete()
-
-/obj/item/projectile/kinetic/on_hit(var/atom/target)
-	var/turf/target_turf= get_turf(target)
-	if(istype(target_turf, /turf/simulated/mineral))
-		var/turf/simulated/mineral/M = target_turf
-		M.gets_drilled()
-	new /obj/item/effect/kinetic_blast(target_turf)
-	..()
-
-/obj/item/effect/kinetic_blast
-	name = "kinetic explosion"
-	icon = 'icons/obj/projectiles.dmi'
-	icon_state = "kinetic_blast"
-	layer = 4.1
-
-/obj/item/effect/kinetic_blast/New()
-	spawn(4)
-		del(src)

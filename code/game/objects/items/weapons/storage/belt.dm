@@ -4,40 +4,13 @@
 	icon = 'icons/obj/clothing/belts.dmi'
 	icon_state = "utilitybelt"
 	item_state = "utility"
+	flags = FPRINT | TABLEPASS
 	slot_flags = SLOT_BELT
 	attack_verb = list("whipped", "lashed", "disciplined")
 
-
-/obj/item/weapon/storage/belt/proc/can_use()
-	if(!ismob(loc)) return 0
-	var/mob/M = loc
-	if(src in M.get_equipped_items())
-		return 1
-	else
-		return 0
-
-
-/obj/item/weapon/storage/belt/MouseDrop(obj/over_object as obj, src_location, over_location)
-	var/mob/M = usr
-	if(!istype(over_object, /obj/screen))
-		return ..()
-	playsound(src.loc, "rustle", 50, 1, -5)
-	if (!M.restrained() && !M.stat && can_use())
-		switch(over_object.name)
-			if("r_hand")
-				M.unEquip(src)
-				M.put_in_r_hand(src)
-			if("l_hand")
-				M.unEquip(src)
-				M.put_in_l_hand(src)
-		src.add_fingerprint(usr)
-		return
-
-
-
 /obj/item/weapon/storage/belt/utility
-	name = "toolbelt" //Carn: utility belt is nicer, but it bamboozles the text parsing.
-	desc = "Holds tools."
+	name = "tool-belt" //Carn: utility belt is nicer, but it bamboozles the text parsing.
+	desc = "Can hold various tools."
 	icon_state = "utilitybelt"
 	item_state = "utility"
 	can_hold = list(
@@ -48,9 +21,10 @@
 		"/obj/item/weapon/wrench",
 		"/obj/item/device/multitool",
 		"/obj/item/device/flashlight",
-		"/obj/item/stack/cable_coil",
+		"/obj/item/weapon/cable_coil",
 		"/obj/item/device/t_scanner",
-		"/obj/item/device/analyzer")
+		"/obj/item/device/analyzer",
+		"/obj/item/taperoll/engineering")
 
 
 /obj/item/weapon/storage/belt/utility/full/New()
@@ -60,7 +34,7 @@
 	new /obj/item/weapon/weldingtool(src)
 	new /obj/item/weapon/crowbar(src)
 	new /obj/item/weapon/wirecutters(src)
-	new /obj/item/stack/cable_coil(src,30,pick("red","yellow","orange"))
+	new /obj/item/weapon/cable_coil(src,30,pick("red","yellow","orange"))
 
 
 /obj/item/weapon/storage/belt/utility/atmostech/New()
@@ -92,7 +66,10 @@
 		"/obj/item/weapon/storage/fancy/cigarettes",
 		"/obj/item/weapon/storage/pill_bottle",
 		"/obj/item/stack/medical",
-		"/obj/item/device/flashlight/pen"
+		"/obj/item/device/flashlight/pen",
+		"/obj/item/clothing/mask/surgical",
+		"/obj/item/clothing/gloves/latex",
+	        "/obj/item/weapon/reagent_containers/hypospray"
 	)
 
 
@@ -101,20 +78,30 @@
 	desc = "Can hold security gear like handcuffs and flashes."
 	icon_state = "securitybelt"
 	item_state = "security"//Could likely use a better one.
-	storage_slots = 5
-	max_w_class = 3 //Because the baton wouldn't fit otherwise. - Neerti
+	storage_slots = 7
+	max_w_class = 3
+	max_combined_w_class = 21
 	can_hold = list(
-		"/obj/item/weapon/melee/baton",
-		"/obj/item/weapon/melee/classic_baton",
 		"/obj/item/weapon/grenade/flashbang",
 		"/obj/item/weapon/reagent_containers/spray/pepper",
 		"/obj/item/weapon/handcuffs",
 		"/obj/item/device/flash",
 		"/obj/item/clothing/glasses",
 		"/obj/item/ammo_casing/shotgun",
-		"/obj/item/ammo_box",
+		"/obj/item/ammo_magazine",
 		"/obj/item/weapon/reagent_containers/food/snacks/donut/normal",
-		"/obj/item/weapon/reagent_containers/food/snacks/donut/jelly"
+		"/obj/item/weapon/reagent_containers/food/snacks/donut/jelly",
+		"/obj/item/weapon/melee/baton",
+		"/obj/item/weapon/gun/energy/taser",
+		"/obj/item/weapon/lighter/zippo",
+		"/obj/item/weapon/cigpacket",
+		"/obj/item/clothing/glasses/hud/security",
+		"/obj/item/device/flashlight",
+		"/obj/item/device/pda",
+		"/obj/item/device/radio/headset",
+		"/obj/item/weapon/melee",
+		"/obj/item/taperoll/police",
+		"/obj/item/weapon/gun/energy/taser"
 		)
 
 /obj/item/weapon/storage/belt/soulstone
@@ -147,8 +134,31 @@
 		"/obj/item/clothing/mask/luchador"
 		)
 
-/obj/item/weapon/storage/belt/military
-	name = "military belt"
-	desc = "A syndicate belt designed to be used by boarding parties.  Its style is modeled after the hardsuits they wear."
-	icon_state = "militarybelt"
-	item_state = "military"
+/obj/item/weapon/storage/belt/security/tactical
+	name = "combat belt"
+	desc = "Can hold security gear like handcuffs and flashes, with more pouches for more storage."
+	icon_state = "swatbelt"
+	item_state = "swatbelt"
+	storage_slots = 9
+	max_w_class = 3
+	max_combined_w_class = 21
+	can_hold = list(
+		"/obj/item/weapon/grenade/flashbang",
+		"/obj/item/weapon/reagent_containers/spray/pepper",
+		"/obj/item/weapon/handcuffs",
+		"/obj/item/device/flash",
+		"/obj/item/clothing/glasses",
+		"/obj/item/ammo_casing/shotgun",
+		"/obj/item/ammo_magazine",
+		"/obj/item/weapon/reagent_containers/food/snacks/donut/normal",
+		"/obj/item/weapon/reagent_containers/food/snacks/donut/jelly",
+		"/obj/item/weapon/melee/baton",
+		"/obj/item/weapon/gun/energy/taser",
+		"/obj/item/weapon/lighter/zippo",
+		"/obj/item/weapon/cigpacket",
+		"/obj/item/clothing/glasses/hud/security",
+		"/obj/item/device/flashlight",
+		"/obj/item/device/pda",
+		"/obj/item/device/radio/headset",
+		"/obj/item/weapon/melee"
+		)

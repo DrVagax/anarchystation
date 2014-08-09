@@ -1,5 +1,5 @@
 /obj/effect/mine
-	name = "mine"
+	name = "Mine"
 	desc = "I Better stay away from that thing."
 	density = 1
 	anchored = 1
@@ -12,7 +12,7 @@
 /obj/effect/mine/New()
 	icon_state = "uglyminearmed"
 
-/obj/effect/mine/Crossed(AM as mob|obj)
+/obj/effect/mine/HasEntered(AM as mob|obj)
 	Bumped(AM)
 
 /obj/effect/mine/Bumped(mob/M as mob|obj)
@@ -46,12 +46,35 @@
 		del(src)
 
 /obj/effect/mine/proc/triggern2o(obj)
-	atmos_spawn_air("n2o", 360)
+	//example: n2o triggerproc
+	//note: im lazy
+
+	for (var/turf/simulated/floor/target in range(1,src))
+		if(!target.blocks_air)
+
+			var/datum/gas_mixture/payload = new
+			var/datum/gas/sleeping_agent/trace_gas = new
+
+			trace_gas.moles = 30
+			payload += trace_gas
+
+			target.zone.air.merge(payload)
+
 	spawn(0)
 		del(src)
 
-/obj/effect/mine/proc/triggerplasma(obj)
-	atmos_spawn_air(SPAWN_HEAT | SPAWN_TOXINS, 360)
+/obj/effect/mine/proc/triggerphoron(obj)
+	for (var/turf/simulated/floor/target in range(1,src))
+		if(!target.blocks_air)
+
+			var/datum/gas_mixture/payload = new
+
+			payload.phoron = 30
+
+			target.zone.air.merge(payload)
+
+			target.hotspot_expose(1000, CELL_VOLUME)
+
 	spawn(0)
 		del(src)
 
@@ -69,26 +92,26 @@
 		del(src)
 
 /obj/effect/mine/dnascramble
-	name = "radiation mine"
+	name = "Radiation Mine"
 	icon_state = "uglymine"
 	triggerproc = "triggerrad"
 
-/obj/effect/mine/plasma
-	name = "plasma mine"
+/obj/effect/mine/phoron
+	name = "Phoron Mine"
 	icon_state = "uglymine"
-	triggerproc = "triggerplasma"
+	triggerproc = "triggerphoron"
 
 /obj/effect/mine/kick
-	name = "kick mine"
+	name = "Kick Mine"
 	icon_state = "uglymine"
 	triggerproc = "triggerkick"
 
 /obj/effect/mine/n2o
-	name = "\improper N2O mine"
+	name = "N2O Mine"
 	icon_state = "uglymine"
 	triggerproc = "triggern2o"
 
 /obj/effect/mine/stun
-	name = "stun mine"
+	name = "Stun Mine"
 	icon_state = "uglymine"
 	triggerproc = "triggerstun"

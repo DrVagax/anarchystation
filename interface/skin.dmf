@@ -1,7 +1,7 @@
 macro "macro"
 	elem 
 		name = "TAB"
-		command = ".winset \"mainwindow.macro=hotkeymode hotkey_toggle.is-checked=true mapwindow.map.focus=true input.background-color=#F0F0F0\""
+		command = ".winset \"mainwindow.macro=hotkeymode hotkey_toggle.is-checked=true mapwindow.map.focus=true\""
 		is-disabled = false
 	elem 
 		name = "CENTER+REP"
@@ -77,7 +77,7 @@ macro "macro"
 		is-disabled = false
 	elem 
 		name = "CTRL+4"
-		command = "a-intent harm"
+		command = "a-intent hurt"
 		is-disabled = false
 	elem 
 		name = "CTRL+A+REP"
@@ -136,6 +136,10 @@ macro "macro"
 		command = ".options"
 		is-disabled = false
 	elem 
+		name = "F2"
+		command = "ooc"
+		is-disabled = false
+	elem 
 		name = "F2+REP"
 		command = ".screenshot auto"
 		is-disabled = false
@@ -144,8 +148,16 @@ macro "macro"
 		command = ".screenshot"
 		is-disabled = false
 	elem 
+		name = "F3"
+		command = "say"
+		is-disabled = false
+	elem 
+		name = "F4"
+		command = "me"
+		is-disabled = false
+	elem 
 		name = "F5"
-		command = "Aghost"
+		command = "asay"
 		is-disabled = false
 	elem 
 		name = "F6"
@@ -167,7 +179,7 @@ macro "macro"
 macro "hotkeymode"
 	elem 
 		name = "TAB"
-		command = ".winset \"mainwindow.macro=macro hotkey_toggle.is-checked=false input.focus=true input.background-color=#D3B5B5\""
+		command = ".winset \"mainwindow.macro=macro hotkey_toggle.is-checked=false input.focus=true\""
 		is-disabled = false
 	elem 
 		name = "CENTER+REP"
@@ -255,11 +267,11 @@ macro "hotkeymode"
 		is-disabled = false
 	elem 
 		name = "4"
-		command = "a-intent harm"
+		command = "a-intent hurt"
 		is-disabled = false
 	elem 
 		name = "CTRL+4"
-		command = "a-intent harm"
+		command = "a-intent hurt"
 		is-disabled = false
 	elem 
 		name = "A+REP"
@@ -300,6 +312,14 @@ macro "hotkeymode"
 	elem 
 		name = "CTRL+G"
 		command = "a-intent right"
+		is-disabled = false
+	elem 
+		name = "H"
+		command = "holster"
+		is-disabled = false
+	elem 
+		name = "CTRL+H"
+		command = "holster"
 		is-disabled = false
 	elem 
 		name = "Q"
@@ -370,6 +390,10 @@ macro "hotkeymode"
 		command = ".options"
 		is-disabled = false
 	elem 
+		name = "F2"
+		command = "ooc"
+		is-disabled = false
+	elem 
 		name = "F2+REP"
 		command = ".screenshot auto"
 		is-disabled = false
@@ -378,8 +402,16 @@ macro "hotkeymode"
 		command = ".screenshot"
 		is-disabled = false
 	elem 
+		name = "F3"
+		command = "say"
+		is-disabled = false
+	elem 
+		name = "F4"
+		command = "me"
+		is-disabled = false
+	elem 
 		name = "F5"
-		command = "Aghost"
+		command = "asay"
 		is-disabled = false
 	elem 
 		name = "F6"
@@ -726,7 +758,7 @@ window "Telecomms IDE"
 		right-click = false
 		saved-params = "is-checked"
 		on-size = ""
-		text = "Save"
+		text = "Apply"
 		image = ""
 		command = "tcssave"
 		is-flat = false
@@ -1175,7 +1207,7 @@ window "mainwindow"
 		on-size = ""
 		text = "Hotkey Toggle"
 		image = ""
-		command = ".winset \"mainwindow.macro!=macro ? mainwindow.macro=macro hotkey_toggle.is-checked=false input.background-color=#D3B5B5 : mainwindow.macro=hotkeymode hotkey_toggle.is-checked=true mapwindow.map.focus=true input.background-color=#F0F0F0\""
+		command = ".winset \"mainwindow.macro!=macro ? mainwindow.macro=macro hotkey_toggle.is-checked=false input.focus=true : mainwindow.macro=hotkeymode hotkey_toggle.is-checked=true mapwindow.map.focus=true\""
 		is-flat = false
 		stretch = false
 		is-checked = false
@@ -1306,7 +1338,7 @@ window "mapwindow"
 		size = 640x480
 		anchor1 = 0,0
 		anchor2 = 100,100
-		font-family = "Arial"
+		font-family = "Arial Rounded MT Bold,Arial Black,Arial,sans-serif"
 		font-size = 7
 		font-style = ""
 		text-color = none
@@ -1322,6 +1354,8 @@ window "mapwindow"
 		on-size = ""
 		icon-size = 0
 		text-mode = false
+		letterbox = true
+		zoom = 0
 		on-show = ".winset\"mainwindow.mainvsplit.left=mapwindow\""
 		on-hide = ".winset\"mainwindow.mainvsplit.left=\""
 		style = ""
@@ -1794,4 +1828,6 @@ window "infowindow"
 		on-show = ".winset\"rpane.infob.is-visible=true;rpane.browseb.is-visible=true?rpane.infob.pos=130,0:rpane.infob.pos=65,0 rpane.textb.is-visible=true rpane.infob.is-checked=true rpane.rpanewindow.pos=0,30 rpane.rpanewindow.size=0x0 rpane.rpanewindow.left=infowindow\""
 		on-hide = ".winset\"rpane.infob.is-visible=false;rpane.browseb.is-visible=true?rpane.browseb.is-checked=true rpane.rpanewindow.left=browserwindow:rpane.textb.is-visible=true rpane.rpanewindow.pos=0,30 rpane.rpanewindow.size=0x0 rpane.rpanewindow.left=\""
 		on-tab = ""
+		prefix-color = none
+		suffix-color = none
 

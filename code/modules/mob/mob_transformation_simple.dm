@@ -40,12 +40,8 @@
 		M.name = src.name
 		M.real_name = src.real_name
 
-	if(check_dna_integrity(src) && istype(M, /mob/living/carbon))
-		var/mob/living/carbon/C = src
-		var/mob/living/carbon/D = M
-		D.dna = C.dna
-	else
-		ready_dna(M)
+	if(src.dna)
+		M.dna = src.dna.Clone()
 
 	if(mind)
 		mind.transfer_to(M)

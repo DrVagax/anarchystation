@@ -43,10 +43,11 @@
 	..()
 	statpanel("Status")
 	if (src.client.statpanel == "Status")
-		if(emergency_shuttle.online && emergency_shuttle.location < 2)
-			var/timeleft = emergency_shuttle.timeleft()
-			if (timeleft)
-				stat(null, "ETA-[(timeleft / 60) % 60]:[add_zero(num2text(timeleft % 60), 2)]")
+		if(emergency_shuttle)
+			if(emergency_shuttle.has_eta() && !emergency_shuttle.returned())
+				var/timeleft = emergency_shuttle.estimate_arrival_time()
+				if (timeleft)
+					stat(null, "ETA-[(timeleft / 60) % 60]:[add_zero(num2text(timeleft % 60), 2)]")
 /*
 		if(ticker.mode.name == "AI malfunction")
 			stat(null, "Points left until the AI takes over: [AI_points]/[AI_points_win]")
@@ -159,17 +160,17 @@
 		src.now_pushing = 1
 		if(ismob(AM))
 			var/mob/tmob = AM
-			if(istype(tmob, /mob/living/carbon/human) && tmob.mutations & FAT)
+			/*if(istype(tmob, /mob/living/carbon/human) && (FAT in tmob.mutations))
 				if(prob(20))
 					for(var/mob/M in viewers(src, null))
 						if(M.client)
 							M << M << "\red <B>[src] fails to push [tmob]'s fat ass out of the way.</B>"
 					src.now_pushing = 0
 					//src.unlock_medal("That's No Moon, That's A Gourmand!", 1)
-					return
+					return*/
 		src.now_pushing = 0
 		..()
-		if (!istype(AM, /atom/movable) || !istype(AM.loc, /turf))
+		if (!istype(AM, /atom/movable))
 			return
 		if (!src.now_pushing)
 			src.now_pushing = 1

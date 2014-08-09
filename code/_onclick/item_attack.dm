@@ -7,7 +7,7 @@
 /atom/proc/attackby(obj/item/W, mob/user)
 	return
 /atom/movable/attackby(obj/item/W, mob/user)
-	if(W && !(W.flags&NOBLUDGEON))
+	if(!(W.flags&NOBLUDGEON))
 		visible_message("<span class='danger'>[src] has been hit by [user] with [W].</span>")
 
 /mob/living/attackby(obj/item/I, mob/user)
@@ -20,32 +20,26 @@
 /obj/item/proc/afterattack(atom/target, mob/user, proximity_flag, click_parameters)
 	return
 
-// Overrides the weapon attack so it can attack any atoms like when we want to have an effect on an object independent of attackby
-// It is a powerfull proc but it should be used wisely, if there is other alternatives instead use those
-// If it returns 1 it exits click code. Always . = 1 at start of the function if you delete src.
-/obj/item/proc/preattack(atom/target, mob/user, proximity_flag, click_parameters)
-	return
-
-obj/item/proc/get_clamped_volume()
-	if(src.force && src.w_class)
-		return Clamp((src.force + src.w_class) * 4, 30, 100)// Add the item's force to its weight class and multiply by 4, then clamp the value between 30 and 100
-	else if(!src.force && src.w_class)
-		return Clamp(src.w_class * 6, 10, 100) // Multiply the item's weight class by 6, then clamp the value between 10 and 100
 
 /obj/item/proc/attack(mob/living/M as mob, mob/living/user as mob, def_zone)
 
 	if (!istype(M)) // not sure if this is the right thing...
 		return
-
-	if (hitsound && force > 0) //If an item's hitsound is defined and the item's force is greater than zero...
-		playsound(loc, hitsound, get_clamped_volume(), 1, -1) //...play the item's hitsound at get_clamped_volume() with varying frequency and -1 extra range.
-	else if (force == 0)//Otherwise, if the item's force is zero...
-		playsound(loc, 'sound/weapons/tap.ogg', get_clamped_volume(), 1, -1)//...play tap.ogg at get_clamped_volume()
+	var/messagesource = M
+	if (can_operate(M))        //Checks if mob is lying down on table for surgery
+		if (do_surgery(M,user,src))
+			return
+	if (istype(M,/mob/living/carbon/brain))
+		messagesource = M:container
+	if (hitsound)
+		playsound(loc, hitsound, 50, 1, -1)
 	/////////////////////////
 	user.lastattacked = M
 	M.lastattacker = user
 
-	add_logs(user, M, "attacked", object=src.name, addition="(INTENT: [uppertext(user.a_intent)]) (DAMTYE: [uppertext(damtype)])")
+	user.attack_log += "\[[time_stamp()]\]<font color='red'> Attacked [M.name] ([M.ckey]) with [name] (INTENT: [uppertext(user.a_intent)]) (DAMTYE: [uppertext(damtype)])</font>"
+	M.attack_log += "\[[time_stamp()]\]<font color='orange'> Attacked by [user.name] ([user.ckey]) with [name] (INTENT: [uppertext(user.a_intent)]) (DAMTYE: [uppertext(damtype)])</font>"
+	msg_admin_attack("[key_name(user)] attacked [key_name(M)] with [name] (INTENT: [uppertext(user.a_intent)]) (DAMTYE: [uppertext(damtype)])" )
 
 	//spawn(1800)            // this wont work right
 	//	M.lastattacker = null
@@ -69,7 +63,7 @@ obj/item/proc/get_clamped_volume()
 				slime.Discipline = 0
 
 			if(power >= 3)
-				if(slime.is_adult)
+				if(istype(slime, /mob/living/carbon/slime/adult))
 					if(prob(5 + round(power/2)))
 
 						if(slime.Victim)
@@ -129,19 +123,15 @@ obj/item/proc/get_clamped_volume()
 
 		var/showname = "."
 		if(user)
-			showname = " by [user]!"
+			showname = " by [user]."
 		if(!(user in viewers(M, null)))
 			showname = "."
 
-		if(attack_verb && attack_verb.len)
-			M.visible_message("<span class='danger'>[M] has been [pick(attack_verb)] with [src][showname]</span>",
-			"<span class='userdanger'>[M] has been [pick(attack_verb)] with [src][showname]!</span>")
-		else if(force == 0)
-			M.visible_message("<span class='danger'>[M] has been [pick("tapped","patted")] with [src][showname]</span>",
-			"<span class='userdanger'>[M] has been [pick("tapped","patted")] with [src][showname]</span>")
-		else
-			M.visible_message("<span class='danger'>[M] has been attacked with [src][showname]</span>",
-			"<span class='userdanger'>[M] has been attacked with [src][showname]</span>")
+		for(var/mob/O in viewers(messagesource, null))
+			if(attack_verb.len)
+				O.show_message("\red <B>[M] has been [pick(attack_verb)] with [src][showname] </B>", 1)
+			else
+				O.show_message("\red <B>[M] has been attacked with [src][showname] </B>", 1)
 
 		if(!showname && user)
 			if(user.client)
@@ -150,7 +140,7 @@ obj/item/proc/get_clamped_volume()
 
 
 	if(istype(M, /mob/living/carbon/human))
-		M:attacked_by(src, user, def_zone)
+		return M:attacked_by(src, user, def_zone)
 	else
 		switch(damtype)
 			if("brute")
@@ -160,10 +150,10 @@ obj/item/proc/get_clamped_volume()
 				else
 
 					M.take_organ_damage(power)
-					if (prob(33) && src.force) // Added blood for whacking non-humans too
+					if (prob(33)) // Added blood for whacking non-humans too
 						var/turf/location = M.loc
 						if (istype(location, /turf/simulated))
-							location.add_blood_floor(M)
+							location:add_blood_floor(M)
 			if("fire")
 				if (!(COLD_RESISTANCE in M.mutations))
 					M.take_organ_damage(0, power)

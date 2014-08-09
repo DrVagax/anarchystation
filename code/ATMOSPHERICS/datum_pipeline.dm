@@ -1,3 +1,5 @@
+#define STEFAN_BOLTZMANN_CONSTANT 0.0000000567
+
 datum/pipeline
 	var/datum/gas_mixture/air
 
@@ -39,7 +41,7 @@ datum/pipeline
 
 			member.air_temporary.oxygen = air.oxygen*member.volume/air.volume
 			member.air_temporary.nitrogen = air.nitrogen*member.volume/air.volume
-			member.air_temporary.toxins = air.toxins*member.volume/air.volume
+			member.air_temporary.phoron = air.phoron*member.volume/air.volume
 			member.air_temporary.carbon_dioxide = air.carbon_dioxide*member.volume/air.volume
 
 			member.air_temporary.temperature = air.temperature
@@ -50,6 +52,7 @@ datum/pipeline
 					member.air_temporary.trace_gases += corresponding
 
 					corresponding.moles = trace_gas.moles*member.volume/air.volume
+			member.air_temporary.update_values()
 
 	proc/build_pipeline(obj/machinery/atmospherics/pipe/base)
 		air = new
@@ -127,16 +130,27 @@ datum/pipeline
 		var/datum/gas_mixture/air_sample = air.remove_ratio(mingle_volume/air.volume)
 		air_sample.volume = mingle_volume
 
-		var/datum/gas_mixture/turf_air = target.return_air()
+		if(istype(target) && target.zone)
+			//Have to consider preservation of group statuses
+			var/datum/gas_mixture/turf_copy = new
 
-		equalize_gases(list(air_sample, turf_air))
-		air.merge(air_sample)
-		//turf_air already modified by equalize_gases()
+			turf_copy.copy_from(target.zone.air)
+			turf_copy.volume = target.zone.air.volume //Copy a good representation of the turf from parent group
 
-		if(istype(target))
-			if(target.air)
-				if(target.air.check_tile_graphic())
-					target.update_visuals(target.air)
+			equalize_gases(list(air_sample, turf_copy))
+			air.merge(air_sample)
+
+			turf_copy.subtract(target.zone.air)
+
+			target.zone.air.merge(turf_copy)
+
+		else
+			var/datum/gas_mixture/turf_air = target.return_air()
+
+			equalize_gases(list(air_sample, turf_air))
+			air.merge(air_sample)
+			//turf_air already modified by equalize_gases()
+
 		if(network)
 			network.update = 1
 
@@ -162,8 +176,12 @@ datum/pipeline
 				var/delta_temperature = 0
 				var/sharer_heat_capacity = 0
 
-				delta_temperature = (air.temperature - modeled_location.air.temperature)
-				sharer_heat_capacity = modeled_location.air.heat_capacity()
+				if(modeled_location.zone)
+					delta_temperature = (air.temperature - modeled_location.zone.air.temperature)
+					sharer_heat_capacity = modeled_location.zone.air.heat_capacity()
+				else
+					delta_temperature = (air.temperature - modeled_location.air.temperature)
+					sharer_heat_capacity = modeled_location.air.heat_capacity()
 
 				var/self_temperature_delta = 0
 				var/sharer_temperature_delta = 0
@@ -179,7 +197,10 @@ datum/pipeline
 
 				air.temperature += self_temperature_delta
 
-				modeled_location.air.temperature += sharer_temperature_delta
+				if(modeled_location.zone)
+					modeled_location.zone.air.temperature += sharer_temperature_delta/modeled_location.zone.air.group_multiplier
+				else
+					modeled_location.air.temperature += sharer_temperature_delta
 
 
 		else
@@ -190,5 +211,12 @@ datum/pipeline
 					(partial_heat_capacity*target.heat_capacity/(partial_heat_capacity+target.heat_capacity))
 
 				air.temperature -= heat/total_heat_capacity
+		if(network)
+			network.update = 1
+			
+	proc/radiate_heat(surface, thermal_conductivity)
+		var/total_heat_capacity = air.heat_capacity()
+		var/heat = STEFAN_BOLTZMANN_CONSTANT * surface * air.temperature ** 4 * thermal_conductivity
+		air.temperature = max(0, air.temperature - heat / total_heat_capacity)
 		if(network)
 			network.update = 1

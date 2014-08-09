@@ -2,7 +2,6 @@
  * Contains:
  *		First Aid Kits
  * 		Pill Bottles
- *		Dice Pack (in a pill bottle)
  */
 
 /*
@@ -12,8 +11,8 @@
 	name = "first-aid kit"
 	desc = "It's an emergency medical kit for those serious boo-boos."
 	icon_state = "firstaid"
-	throw_speed = 3
-	throw_range = 7
+	throw_speed = 2
+	throw_range = 8
 	var/empty = 0
 
 
@@ -30,7 +29,7 @@
 		icon_state = pick("ointment","firefirstaid")
 
 		new /obj/item/device/healthanalyzer( src )
-		new /obj/item/weapon/reagent_containers/syringe/inaprovaline( src )
+		new /obj/item/weapon/reagent_containers/hypospray/autoinjector( src )
 		new /obj/item/stack/medical/ointment( src )
 		new /obj/item/stack/medical/ointment( src )
 		new /obj/item/weapon/reagent_containers/pill/kelotane( src )
@@ -51,7 +50,7 @@
 		new /obj/item/stack/medical/ointment(src)
 		new /obj/item/stack/medical/ointment(src)
 		new /obj/item/device/healthanalyzer(src)
-		new /obj/item/weapon/reagent_containers/syringe/inaprovaline( src )
+		new /obj/item/weapon/reagent_containers/hypospray/autoinjector( src )
 		return
 
 /obj/item/weapon/storage/firstaid/toxin
@@ -88,30 +87,28 @@
 		new /obj/item/weapon/reagent_containers/pill/dexalin( src )
 		new /obj/item/weapon/reagent_containers/pill/dexalin( src )
 		new /obj/item/weapon/reagent_containers/pill/dexalin( src )
-		new /obj/item/weapon/reagent_containers/syringe/inaprovaline( src )
+		new /obj/item/weapon/reagent_containers/hypospray/autoinjector( src )
 		new /obj/item/weapon/reagent_containers/syringe/inaprovaline( src )
 		new /obj/item/device/healthanalyzer( src )
 		return
 
-/obj/item/weapon/storage/firstaid/tactical
-	name = "first-aid kit"
-	icon_state = "bezerk"
-	desc = "I hope you've got insurance."
-	max_w_class = 3
+/obj/item/weapon/storage/firstaid/adv
+	name = "advanced first-aid kit"
+	desc = "Contains advanced medical treatments."
+	icon_state = "advfirstaid"
+	item_state = "firstaid-advanced"
 
-	New()
-		..()
-		if (empty) return
-		new /obj/item/clothing/tie/stethoscope( src )
-		new /obj/item/weapon/surgicaldrill ( src )
-		new /obj/item/weapon/reagent_containers/hypospray/combat( src )
-		new /obj/item/weapon/reagent_containers/pill/bicaridine( src )
-		new /obj/item/weapon/reagent_containers/pill/dermaline( src )
-		new /obj/item/weapon/reagent_containers/syringe/lethal/choral( src )
-		new /obj/item/clothing/glasses/hud/health( src )
-		return
-
-
+/obj/item/weapon/storage/firstaid/adv/New()
+	..()
+	if (empty) return
+	new /obj/item/weapon/reagent_containers/hypospray/autoinjector( src )
+	new /obj/item/stack/medical/advanced/bruise_pack(src)
+	new /obj/item/stack/medical/advanced/bruise_pack(src)
+	new /obj/item/stack/medical/advanced/bruise_pack(src)
+	new /obj/item/stack/medical/advanced/ointment(src)
+	new /obj/item/stack/medical/advanced/ointment(src)
+	new /obj/item/stack/medical/splint(src)
+	return
 /*
  * Pill Bottles
  */
@@ -122,32 +119,11 @@
 	icon = 'icons/obj/chemical.dmi'
 	item_state = "contsolid"
 	w_class = 2.0
-	can_hold = list("/obj/item/weapon/reagent_containers/pill","/obj/item/weapon/dice")
+	can_hold = list("/obj/item/weapon/reagent_containers/pill","/obj/item/weapon/dice","/obj/item/weapon/paper")
 	allow_quick_gather = 1
 	use_to_pickup = 1
-
-/obj/item/weapon/storage/pill_bottle/MouseDrop(obj/over_object as obj) //Quick pillbottle fix. -Agouri
-
-	if (ishuman(usr) || ismonkey(usr)) //Can monkeys even place items in the pocket slots? Leaving this in just in case~
-		var/mob/M = usr
-		if (!( istype(over_object, /obj/screen) ))
-			return ..()
-		if ((!( M.restrained() ) && !( M.stat ) /*&& M.pocket == src*/))
-			switch(over_object.name)
-				if("r_hand")
-					M.unEquip(src)
-					M.put_in_r_hand(src)
-				if("l_hand")
-					M.unEquip(src)
-					M.put_in_l_hand(src)
-			src.add_fingerprint(usr)
-			return
-		if(over_object == usr && in_range(src, usr) || usr.contents.Find(src))
-			if (usr.s_active)
-				usr.s_active.close(usr)
-			src.show_to(usr)
-			return
-	return
+	storage_slots = 14
+	use_sound = null
 
 /obj/item/weapon/storage/pill_bottle/kelotane
 	name = "bottle of kelotane pills"
@@ -164,7 +140,7 @@
 		new /obj/item/weapon/reagent_containers/pill/kelotane( src )
 
 /obj/item/weapon/storage/pill_bottle/antitox
-	name = "bottle of anti-toxin pills"
+	name = "Dylovene pills"
 	desc = "Contains pills used to counter toxins."
 
 	New()
@@ -178,7 +154,7 @@
 		new /obj/item/weapon/reagent_containers/pill/antitox( src )
 
 /obj/item/weapon/storage/pill_bottle/inaprovaline
-	name = "bottle of inaprovaline pills"
+	name = "Inaprovaline pills"
 	desc = "Contains pills used to stabilize patients."
 
 	New()
@@ -191,31 +167,17 @@
 		new /obj/item/weapon/reagent_containers/pill/inaprovaline( src )
 		new /obj/item/weapon/reagent_containers/pill/inaprovaline( src )
 
-/obj/item/weapon/storage/pill_bottle/stimulant
-	name = "bottle of stimulant pills"
-	desc = "Guaranteed to give you that extra burst of energy during a long shift!"
-
-/obj/item/weapon/storage/pill_bottle/stimulant/New()
-	..()
-	new /obj/item/weapon/reagent_containers/pill/stimulant( src )
-	new /obj/item/weapon/reagent_containers/pill/stimulant( src )
-	new /obj/item/weapon/reagent_containers/pill/stimulant( src )
-	new /obj/item/weapon/reagent_containers/pill/stimulant( src )
-	new /obj/item/weapon/reagent_containers/pill/stimulant( src )
-
-/obj/item/weapon/storage/pill_bottle/dice
-	name = "bag of dice"
-	desc = "Contains all the luck you'll ever need."
-	icon = 'icons/obj/dice.dmi'
-	icon_state = "dicebag"
+/obj/item/weapon/storage/pill_bottle/tramadol
+	name = "Tramadol Pills"
+	desc = "Contains pills used to relieve pain."
 
 	New()
 		..()
-		new /obj/item/weapon/dice/d4( src )
-		new /obj/item/weapon/dice( src )
-		new /obj/item/weapon/dice/d8( src )
-		new /obj/item/weapon/dice/d10( src )
-		new /obj/item/weapon/dice/d00( src )
-		new /obj/item/weapon/dice/d12( src )
-		new /obj/item/weapon/dice/d20( src )
+		new /obj/item/weapon/reagent_containers/pill/tramadol( src )
+		new /obj/item/weapon/reagent_containers/pill/tramadol( src )
+		new /obj/item/weapon/reagent_containers/pill/tramadol( src )
+		new /obj/item/weapon/reagent_containers/pill/tramadol( src )
+		new /obj/item/weapon/reagent_containers/pill/tramadol( src )
+		new /obj/item/weapon/reagent_containers/pill/tramadol( src )
+		new /obj/item/weapon/reagent_containers/pill/tramadol( src )
 

@@ -1,6 +1,5 @@
 // This is to replace the previous datum/disease/alien_embryo for slightly improved handling and maintainability
 // It functions almost identically (see code/datums/diseases/alien_embryo.dm)
-var/const/ALIEN_AFK_BRACKET = 450 // 45 seconds
 
 /obj/item/alien_embryo
 	name = "alien embryo"
@@ -13,7 +12,6 @@ var/const/ALIEN_AFK_BRACKET = 450 // 45 seconds
 /obj/item/alien_embryo/New()
 	if(istype(loc, /mob/living))
 		affected_mob = loc
-		affected_mob.status_flags |= XENO_HOST
 		processing_objects.Add(src)
 		spawn(0)
 			AddInfectionImages(affected_mob)
@@ -74,8 +72,8 @@ var/const/ALIEN_AFK_BRACKET = 450 // 45 seconds
 				AttemptGrow()
 
 /obj/item/alien_embryo/proc/AttemptGrow(var/gib_on_success = 1)
-	var/list/candidates = get_candidates(BE_ALIEN, ALIEN_AFK_BRACKET)
-	var/client/C = null
+	var/list/candidates = get_alien_candidates()
+	var/picked = null
 
 	// To stop clientless larva, we will check that our host has a client
 	// if we find no ghosts to become the alien. If the host has a client
@@ -83,9 +81,9 @@ var/const/ALIEN_AFK_BRACKET = 450 // 45 seconds
 	// to 2, so we don't do a process heavy check everytime.
 
 	if(candidates.len)
-		C = pick(candidates)
+		picked = pick(candidates)
 	else if(affected_mob.client)
-		C = affected_mob.client
+		picked = affected_mob.key
 	else
 		stage = 4 // Let's try again later.
 		return
@@ -96,13 +94,10 @@ var/const/ALIEN_AFK_BRACKET = 450 // 45 seconds
 		affected_mob.overlays += image('icons/mob/alien.dmi', loc = affected_mob, icon_state = "burst_stand")
 	spawn(6)
 		var/mob/living/carbon/alien/larva/new_xeno = new(affected_mob.loc)
-		new_xeno.key = C.key
+		new_xeno.key = picked
 		new_xeno << sound('sound/voice/hiss5.ogg',0,0,0,100)	//To get the player's attention
 		if(gib_on_success)
 			affected_mob.gib()
-		if(istype(new_xeno.loc,/mob/living/carbon))
-			var/mob/living/carbon/digester = new_xeno.loc
-			digester.stomach_contents += new_xeno
 		del(src)
 
 /*----------------------------------------

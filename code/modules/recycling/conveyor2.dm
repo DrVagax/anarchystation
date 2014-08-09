@@ -6,6 +6,7 @@
 	icon_state = "conveyor0"
 	name = "conveyor belt"
 	desc = "A conveyor belt."
+	layer = 2			// so they appear under stuff
 	anchored = 1
 	var/operating = 0	// 1 if running forward, -1 if backwards, 0 if off
 	var/operable = 1	// true if can operate (no broken segments in this belt run)
@@ -15,34 +16,12 @@
 
 	var/list/affecting	// the list of all items that will be moved this ptick
 	var/id = ""			// the control ID	- must match controller ID
-	var/verted = 1		// set to -1 to have the conveyour belt be inverted, so you can use the other corner icons
 
 /obj/machinery/conveyor/centcom_auto
 	id = "round_end_belt"
 
-
-// Auto conveyour is always on unless unpowered
-
-/obj/machinery/conveyor/auto/New(loc, newdir)
-	..(loc, newdir)
-	operating = 1
-	setmove()
-
-/obj/machinery/conveyor/auto/update()
-	if(stat & BROKEN)
-		icon_state = "conveyor-broken"
-		operating = 0
-		return
-	else if(!operable)
-		operating = 0
-	else if(stat & NOPOWER)
-		operating = 0
-	else
-		operating = 1
-	icon_state = "conveyor[operating * verted]"
-
 	// create a conveyor
-/obj/machinery/conveyor/New(loc, newdir)
+/obj/machinery/conveyor/New(loc, newdir, on = 0)
 	..(loc)
 	if(newdir)
 		dir = newdir
@@ -71,10 +50,9 @@
 		if(SOUTHWEST)
 			forwards = WEST
 			backwards = NORTH
-	if(verted == -1)
-		var/temp = forwards
-		forwards = backwards
-		backwards = temp
+	if(on)
+		operating = 1
+		setmove()
 
 /obj/machinery/conveyor/proc/setmove()
 	if(operating == 1)
@@ -92,7 +70,7 @@
 		operating = 0
 	if(stat & NOPOWER)
 		operating = 0
-	icon_state = "conveyor[operating * verted]"
+	icon_state = "conveyor[operating]"
 
 	// machine process
 	// move items to the target location
@@ -123,7 +101,21 @@
 
 // attack with hand, move pulled object onto conveyor
 /obj/machinery/conveyor/attack_hand(mob/user as mob)
-	user.Move_Pulled(src)
+	if ((!( user.canmove ) || user.restrained() || !( user.pulling )))
+		return
+	if (user.pulling.anchored)
+		return
+	if ((user.pulling.loc != user.loc && get_dist(user, user.pulling) > 1))
+		return
+	if (ismob(user.pulling))
+		var/mob/M = user.pulling
+		M.stop_pulling()
+		step(user.pulling, get_dir(user.pulling.loc, src))
+		user.stop_pulling()
+	else
+		step(user.pulling, get_dir(user.pulling.loc, src))
+		user.stop_pulling()
+	return
 
 
 // make the conveyor broken
@@ -220,6 +212,10 @@
 
 // attack with hand, switch position
 /obj/machinery/conveyor_switch/attack_hand(mob/user)
+	if(!allowed(user))
+		user << "<span class='warning'>Access denied.</span>"
+		return
+
 	if(position == 0)
 		if(last_pos < 0)
 			position = 1

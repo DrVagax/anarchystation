@@ -2,9 +2,10 @@
 	name = "proximity sensor"
 	desc = "Used for scanning and alerting when someone enters a certain proximity."
 	icon_state = "prox"
-	m_amt = 800
-	g_amt = 200
+	matter = list("metal" = 800, "glass" = 200, "waste" = 50)
 	origin_tech = "magnets=1"
+
+	wires = WIRE_PULSE
 
 	secured = 0
 
@@ -12,14 +13,12 @@
 	var/timing = 0
 	var/time = 10
 
+	var/range = 2
+
 	proc
 		toggle_scan()
 		sense()
 
-	describe()
-		if(timing)
-			return "\blue The proximity sensor is arming."
-		return "The proximity sensor is [scanning?"armed":"disarmed"]."
 
 	activate()
 		if(!..())	return 0//Cooldown check
@@ -47,9 +46,13 @@
 
 
 	sense()
-		if((!secured)||(!scanning)||(cooldown > 0))	return 0
+		var/turf/mainloc = get_turf(src)
+//		if(scanning && cooldown <= 0)
+//			mainloc.visible_message("\icon[src] *boop* *boop*", "*boop* *boop*")
+		if((!holder && !secured)||(!scanning)||(cooldown > 0))	return 0
 		pulse(0)
-		visible_message("\icon[src] *beep* *beep*", "*beep* *beep*")
+		if(!holder)
+			mainloc.visible_message("\icon[src] *beep* *beep*", "*beep* *beep*")
 		cooldown = 2
 		spawn(10)
 			process_cooldown()
@@ -57,6 +60,12 @@
 
 
 	process()
+		if(scanning)
+			var/turf/mainloc = get_turf(src)
+			for(var/mob/living/A in range(range,mainloc))
+				if (A.move_speed < 12)
+					sense()
+
 		if(timing && (time >= 0))
 			time--
 		if(timing && time <= 0)
@@ -91,6 +100,9 @@
 			attached_overlays += "prox_scanning"
 		if(holder)
 			holder.update_icon()
+		if(holder && istype(holder.loc,/obj/item/weapon/grenade/chem_grenade))
+			var/obj/item/weapon/grenade/chem_grenade/grenade = holder.loc
+			grenade.primed(scanning)
 		return
 
 
@@ -107,6 +119,7 @@
 		var/second = time % 60
 		var/minute = (time - second) / 60
 		var/dat = text("<TT><B>Proximity Sensor</B>\n[] []:[]\n<A href='?src=\ref[];tp=-30'>-</A> <A href='?src=\ref[];tp=-1'>-</A> <A href='?src=\ref[];tp=1'>+</A> <A href='?src=\ref[];tp=30'>+</A>\n</TT>", (timing ? text("<A href='?src=\ref[];time=0'>Arming</A>", src) : text("<A href='?src=\ref[];time=1'>Not Arming</A>", src)), minute, second, src, src, src, src)
+		dat += text("<BR>Range: <A href='?src=\ref[];range=-1'>-</A> [] <A href='?src=\ref[];range=1'>+</A>", src, range, src)
 		dat += "<BR><A href='?src=\ref[src];scanning=1'>[scanning?"Armed":"Unarmed"]</A> (Movement sensor active when armed!)"
 		dat += "<BR><BR><A href='?src=\ref[src];refresh=1'>Refresh</A>"
 		dat += "<BR><BR><A href='?src=\ref[src];close=1'>Close</A>"
@@ -133,6 +146,11 @@
 			var/tp = text2num(href_list["tp"])
 			time += tp
 			time = min(max(round(time), 0), 600)
+
+		if(href_list["range"])
+			var/r = text2num(href_list["range"])
+			range += r
+			range = min(max(range, 1), 5)
 
 		if(href_list["close"])
 			usr << browse(null, "window=prox")

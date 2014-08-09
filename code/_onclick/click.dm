@@ -16,9 +16,11 @@
 	Note that this proc can be overridden, and is in the case of screen objects.
 */
 /atom/Click(location,control,params)
-	usr.ClickOn(src, params)
+	if(src)
+		usr.ClickOn(src, params)
 /atom/DblClick(location,control,params)
-	usr.DblClickOn(src,params)
+	if(src)
+		usr.DblClickOn(src,params)
 
 /*
 	Standard mob ClickOn()
@@ -59,7 +61,7 @@
 	if(stat || paralysis || stunned || weakened)
 		return
 
-	face_atom(A)
+	face_atom(A) // change direction to face what you clicked on
 
 	if(next_move > world.time) // in the year 2000...
 		return
@@ -71,7 +73,6 @@
 		return M.click_action(A,src)
 
 	if(restrained())
-		next_move = world.time + 10   //Doing shit in cuffs shall be vey slow
 		RestrainedClickOn(A)
 		return
 
@@ -80,7 +81,6 @@
 		return
 
 	var/obj/item/W = get_active_hand()
-
 
 	if(W == A)
 		next_move = world.time + 6
@@ -94,8 +94,10 @@
 
 		return
 
-	// operate two levels deep here (item in backpack in src; NOT item in box in backpack in src)
-	if(!isturf(A) && A == loc || (A in contents) || (A.loc in contents))
+	// operate two STORAGE levels deep here (item in backpack in src; NOT item in box in backpack in src)
+	var/sdepth = A.storage_depth(src)
+	if(A == loc || (A in loc) || (sdepth != -1 && sdepth <= 1))
+
 		// faster access to objects already on you
 		if(A in contents)
 			next_move = world.time + 6 // on your person
@@ -118,14 +120,15 @@
 		return
 
 	// Allows you to click on a box's contents, if that box is on the ground, but no deeper than that
-	if(isturf(A) || isturf(A.loc) || (A.loc && isturf(A.loc.loc)))
+	sdepth = A.storage_depth_turf()
+	if(isturf(A) || isturf(A.loc) || (sdepth != -1 && sdepth <= 1))
 		next_move = world.time + 10
+
 		if(A.Adjacent(src)) // see adjacent.dm
 			if(W)
 				if(W.flags&USEDELAY)
 					next_move += 5
-				if(W.preattack(A,src,1,params))	//Weapon attack override,return 1 to exit
-					return
+
 				// Return 1 in attackby() to prevent afterattack() effects (when safely moving items for example)
 				var/resolved = A.attackby(W,src)
 				if(!resolved && A && W)
@@ -135,8 +138,6 @@
 			return
 		else // non-adjacent click
 			if(W)
-				if(W.preattack(A,src,0,params))	//Weapon attack override,return 1 to exit
-					return
 				W.afterattack(A,src,0,params) // 0: not Adjacent
 			else
 				RangedAttack(A, params)
@@ -248,16 +249,13 @@
 
 /atom/proc/AltClick(var/mob/user)
 	var/turf/T = get_turf(src)
-	if(T && user.TurfAdjacent(T))
+	if(T && T.AdjacentQuick(user))
 		if(user.listed_turf == T)
 			user.listed_turf = null
 		else
 			user.listed_turf = T
 			user.client.statpanel = T.name
 	return
-
-/mob/proc/TurfAdjacent(var/turf/T)
-	return T.Adjacent(src)
 
 /*
 	Misc helpers
@@ -297,19 +295,19 @@
 
 // Simple helper to face what you clicked on, in case it should be needed in more than one place
 /mob/proc/face_atom(var/atom/A)
-	if( buckled || stat != CONSCIOUS || !A || !x || !y || !A.x || !A.y ) return
+	if( stat || (buckled && !buckled.movable) || !A || !x || !y || !A.x || !A.y ) return
 	var/dx = A.x - x
 	var/dy = A.y - y
-	if(!dx && !dy) // Wall items are graphically shifted but on the floor
-		if(A.pixel_y > 16)		dir = NORTH
-		else if(A.pixel_y < -16)dir = SOUTH
-		else if(A.pixel_x > 16)	dir = EAST
-		else if(A.pixel_x < -16)dir = WEST
-		return
+	if(!dx && !dy) return
 
+	var/direction
 	if(abs(dx) < abs(dy))
-		if(dy > 0)	dir = NORTH
-		else		dir = SOUTH
+		if(dy > 0)	direction = NORTH
+		else		direction = SOUTH
 	else
-		if(dx > 0)	dir = EAST
-		else		dir = WEST
+		if(dx > 0)	direction = EAST
+		else		direction = WEST
+	usr.dir = direction
+	if(buckled && buckled.movable)
+		buckled.dir = direction
+		buckled.handle_rotation()

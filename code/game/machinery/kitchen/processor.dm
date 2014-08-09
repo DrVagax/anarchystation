@@ -1,7 +1,5 @@
-
 /obj/machinery/processor
-	name = "food processor"
-	desc = "An industrial grinder used to process meat and other foods. Keep hands clear of intake area while operating."
+	name = "Food Processor"
 	icon = 'icons/obj/kitchen.dmi'
 	icon_state = "processor"
 	layer = 2.9
@@ -28,11 +26,11 @@
 	/* objs */
 	meat
 		input = /obj/item/weapon/reagent_containers/food/snacks/meat
-		output = /obj/item/weapon/reagent_containers/food/snacks/faggot
+		output = /obj/item/weapon/reagent_containers/food/snacks/meatball
 
 	potato
 		input = /obj/item/weapon/reagent_containers/food/snacks/grown/potato
-		output = /obj/item/weapon/reagent_containers/food/snacks/fries
+		output = /obj/item/weapon/reagent_containers/food/snacks/rawsticks
 
 	carrot
 		input = /obj/item/weapon/reagent_containers/food/snacks/grown/carrot
@@ -42,6 +40,13 @@
 		input = /obj/item/weapon/reagent_containers/food/snacks/grown/soybeans
 		output = /obj/item/weapon/reagent_containers/food/snacks/soydope
 
+	wheat
+		input = /obj/item/weapon/reagent_containers/food/snacks/grown/wheat
+		output = /obj/item/weapon/reagent_containers/food/snacks/flour
+
+	spaghetti
+		input = /obj/item/weapon/reagent_containers/food/snacks/flour
+		output = /obj/item/weapon/reagent_containers/food/snacks/spagetti
 
 	/* mobs */
 	mob
@@ -50,21 +55,9 @@
 
 
 		slime
-
-			process(loc, what)
-
-				var/mob/living/carbon/slime/S = what
-				var/C = S.cores
-				if(S.stat != DEAD)
-					S.loc = loc
-					S.visible_message("\blue [C] crawls free of the processor!")
-					return
-				for(var/i = 1, i <= C, i++)
-					new S.coretype(loc)
-					feedback_add_details("slime_core_harvested","[replacetext(S.colour," ","_")]")
-				..()
 			input = /mob/living/carbon/slime
-			output = null
+			output = /obj/item/weapon/reagent_containers/glass/beaker/slime
+
 		monkey
 			process(loc, what)
 				var/mob/living/carbon/monkey/O = what
@@ -72,7 +65,7 @@
 					O.loc = loc
 					O.visible_message("\blue Suddenly [O] jumps out from the processor!", \
 							"You jump out from the processor", \
-							"You hear chimpering")
+							"You hear chimp")
 					return
 				var/obj/item/weapon/reagent_containers/glass/bucket/bucket_of_blood = new(loc)
 				var/datum/reagent/blood/B = new()
@@ -84,9 +77,8 @@
 				for(var/datum/disease/D in O.viruses)
 					if(D.spread_type != SPECIAL)
 						B.data["viruses"] += D.Copy()
-				if(check_dna_integrity(O))
-					B.data["blood_DNA"] = copytext(O.dna.unique_enzymes,1,0)
 
+				B.data["blood_DNA"] = copytext(O.dna.unique_enzymes,1,0)
 				if(O.resistances&&O.resistances.len)
 					B.data["resistances"] = O.resistances.Copy()
 				bucket_of_blood.reagents.reagent_list += B
@@ -113,8 +105,6 @@
 	if(src.contents.len > 0) //TODO: several items at once? several different items?
 		user << "\red Something is already in the processing chamber."
 		return 1
-	if(default_unfasten_wrench(user, O))
-		return
 	var/what = O
 	if (istype(O, /obj/item/weapon/grab))
 		var/obj/item/weapon/grab/G = O
@@ -147,12 +137,12 @@
 		src.processing = 1
 		user.visible_message("\blue [user] turns on \a [src].", \
 			"You turn on \a [src].", \
-			"You hear a food processor")
+			"You hear a food processor.")
 		playsound(src.loc, 'sound/machines/blender.ogg', 50, 1)
 		use_power(500)
 		sleep(P.time)
 		P.process(src.loc, O)
 		src.processing = 0
-	src.visible_message("\blue \the [src] finished processing.")
-
+	src.visible_message("\blue \the [src] finished processing.", \
+		"You hear the food processor stopping/")
 

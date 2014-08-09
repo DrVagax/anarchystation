@@ -7,6 +7,8 @@
 
 */
 
+#define RANDOM_STARTING_LEVEL 2
+
 var/list/archive_diseases = list()
 
 // The order goes from easy to cure to hard to cure.
@@ -14,7 +16,7 @@ var/list/advance_cures = 	list(
 									"nutriment", "sugar", "orangejuice",
 									"spaceacillin", "kelotane", "ethanol",
 									"leporazine", "synaptizine", "lipozine",
-									"silver", "gold"
+									"silver", "gold", "phoron"
 								)
 
 /*
@@ -60,7 +62,7 @@ var/list/advance_cures = 	list(
 	if(!symptoms || !symptoms.len)
 
 		if(!D || !D.symptoms || !D.symptoms.len)
-			symptoms = GenerateSymptoms(0, 2)
+			symptoms = GenerateSymptoms()
 		else
 			for(var/datum/symptom/S in D.symptoms)
 				symptoms += new S.type
@@ -134,7 +136,7 @@ var/list/advance_cures = 	list(
 	return 0
 
 // Will generate new unique symptoms, use this if there are none. Returns a list of symptoms that were generated.
-/datum/disease/advance/proc/GenerateSymptoms(var/level_min, var/level_max, var/amount_get = 0)
+/datum/disease/advance/proc/GenerateSymptoms(var/type_level_limit = RANDOM_STARTING_LEVEL, var/amount_get = 0)
 
 	var/list/generated = list() // Symptoms we generated.
 
@@ -142,12 +144,13 @@ var/list/advance_cures = 	list(
 	var/list/possible_symptoms = list()
 	for(var/symp in list_symptoms)
 		var/datum/symptom/S = new symp
-		if(S.level >= level_min && S.level <= level_max)
+		if(S.level <= type_level_limit)
 			if(!HasSymptom(S))
 				possible_symptoms += S
 
 	if(!possible_symptoms.len)
-		return generated
+		return
+		//error("Advance Disease - We weren't able to get any possible symptoms in GenerateSymptoms([type_level_limit], [amount_get])")
 
 	// Random chance to get more than one symptom
 	var/number_of = amount_get
@@ -156,8 +159,10 @@ var/list/advance_cures = 	list(
 		while(prob(20))
 			number_of += 1
 
-	for(var/i = 1; number_of >= i && possible_symptoms.len; i++)
-		generated += pick_n_take(possible_symptoms)
+	for(var/i = 1; number_of >= i; i++)
+		var/datum/symptom/S = pick(possible_symptoms)
+		generated += S
+		possible_symptoms -= S
 
 	return generated
 
@@ -264,8 +269,8 @@ var/list/advance_cures = 	list(
 	return
 
 // Randomly generate a symptom, has a chance to lose or gain a symptom.
-/datum/disease/advance/proc/Evolve(var/min_level, var/max_level)
-	var/s = safepick(GenerateSymptoms(min_level, max_level, 1))
+/datum/disease/advance/proc/Evolve(var/level = 2)
+	var/s = safepick(GenerateSymptoms(level, 1))
 	if(s)
 		AddSymptom(s)
 		Refresh(1)
@@ -286,7 +291,7 @@ var/list/advance_cures = 	list(
 	return
 
 // Return a unique ID of the disease.
-/datum/disease/advance/GetDiseaseID()
+/datum/disease/advance/proc/GetDiseaseID()
 
 	var/list/L = list()
 	for(var/datum/symptom/S in symptoms)
@@ -362,14 +367,12 @@ var/list/advance_cures = 	list(
 			for(var/datum/disease/A in data["viruses"])
 				preserve += A.Copy()
 			R.data = data.Copy()
+		else
+			R.data = data
 		if(preserve.len)
 			R.data["viruses"] = preserve
 
-/proc/AdminCreateVirus(var/client/user)
-
-	if(!user)
-		return
-
+/proc/AdminCreateVirus(var/mob/user)
 	var/i = 5
 
 	var/datum/disease/advance/D = new(0, null)
@@ -379,24 +382,19 @@ var/list/advance_cures = 	list(
 	symptoms += "Done"
 	symptoms += list_symptoms.Copy()
 	do
-		if(user)
-			var/symptom = input(user, "Choose a symptom to add ([i] remaining)", "Choose a Symptom") in symptoms
-			if(isnull(symptom))
-				return
-			else if(istext(symptom))
-				i = 0
-			else if(ispath(symptom))
-				var/datum/symptom/S = new symptom
-				if(!D.HasSymptom(S))
-					D.symptoms += S
-					i -= 1
+		var/symptom = input(user, "Choose a symptom to add ([i] remaining)", "Choose a Symptom") in symptoms
+		if(istext(symptom))
+			i = 0
+		else if(ispath(symptom))
+			var/datum/symptom/S = new symptom
+			if(!D.HasSymptom(S))
+				D.symptoms += S
+				i -= 1
 	while(i > 0)
 
 	if(D.symptoms.len > 0)
 
 		var/new_name = input(user, "Name your new disease.", "New Name")
-		if(!new_name)
-			return
 		D.AssignName(new_name)
 		D.Refresh()
 

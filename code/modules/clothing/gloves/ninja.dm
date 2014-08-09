@@ -15,14 +15,11 @@
 	icon_state = "s-ninja"
 	item_state = "s-ninja"
 	siemens_coefficient = 0
-	cold_protection = HANDS
-	min_cold_protection_temperature = GLOVES_MIN_TEMP_PROTECT
-	heat_protection = HANDS
-	max_heat_protection_temperature = GLOVES_MAX_TEMP_PROTECT
 	var/draining = 0
 	var/candrain = 0
 	var/mindrain = 200
 	var/maxdrain = 400
+	species_restricted = null
 
 /*
 	This runs the gamut of what ninja gloves can do

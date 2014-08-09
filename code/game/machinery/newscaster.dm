@@ -10,6 +10,7 @@
 	var/backup_author =""
 	var/is_admin_message = 0
 	var/icon/img = null
+	var/icon/backup_img
 
 /datum/feed_channel
 	var/channel_name=""
@@ -28,6 +29,7 @@
 	src.backup_body = ""
 	src.backup_author = ""
 	src.img = null
+	src.backup_img = null
 
 /datum/feed_channel/proc/clear()
 	src.channel_name = ""
@@ -45,39 +47,6 @@
 var/datum/feed_network/news_network = new /datum/feed_network     //The global news-network, which is coincidentally a global list.
 
 var/list/obj/machinery/newscaster/allCasters = list() //Global list that will contain reference to all newscasters in existence.
-
-
-/obj/item/newscaster_frame
-	name = "newscaster frame"
-	desc = "Used to build newscasters, just secure to the wall."
-	icon_state = "newscaster"
-	item_state = "syringe_kit"
-	m_amt = 25000
-	g_amt = 15000
-
-/obj/item/newscaster_frame/proc/try_build(turf/on_wall)
-	if (get_dist(on_wall,usr)>1)
-		return
-	var/ndir = get_dir(usr,on_wall)
-	if (!(ndir in cardinal))
-		return
-	var/turf/loc = get_turf(usr)
-	var/area/A = loc.loc
-	if (!istype(loc, /turf/simulated/floor))
-		usr << "<span class='alert'>Newscaster cannot be placed on this spot.</span>"
-		return
-	if (A.requires_power == 0 || A.name == "Space")
-		usr << "<span class='alert'>Newscaster cannot be placed in this area.</span>"
-		return
-	for(var/obj/machinery/newscaster/T in loc)
-		usr << "<span class='alert'>There is another newscaster here.</span>"
-		return
-	var/obj/machinery/newscaster/N = new(loc)
-	N.pixel_y -= (loc.y - on_wall.y) * 32
-	N.pixel_x -= (loc.x - on_wall.x) * 32
-	del(src)
-
-
 
 
 /obj/machinery/newscaster
@@ -128,7 +97,7 @@ var/list/obj/machinery/newscaster/allCasters = list() //Global list that will co
 
 
 /obj/machinery/newscaster/security_unit                   //Security unit
-	name = "security newscaster"
+	name = "Security Newscaster"
 	securityCaster = 1
 
 /obj/machinery/newscaster/New()         //Constructor, ho~
@@ -208,6 +177,7 @@ var/list/obj/machinery/newscaster/allCasters = list() //Global list that will co
 	if(istype(user, /mob/living/carbon/human) || istype(user,/mob/living/silicon) )
 		var/mob/living/human_or_robot_user = user
 		var/dat
+		dat = text("<HEAD><TITLE>Newscaster</TITLE></HEAD><H3>Newscaster Unit #[src.unit_no]</H3>")
 
 		src.scan_user(human_or_robot_user) //Newscaster scans you
 
@@ -425,18 +395,15 @@ var/list/obj/machinery/newscaster/allCasters = list() //Global list that will co
 				dat+="<B>Wanted Issue successfully deleted from Circulation</B><BR>"
 				dat+="<BR><A href='?src=\ref[src];setScreen=[0]'>Return</A><BR>"
 			if(18)
-				if(news_network.wanted_issue)
-					dat+="<B><FONT COLOR ='maroon'>-- STATIONWIDE WANTED ISSUE --</B></FONT><BR><FONT SIZE=2>\[Submitted by: <FONT COLOR='green'>[news_network.wanted_issue.backup_author]</FONT>\]</FONT><HR>"
-					dat+="<B>Criminal</B>: [news_network.wanted_issue.author]<BR>"
-					dat+="<B>Description</B>: [news_network.wanted_issue.body]<BR>"
-					dat+="<B>Photo:</B>: "
-					if(news_network.wanted_issue.img)
-						usr << browse_rsc(news_network.wanted_issue.img, "tmp_photow.png")
-						dat+="<BR><img src='tmp_photow.png' width = '180'>"
-					else
-						dat+="None"
+				dat+="<B><FONT COLOR ='maroon'>-- STATIONWIDE WANTED ISSUE --</B></FONT><BR><FONT SIZE=2>\[Submitted by: <FONT COLOR='green'>[news_network.wanted_issue.backup_author]</FONT>\]</FONT><HR>"
+				dat+="<B>Criminal</B>: [news_network.wanted_issue.author]<BR>"
+				dat+="<B>Description</B>: [news_network.wanted_issue.body]<BR>"
+				dat+="<B>Photo:</B>: "
+				if(news_network.wanted_issue.img)
+					usr << browse_rsc(news_network.wanted_issue.img, "tmp_photow.png")
+					dat+="<BR><img src='tmp_photow.png' width = '180'>"
 				else
-					dat+="No current wanted issue found.<BR><BR>"
+					dat+="None"
 				dat+="<BR><BR><A href='?src=\ref[src];setScreen=[0]'>Back</A><BR>"
 			if(19)
 				dat+="<FONT COLOR='green'>Wanted issue for [src.channel_name] successfully edited.</FONT><BR><BR>"
@@ -450,13 +417,9 @@ var/list/obj/machinery/newscaster/allCasters = list() //Global list that will co
 			else
 				dat+="I'm sorry to break your immersion. This shit's bugged. Report this bug to Agouri, polyxenitopalidou@gmail.com"
 
-		//human_or_robot_user << browse(dat, "window=newscaster_main;size=400x600")
-		//onclose(human_or_robot_user, "newscaster_main")
 
-		var/datum/browser/popup = new(human_or_robot_user, "newscaster_main", "Newscaster Unit #[src.unit_no]", 400, 600)
-		popup.set_content(dat)
-		popup.set_title_image(human_or_robot_user.browse_rsc_icon(src.icon, src.icon_state))
-		popup.open()
+		human_or_robot_user << browse(dat, "window=newscaster_main;size=400x600")
+		onclose(human_or_robot_user, "newscaster_main")
 
 	/*if(src.isbroken) //debugging shit
 		return
@@ -472,7 +435,7 @@ var/list/obj/machinery/newscaster/allCasters = list() //Global list that will co
 	if ((usr.contents.Find(src) || ((get_dist(src, usr) <= 1) && istype(src.loc, /turf))) || (istype(usr, /mob/living/silicon)))
 		usr.set_machine(src)
 		if(href_list["set_channel_name"])
-			src.channel_name = strip_html_simple(input(usr, "Provide a Feed Channel Name", "Network Channel Handler", ""))
+			src.channel_name = sanitizeSQL(strip_html_simple(input(usr, "Provide a Feed Channel Name", "Network Channel Handler", "")))
 			while (findtext(src.channel_name," ") == 1)
 				src.channel_name = copytext(src.channel_name,2,lentext(src.channel_name)+1)
 			src.updateUsrDialog()
@@ -520,7 +483,7 @@ var/list/obj/machinery/newscaster/allCasters = list() //Global list that will co
 			for(var/datum/feed_channel/F in news_network.network_channels)
 				if( (!F.locked || F.author == scanned_user) && !F.censored)
 					available_channels += F.channel_name
-			src.channel_name = strip_html(input(usr, "Choose receiving Feed Channel", "Network Channel Handler") in available_channels )
+			src.channel_name = strip_html_simple(input(usr, "Choose receiving Feed Channel", "Network Channel Handler") in available_channels )
 			src.updateUsrDialog()
 
 		else if(href_list["set_new_message"])
@@ -679,6 +642,11 @@ var/list/obj/machinery/newscaster/allCasters = list() //Global list that will co
 			if(MSG.is_admin_message)
 				alert("This channel was created by a Nanotrasen Officer. You cannot censor it.","Ok")
 				return
+			if(MSG.img != null)
+				MSG.backup_img = MSG.img
+				MSG.img = null
+			else
+				MSG.img = MSG.backup_img
 			if(MSG.body != "<B>\[REDACTED\]</B>")
 				MSG.backup_body = MSG.body
 				MSG.body = "<B>\[REDACTED\]</B>"
@@ -744,15 +712,6 @@ var/list/obj/machinery/newscaster/allCasters = list() //Global list that will co
 				src.scanned_user = text("[T.registered_name] ([T.assignment])")
 				src.screen=2*/  //Obsolete after autorecognition
 
-	if(istype(I, /obj/item/weapon/wrench))
-		user << "<span class='notice'>Now [anchored ? "un" : ""]securing [name]</span>"
-		playsound(src.loc, 'sound/items/Ratchet.ogg', 50, 1)
-		if(do_after(user, 60))
-			new /obj/item/newscaster_frame(loc)
-			playsound(src.loc, 'sound/items/Deconstruct.ogg', 50, 1)
-			del(src)
-		return
-
 	if (src.isbroken)
 		playsound(src.loc, 'sound/effects/hit_on_shattered_glass.ogg', 100, 1)
 		for (var/mob/O in hearers(5, src.loc))
@@ -779,6 +738,9 @@ var/list/obj/machinery/newscaster/allCasters = list() //Global list that will co
 			user << "<FONT COLOR='blue'>This does nothing.</FONT>"
 	src.update_icon()
 
+/obj/machinery/newscaster/attack_ai(mob/user as mob)
+	return src.attack_hand(user) //or maybe it'll have some special functions? No idea.
+
 
 /obj/machinery/newscaster/attack_paw(mob/user as mob)
 	user << "<font color='blue'>The newscaster controls are far too complicated for your tiny brain!</font>"
@@ -793,26 +755,6 @@ var/list/obj/machinery/newscaster/allCasters = list() //Global list that will co
 		photo = user.get_active_hand()
 		user.drop_item()
 		photo.loc = src
-	if(istype(usr,/mob/living/silicon/ai))
-		var/list/nametemp = list()
-		var/find
-		var/datum/picture/selection
-		var/mob/living/silicon/ai/tempAI = user
-		if(tempAI.aicamera.aipictures.len == 0)
-			usr << "<FONT COLOR=red><B>No images saved</B>"
-			return
-		for(var/datum/picture/t in tempAI.aicamera.aipictures)
-			nametemp += t.fields["name"]
-		find = input("Select image (numbered in order taken)") in nametemp
-		var/obj/item/weapon/photo/P = new/obj/item/weapon/photo()
-		for(var/datum/picture/q in tempAI.aicamera.aipictures)
-			if(q.fields["name"] == find)
-				selection = q
-				break  	// just in case some AI decides to take 10 thousand pictures in a round
-		P.icon = selection.fields["icon"]
-		P.img = selection.fields["img"]
-		P.desc = selection.fields["desc"]
-		photo = P
 
 
 

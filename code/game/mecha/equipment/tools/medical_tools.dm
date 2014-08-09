@@ -1,8 +1,8 @@
 /obj/item/mecha_parts/mecha_equipment/tool/sleeper
-	name = "mounted sleeper"
+	name = "Mounted Sleeper"
 	desc = "Mounted Sleeper. (Can be attached to: Medical Exosuits)"
 	icon = 'icons/obj/Cryogenic2.dmi'
-	icon_state = "sleeper"
+	icon_state = "sleeper_0"
 	origin_tech = "programming=2;biotech=3"
 	energy_drain = 20
 	range = MELEE
@@ -195,7 +195,6 @@
 		if(to_inject && occupant.reagents.get_reagent_amount(R.id) + to_inject <= inject_amount*2)
 			occupant_message("Injecting [occupant] with [to_inject] units of [R.name].")
 			log_message("Injecting [occupant] with [to_inject] units of [R.name].")
-			add_logs(chassis.occupant, occupant, "injected", object="[name] ([R] - [to_inject] units)")
 			SG.reagents.trans_id_to(occupant,R.id,to_inject)
 			update_equip_info()
 		return
@@ -207,9 +206,6 @@
 			send_byjax(chassis.occupant,"msleeper.browser","injectwith",get_available_reagents())
 			return 1
 		return
-
-	container_resist()
-		go_out()
 
 /datum/global_iterator/mech_sleeper
 
@@ -242,12 +238,12 @@
 
 
 /obj/item/mecha_parts/mecha_equipment/tool/cable_layer
-	name = "cable layer"
+	name = "Cable Layer"
 	icon_state = "mecha_wire"
 	var/datum/event/event
 	var/turf/old_turf
 	var/obj/structure/cable/last_piece
-	var/obj/item/stack/cable_coil/cable
+	var/obj/item/weapon/cable_coil/cable
 	var/max_cable = 1000
 
 	New()
@@ -274,7 +270,7 @@
 		chassis.events.clearEvent("onMove",event)
 		return ..()
 
-	action(var/obj/item/stack/cable_coil/target)
+	action(var/obj/item/weapon/cable_coil/target)
 		if(!action_checks(target))
 			return
 		var/result = load_cable(target)
@@ -302,7 +298,7 @@
 				m = min(m, cable.amount)
 				if(m)
 					use_cable(m)
-					var/obj/item/stack/cable_coil/CC = new (get_turf(chassis))
+					var/obj/item/weapon/cable_coil/CC = new (get_turf(chassis))
 					CC.amount = m
 			else
 				occupant_message("There's no more cable on the reel.")
@@ -314,7 +310,7 @@
 			return "[output] \[Cable: [cable ? cable.amount : 0] m\][(cable && cable.amount) ? "- <a href='?src=\ref[src];toggle=1'>[!equip_ready?"Dea":"A"]ctivate</a>|<a href='?src=\ref[src];cut=1'>Cut</a>" : null]"
 		return
 
-	proc/load_cable(var/obj/item/stack/cable_coil/CC)
+	proc/load_cable(var/obj/item/weapon/cable_coil/CC)
 		if(istype(CC) && CC.amount)
 			var/cur_amount = cable? cable.amount : 0
 			var/to_load = max(max_cable - cur_amount,0)
@@ -389,7 +385,7 @@
 		return 1
 
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun
-	name = "syringe gun"
+	name = "Syringe Gun"
 	desc = "Exosuit-mounted chem synthesizer with syringe gun. Reagents inside are held in stasis, so no reactions will occur. (Can be attached to: Medical Exosuits)"
 	icon = 'icons/obj/gun.dmi'
 	icon_state = "syringegun"
@@ -466,7 +462,6 @@
 		S.icon_state = "syringeproj"
 		playsound(chassis, 'sound/items/syringeproj.ogg', 50, 1)
 		log_message("Launched [S] from [src], targeting [target].")
-		var/mob/originaloccupant = chassis.occupant
 		spawn(-1)
 			src = null //if src is deleted, still process the syringe
 			for(var/i=0, i<6, i++)
@@ -478,17 +473,11 @@
 						mobs += M
 					var/mob/living/carbon/M = safepick(mobs)
 					if(M)
-						var/R
-						if(S.reagents)
-							for(var/datum/reagent/A in S.reagents.reagent_list)
-								R += A.id + " ("
-								R += num2text(A.volume) + "),"
 						S.icon_state = initial(S.icon_state)
 						S.icon = initial(S.icon)
 						S.reagents.trans_to(M, S.reagents.total_volume)
 						M.take_organ_damage(2)
 						S.visible_message("<span class=\"attack\"> [M] was hit by the syringe!</span>")
-						add_logs(originaloccupant, M, "shot", object="syringegun")
 						break
 					else if(S.loc == trg)
 						S.icon_state = initial(S.icon_state)

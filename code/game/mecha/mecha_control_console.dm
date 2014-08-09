@@ -1,5 +1,5 @@
 /obj/machinery/computer/mecha
-	name = "exosuit control console"
+	name = "Exosuit Control"
 	icon = 'icons/obj/computer.dmi'
 	icon_state = "mecha"
 	req_access = list(access_robotics)
@@ -7,6 +7,12 @@
 	var/list/located = list()
 	var/screen = 0
 	var/stored_data
+
+	attack_ai(var/mob/user as mob)
+		return src.attack_hand(user)
+
+	attack_paw(var/mob/user as mob)
+		return src.attack_hand(user)
 
 	attack_hand(var/mob/user as mob)
 		if(..())
@@ -60,7 +66,7 @@
 
 
 /obj/item/mecha_parts/mecha_tracking
-	name = "exosuit tracking beacon"
+	name = "Exosuit tracking beacon"
 	desc = "Device used to transmit exosuit data."
 	icon = 'icons/obj/device.dmi'
 	icon_state = "motion2"
@@ -113,7 +119,7 @@
 
 
 /obj/item/weapon/storage/box/mechabeacons
-	name = "exosuit tracking beacons"
+	name = "Exosuit Tracking Beacons"
 	New()
 		..()
 		new /obj/item/mecha_parts/mecha_tracking(src)

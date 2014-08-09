@@ -53,17 +53,13 @@
 		return
 	next_move = world.time + 9
 
-	if(aicamera.in_camera_mode)
-		aicamera.camera_mode_off()
-		aicamera.captureimage(A, usr)
-		return
-
 	/*
 		AI restrained() currently does nothing
 	if(restrained())
 		RestrainedClickOn(A)
 	else
 	*/
+	A.add_hiddenprint(src)
 	A.attack_ai(src)
 
 /*
@@ -117,12 +113,11 @@
 	else
 		Topic("aiDisable=4", list("aiDisable"="4"), 1)
 
-/obj/machinery/power/apc/AICtrlClick() // turns off/on APCs.
-	toggle_breaker()
+/obj/machinery/power/apc/AICtrlClick() // turns off APCs.
+	Topic("breaker=1", list("breaker"="1"), 0) // 0 meaning no window (consistency! wait...)
 
 
-/atom/proc/AIAltClick(var/mob/living/silicon/ai/user)
-	AltClick(user)
+/atom/proc/AIAltClick()
 	return
 
 /obj/machinery/door/airlock/AIAltClick() // Eletrifies doors.
@@ -133,10 +128,3 @@
 		// disable/6 is not in Topic; disable/5 disables both temporary and permenant shock
 		Topic("aiDisable=5", list("aiDisable"="5"), 1)
 	return
-
-//
-// Override TurfAdjacent for AltClicking
-//
-
-/mob/living/silicon/ai/TurfAdjacent(var/turf/T)
-	return (cameranet && cameranet.checkTurfVis(T))

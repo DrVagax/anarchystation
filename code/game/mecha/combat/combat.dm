@@ -25,7 +25,7 @@
 	if(!melee_can_hit || !istype(target, /atom)) return
 	if(istype(target, /mob/living))
 		var/mob/living/M = target
-		if(src.occupant.a_intent == "harm")
+		if(src.occupant.a_intent == "hurt")
 			playsound(src, 'sound/weapons/punch4.ogg', 50, 1)
 			if(damtype == "brute")
 				step_away(M,src,15)
@@ -41,7 +41,7 @@
 				var/mob/living/carbon/human/H = target
 	//			if (M.health <= 0) return
 
-				var/obj/item/organ/limb/temp = H.get_organ(pick("chest", "chest", "chest", "head"))
+				var/datum/organ/external/temp = H.get_organ(pick("chest", "chest", "chest", "head"))
 				if(temp)
 					var/update = 0
 					switch(damtype)
@@ -58,7 +58,7 @@
 									H.reagents.add_reagent("cryptobiolin", force)
 						else
 							return
-					if(update)	H.update_damage_overlays(0)
+					if(update)	H.UpdateDamageIcon()
 				H.updatehealth()
 
 			else
@@ -79,7 +79,6 @@
 				M.updatehealth()
 			src.occupant_message("You hit [target].")
 			src.visible_message("<font color='red'><b>[src.name] hits [target].</b></font>")
-			add_logs(occupant, M, "attacked", object=src, addition="(INTENT: [uppertext(occupant.a_intent)]) (DAMTYE: [uppertext(damtype)])")
 		else
 			step_away(M,src)
 			src.occupant_message("You push [target] out of the way.")
@@ -114,7 +113,7 @@
 	if(!istype(target, /obj) && !istype(target, /mob)) return
 	if(istype(target, /mob))
 		var/mob/M = target
-		M.Dizzy(3)
+		M.make_dizzy(3)
 		M.adjustBruteLoss(1)
 		M.updatehealth()
 		for (var/mob/V in viewers(src))

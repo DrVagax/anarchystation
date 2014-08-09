@@ -1,7 +1,8 @@
 /obj/mecha/combat/durand
 	desc = "An aging combat exosuit utilized by the Nanotrasen corporation. Originally developed to combat hostile alien lifeforms."
-	name = "\improper Durand"
+	name = "Durand"
 	icon_state = "durand"
+	initial_icon = "durand"
 	step_in = 4
 	dir_in = 1 //Facing North.
 	health = 400
@@ -12,7 +13,7 @@
 	force = 40
 	var/defence = 0
 	var/defence_deflect = 35
-	wreckage = /obj/structure/mecha_wreckage/durand
+	wreckage = /obj/effect/decal/mecha_wreckage/durand
 
 /*
 /obj/mecha/combat/durand/New()

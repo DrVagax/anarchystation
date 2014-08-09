@@ -17,8 +17,6 @@
 
 	var/destroys = "none" //can be "none", "gib" or "disintegrate"
 
-	var/summon_type = null //this will put an obj at the target's location
-
 /obj/effect/proc_holder/spell/targeted/inflict_handler/cast(list/targets)
 
 	for(var/mob/living/target in targets)
@@ -27,10 +25,10 @@
 				target.gib()
 			if("gib_brain")
 				if(ishuman(target) || ismonkey(target))
-					var/obj/item/organ/brain/B = target.getorgan(/obj/item/organ/brain)
-					if(B)
-						B.loc = get_turf(target)
-						B.transfer_identity(target)
+					var/mob/living/carbon/C = target
+					if(C.brain_op_stage != 4) // Their brain is already taken out
+						var/obj/item/brain/B = new(C.loc)
+						B.transfer_identity(C)
 				target.gib()
 			if("disintegrate")
 				target.dust()
@@ -59,6 +57,3 @@
 
 		target.eye_blind += amt_eye_blind
 		target.eye_blurry += amt_eye_blurry
-		//summoning
-		if(summon_type)
-			new summon_type(target.loc, target)

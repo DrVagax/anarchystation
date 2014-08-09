@@ -1,9 +1,4 @@
-/datum/round_event_control/communications_blackout
-	name = "Communications Blackout"
-	typepath = /datum/round_event/communications_blackout
-	weight = 30
-
-/datum/round_event/communications_blackout/announce()
+/datum/event/communications_blackout/announce()
 	var/alert = pick(	"Ionospheric anomalies detected. Temporary telecommunication failure imminent. Please contact you*%fj00)`5vc-BZZT", \
 						"Ionospheric anomalies detected. Temporary telecommunication failu*3mga;b4;'1v¬-BZZZT", \
 						"Ionospheric anomalies detected. Temporary telec#MCi46:5.;@63-BZZZZT", \
@@ -20,6 +15,6 @@
 		command_alert(alert)
 
 
-/datum/round_event/communications_blackout/start()
+/datum/event/communications_blackout/start()
 	for(var/obj/machinery/telecomms/T in telecomms_list)
 		T.emp_act(1)

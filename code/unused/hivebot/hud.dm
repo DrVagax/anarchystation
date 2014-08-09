@@ -55,7 +55,7 @@
 	using.dir = SOUTHWEST
 	using.icon = 'icons/mob/screen1_robot.dmi'
 	using.icon_state = "radio"
-	using.screen_loc = ui_movi
+	using.screen_loc = ui_movi_old
 	using.layer = 20
 	src.adding += using
 
@@ -217,6 +217,7 @@
 	mymob.blind.name = " "
 	mymob.blind.screen_loc = "1,1"
 	mymob.blind.layer = 0
+	mymob.blind.mouse_opacity = 0
 
 	mymob.flash = new /obj/screen( null )
 	mymob.flash.icon = 'icons/mob/screen1_robot.dmi'

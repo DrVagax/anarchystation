@@ -2,7 +2,7 @@
 
 /obj/machinery/power/emitter
 	name = "Emitter"
-	desc = "A heavy duty industrial laser"
+	desc = "It is a heavy duty industrial laser."
 	icon = 'icons/obj/singularity.dmi'
 	icon_state = "emitter"
 	anchored = 0
@@ -40,10 +40,9 @@
 		src.directwired = 1
 
 /obj/machinery/power/emitter/Del()
-	if(ticker && ticker.current_state == GAME_STATE_PLAYING)
-		message_admins("Emitter deleted at ([x],[y],[z] - <A HREF='?_src_=holder;adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)",0,1)
-		log_game("Emitter deleted at ([x],[y],[z])")
-		investigate_log("<font color='red'>deleted</font> at ([x],[y],[z])","singulo")
+	message_admins("Emitter deleted at ([x],[y],[z] - <A HREF='?_src_=holder;adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)",0,1)
+	log_game("Emitter deleted at ([x],[y],[z])")
+	investigate_log("<font color='red'>deleted</font> at ([x],[y],[z])","singulo")
 	..()
 
 /obj/machinery/power/emitter/update_icon()
@@ -71,6 +70,8 @@
 				user << "You turn on the [src]."
 				src.shot_number = 0
 				src.fire_delay = 100
+				message_admins("Emitter turned on by [key_name(user, user.client)](<A HREF='?_src_=holder;adminmoreinfo=\ref[user]'>?</A>) in ([x],[y],[z] - <A HREF='?_src_=holder;adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)",0,1)
+				log_game("Emitter turned on by [user.ckey]([user]) in ([x],[y],[z])")
 				investigate_log("turned <font color='green'>on</font> by [user.key]","singulo")
 			update_icon()
 		else
@@ -88,7 +89,7 @@
 			src.use_power = 1	*/
 	return 1
 
-/obj/machinery/field/containment/meteorhit()
+/obj/machinery/containment_field/meteorhit()
 	return 0
 
 /obj/machinery/power/emitter/process()
@@ -150,7 +151,7 @@
 			user << "Turn off the [src] first."
 			return
 		switch(state)
-			if(0 && !isinspace())
+			if(0)
 				state = 1
 				playsound(src.loc, 'sound/items/Ratchet.ogg', 75, 1)
 				user.visible_message("[user.name] secures [src.name] to the floor.", \

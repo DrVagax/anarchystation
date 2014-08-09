@@ -1,17 +1,8 @@
-/mob/living/carbon/slime
-	var/AIproc = 0 // determines if the AI loop is activated
-	var/Atkcool = 0 // attack cooldown
-	var/Tempstun = 0 // temporary temperature stuns
-	var/Discipline = 0 // if a slime has been hit with a freeze gun, or wrestled/attacked off a human, they become disciplined and don't attack anymore for a while
-	var/SStun = 0 // stun variable
-
-
-
 /mob/living/carbon/slime/Life()
 	set invisibility = 0
-	set background = BACKGROUND_ENABLED
+	set background = 1
 
-	if (src.notransform)
+	if (src.monkeyizing)
 		return
 
 	..()
@@ -48,6 +39,15 @@
 
 
 
+
+
+/mob/living/carbon/slime
+	var/AIproc = 0 // determines if the AI loop is activated
+	var/Atkcool = 0 // attack cooldown
+	var/Tempstun = 0 // temporary temperature stuns
+	var/Discipline = 0 // if a slime has been hit with a freeze gun, or wrestled/attacked off a human, they become disciplined and don't attack anymore for a while
+	var/SStun = 0 // stun variable
+
 /mob/living/carbon/slime/proc/AIprocess()  // the master AI process
 
 	//world << "AI proc started."
@@ -55,7 +55,7 @@
 
 	var/hungry = 0
 	var/starving = 0
-	if(is_adult)
+	if(istype(src, /mob/living/carbon/slime/adult))
 		switch(nutrition)
 			if(400 to 1100) hungry = 1
 			if(0 to 399)
@@ -156,7 +156,15 @@
 		return
 
 	//var/environment_heat_capacity = environment.heat_capacity()
-	var/loc_temp = get_temperature(environment)
+	var/loc_temp = T0C
+	if(istype(get_turf(src), /turf/space))
+		//environment_heat_capacity = loc:heat_capacity
+		var/turf/heat_turf = get_turf(src)
+		loc_temp = heat_turf.temperature
+	else if(istype(loc, /obj/machinery/atmospherics/unary/cryo_cell))
+		loc_temp = loc:air_contents.temperature
+	else
+		loc_temp = environment.temperature
 
 	/*
 	if((environment.temperature > (T0C + 50)) || (environment.temperature < (T0C + 10)))
@@ -229,7 +237,7 @@
 
 /mob/living/carbon/slime/proc/handle_regular_status_updates()
 
-	if(is_adult)
+	if(istype(src, /mob/living/carbon/slime/adult))
 		health = 200 - (getOxyLoss() + getToxLoss() + getFireLoss() + getBruteLoss() + getCloneLoss())
 	else
 		health = 150 - (getOxyLoss() + getToxLoss() + getFireLoss() + getBruteLoss() + getCloneLoss())
@@ -310,7 +318,7 @@
 /mob/living/carbon/slime/proc/handle_nutrition()
 
 	if(prob(20))
-		if(is_adult) nutrition-=rand(4,6)
+		if(istype(src, /mob/living/carbon/slime/adult)) nutrition-=rand(4,6)
 		else nutrition-=rand(2,3)
 
 	if(nutrition <= 0)
@@ -320,7 +328,7 @@
 			adjustToxLoss(rand(0,5))
 
 	else
-		if(is_adult)
+		if(istype(src, /mob/living/carbon/slime/adult))
 			if(nutrition >= 1000)
 				if(prob(40)) amount_grown++
 
@@ -329,12 +337,66 @@
 				if(prob(40)) amount_grown++
 
 	if(amount_grown >= 10 && !Victim && !Target)
-		if(!ckey)
-			if(is_adult)
-				Reproduce()
+		if(istype(src, /mob/living/carbon/slime/adult))
+			if(!client)
+				for(var/i=1,i<=4,i++)
+					if(prob(70))
+						var/mob/living/carbon/slime/M = new primarytype(loc)
+						M.powerlevel = round(powerlevel/4)
+						M.Friends = Friends
+						M.tame = tame
+						M.rabid = rabid
+						M.Discipline = Discipline
+						if(i != 1) step_away(M,src)
+					else
+						var/mutations = pick("one","two","three","four")
+						switch(mutations)
+							if("one")
+								var/mob/living/carbon/slime/M = new mutationone(loc)
+								M.powerlevel = round(powerlevel/4)
+								M.Friends = Friends
+								M.tame = tame
+								M.rabid = rabid
+								M.Discipline = Discipline
+								if(i != 1) step_away(M,src)
+							if("two")
+								var/mob/living/carbon/slime/M = new mutationtwo(loc)
+								M.powerlevel = round(powerlevel/4)
+								M.Friends = Friends
+								M.tame = tame
+								M.rabid = rabid
+								M.Discipline = Discipline
+								if(i != 1) step_away(M,src)
+							if("three")
+								var/mob/living/carbon/slime/M = new mutationthree(loc)
+								M.powerlevel = round(powerlevel/4)
+								M.Friends = Friends
+								M.tame = tame
+								M.rabid = rabid
+								M.Discipline = Discipline
+								if(i != 1) step_away(M,src)
+							if("four")
+								var/mob/living/carbon/slime/M = new mutationfour(loc)
+								M.powerlevel = round(powerlevel/4)
+								M.Friends = Friends
+								M.tame = tame
+								M.rabid = rabid
+								M.Discipline = Discipline
+								if(i != 1) step_away(M,src)
 
-			else
-				Evolve()
+				del(src)
+
+		else
+			if(!client)
+				var/mob/living/carbon/slime/adult/A = new adulttype(src.loc)
+				A.nutrition = nutrition
+//				A.nutrition += 100
+				A.powerlevel = max(0, powerlevel-1)
+				A.Friends = Friends
+				A.tame = tame
+				A.rabid = rabid
+				del(src)
+
 
 /mob/living/carbon/slime/proc/handle_targets()
 	if(Tempstun)
@@ -379,7 +441,7 @@
 
 		var/hungry = 0 // determines if the slime is hungry
 		var/starving = 0 // determines if the slime is starving-hungry
-		if(is_adult) // 1200 max nutrition
+		if(istype(src, /mob/living/carbon/slime/adult)) // 1200 max nutrition
 			switch(nutrition)
 				if(601 to 900)
 					if(prob(25)) hungry = 1//Ensures they continue eating, but aren't as aggressive at the same time
@@ -411,7 +473,7 @@
 						continue
 
 					if(issilicon(L))
-						if(!is_adult) //Non-starving diciplined adult slimes wont eat things
+						if(!istype(src, /mob/living/carbon/slime/adult)) //Non-starving diciplined adult slimes wont eat things
 							if(!starving && Discipline > 0)
 								continue
 
@@ -428,7 +490,7 @@
 								if(H.dna.mutantrace == "slime")
 									continue
 
-						if(!is_adult) //Non-starving diciplined adult slimes wont eat things
+						if(!istype(src, /mob/living/carbon/slime/adult)) //Non-starving diciplined adult slimes wont eat things
 							if(!starving && Discipline > 0)
 								continue
 
@@ -452,7 +514,7 @@
 
 
 			if((hungry || starving) && targets.len > 0)
-				if(!is_adult)
+				if(!istype(src, /mob/living/carbon/slime/adult))
 					if(!starving)
 						for(var/mob/living/carbon/C in targets)
 							if(!Discipline && prob(5))

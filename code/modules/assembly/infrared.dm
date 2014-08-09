@@ -4,9 +4,10 @@
 	name = "infrared emitter"
 	desc = "Emits a visible or invisible beam and is triggered when the beam is interrupted."
 	icon_state = "infrared"
-	m_amt = 1000
-	g_amt = 500
+	matter = list("metal" = 1000, "glass" = 500, "waste" = 100)
 	origin_tech = "magnets=2"
+
+	wires = WIRE_PULSE
 
 	secured = 0
 
@@ -17,8 +18,6 @@
 	proc
 		trigger_beam()
 
-	describe()
-		return "The infrared trigger is [on?"on":"off"]."
 
 	activate()
 		if(!..())	return 0//Cooldown check
@@ -56,19 +55,9 @@
 			if(first)
 				del(first)
 				return
-		if(first || !secured) return
-		var/turf/T = null
-		if(istype(loc,/turf))
-			T = loc
-		else if (holder)
-			if (istype(holder.loc,/turf))
-				T = holder.loc
-			else if (istype(holder.loc.loc,/turf)) //for onetankbombs and other tertiary builds with assemblies
-				T = holder.loc.loc
-		else if(istype(loc,/obj/item/weapon/grenade) && istype(loc.loc,/turf))
-			T = loc.loc
-		if(T)
-			var/obj/effect/beam/i_beam/I = new /obj/effect/beam/i_beam(T)
+
+		if((!(first) && (secured && (istype(loc, /turf) || (holder && istype(holder.loc, /turf))))))
+			var/obj/effect/beam/i_beam/I = new /obj/effect/beam/i_beam((holder ? holder.loc : loc) )
 			I.master = src
 			I.density = 1
 			I.dir = dir
@@ -111,7 +100,8 @@
 	trigger_beam()
 		if((!secured)||(!on)||(cooldown > 0))	return 0
 		pulse(0)
-		visible_message("\icon[src] *beep* *beep*")
+		if(!holder)
+			visible_message("\icon[src] *beep* *beep*")
 		cooldown = 2
 		spawn(10)
 			process_cooldown()
@@ -178,6 +168,7 @@
 	var/visible = 0.0
 	var/left = null
 	anchored = 1.0
+	flags = TABLEPASS
 
 
 /obj/effect/beam/i_beam/proc/hit()
@@ -260,7 +251,7 @@
 	hit()
 	return
 
-/obj/effect/beam/i_beam/Crossed(atom/movable/AM as mob|obj)
+/obj/effect/beam/i_beam/HasEntered(atom/movable/AM as mob|obj)
 	if(istype(AM, /obj/effect/beam))
 		return
 	spawn(0)

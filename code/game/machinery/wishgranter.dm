@@ -1,5 +1,5 @@
 /obj/machinery/wish_granter
-	name = "wish granter"
+	name = "Wish Granter"
 	desc = "You're not so sure about this, anymore..."
 	icon = 'icons/obj/device.dmi'
 	icon_state = "syndbeacon"
@@ -62,9 +62,9 @@
 		ticker.mode.traitors += user.mind
 		user.mind.special_role = "Avatar of the Wish Granter"
 
-		var/datum/objective/hijack/hijack = new
-		hijack.owner = user.mind
-		user.mind.objectives += hijack
+		var/datum/objective/silence/silence = new
+		silence.owner = user.mind
+		user.mind.objectives += silence
 
 		var/obj_count = 1
 		for(var/datum/objective/OBJ in user.mind.objectives)

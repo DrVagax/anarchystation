@@ -13,16 +13,21 @@
 	var/delay = 1200
 	var/floor = 0
 	var/yield = 3
-	var/generation = 1
+	var/spreadChance = 40
 	var/spreadIntoAdjacentChance = 60
+	var/evolveChance = 2
+	var/lastTick = 0
+	var/spreaded = 1
 
 /obj/effect/glowshroom/single
-	yield = 0
+	spreadChance = 0
 
 /obj/effect/glowshroom/New()
+
 	..()
-	SetLuminosity(round(potency/10))
+
 	dir = CalcDir()
+
 	if(!floor)
 		switch(dir) //offset to make it be on the wall rather than on the floor
 			if(NORTH)
@@ -37,50 +42,64 @@
 	else //if on the floor, glowshroom on-floor sprite
 		icon_state = "glowshroomf"
 
-	spawn(delay)
-		Spread()
+	processing_objects += src
 
-/obj/effect/glowshroom/proc/Spread()
-	set background = BACKGROUND_ENABLED
+	SetLuminosity(round(potency/10))
+	lastTick = world.timeofday
 
-	for(var/i=1,i<=yield,i++)
-		if(prob(1/(generation * generation) * 100))//This formula gives you diminishing returns based on generation. 100% with 1st gen, decreasing to 25%, 11%, 6, 4, 2...
-			var/list/possibleLocs = list()
-			var/spreadsIntoAdjacent = 0
+/obj/effect/glowshroom/Del()
+	processing_objects -= src
+	..()
 
-			if(prob(spreadIntoAdjacentChance))
-				spreadsIntoAdjacent = 1
+/obj/effect/glowshroom/process()
+	if(!spreaded)
+		return
 
-			for(var/turf/simulated/floor/earth in view(3,src))
-				if(spreadsIntoAdjacent || !locate(/obj/effect/glowshroom) in view(1,earth))
-					possibleLocs += earth
+	if(((world.timeofday - lastTick) > delay) || ((world.timeofday - lastTick) < 0))
+		lastTick = world.timeofday
+		spreaded = 0
 
-			if(!possibleLocs.len)
-				break
+		for(var/i=1,i<=yield,i++)
+			if(prob(spreadChance))
+				var/list/possibleLocs = list()
+				var/spreadsIntoAdjacent = 0
 
-			var/turf/newLoc = pick(possibleLocs)
+				if(prob(spreadIntoAdjacentChance))
+					spreadsIntoAdjacent = 1
 
-			var/shroomCount = 0 //hacky
-			var/placeCount = 1
-			for(var/obj/effect/glowshroom/shroom in newLoc)
-				shroomCount++
-			for(var/wallDir in cardinal)
-				var/turf/isWall = get_step(newLoc,wallDir)
-				if(isWall.density)
-					placeCount++
-			if(shroomCount >= placeCount)
-				continue
+				for(var/turf/simulated/floor/plating/airless/asteroid/earth in view(3,src))
+					if(spreadsIntoAdjacent || !locate(/obj/effect/glowshroom) in view(1,earth))
+						possibleLocs += earth
 
-			var/obj/effect/glowshroom/child = new /obj/effect/glowshroom(newLoc)//The baby mushrooms have different stats :3
-			child.potency = max(potency+rand(-3,6), 0)
-			child.yield = max(yield+rand(-1,2), 0)
-			child.delay = max(delay+rand(-30,60), 0)
-			child.endurance = max(endurance+rand(-3,6), 1)
-			child.generation = generation+1
-			child.desc = "This is a [child.generation]\th generation glowshroom!"//I added this for testing, but I figure I'll leave it in.
+				if(!possibleLocs.len)
+					break
+
+				var/turf/newLoc = pick(possibleLocs)
+
+				var/shroomCount = 0 //hacky
+				var/placeCount = 1
+				for(var/obj/effect/glowshroom/shroom in newLoc)
+					shroomCount++
+				for(var/wallDir in cardinal)
+					var/turf/isWall = get_step(newLoc,wallDir)
+					if(isWall.density)
+						placeCount++
+				if(shroomCount >= placeCount)
+					continue
+
+				var/obj/effect/glowshroom/child = new /obj/effect/glowshroom(newLoc)
+				child.potency = potency
+				child.yield = yield
+				child.delay = delay
+				child.endurance = endurance
+
+				spreaded++
+
+		if(prob(evolveChance)) //very low chance to evolve on its own
+			potency += rand(4,6)
 
 /obj/effect/glowshroom/proc/CalcDir(turf/location = loc)
-	set background = BACKGROUND_ENABLED
+	set background = 1
 	var/direction = 16
 
 	for(var/wallDir in cardinal)
@@ -114,7 +133,9 @@
 
 /obj/effect/glowshroom/attackby(obj/item/weapon/W as obj, mob/user as mob)
 	..()
+
 	endurance -= W.force
+
 	CheckEndurance()
 
 /obj/effect/glowshroom/ex_act(severity)
@@ -133,7 +154,7 @@
 		else
 	return
 
-/obj/effect/glowshroom/temperature_expose(datum/gas_mixture/air, exposed_temperature, exposed_volume)
+/obj/effect/glowshroom/fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume)
 	if(exposed_temperature > 300)
 		endurance -= 5
 		CheckEndurance()

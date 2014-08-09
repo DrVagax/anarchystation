@@ -1,16 +1,23 @@
 
 /obj/machinery/computer/station_alert
-	name = "station alert console"
+	name = "Station Alert Computer"
 	desc = "Used to access the station's automated alert system."
 	icon_state = "alert:0"
-	circuit = /obj/item/weapon/circuitboard/stationalert
+	circuit = "/obj/item/weapon/circuitboard/stationalert"
 	var/alarms = list("Fire"=list(), "Atmosphere"=list(), "Power"=list())
 
 
+	attack_ai(mob/user)
+		add_fingerprint(user)
+		if(stat & (BROKEN|NOPOWER))
+			return
+		interact(user)
+		return
 
 
 	attack_hand(mob/user)
-		if(..())
+		add_fingerprint(user)
+		if(stat & (BROKEN|NOPOWER))
 			return
 		interact(user)
 		return
@@ -18,9 +25,10 @@
 
 	interact(mob/user)
 		usr.set_machine(src)
-		var/dat = ""
+		var/dat = "<HEAD><TITLE>Current Station Alerts</TITLE><META HTTP-EQUIV='Refresh' CONTENT='10'></HEAD><BODY>\n"
+		dat += "<A HREF='?src=\ref[user];mach_close=alerts'>Close</A><br><br>"
 		for (var/cat in src.alarms)
-			dat += text("<h2>[]</h2>", cat)
+			dat += text("<B>[]</B><BR>\n", cat)
 			var/list/L = src.alarms[cat]
 			if (L.len)
 				for (var/alarm in L)
@@ -29,20 +37,15 @@
 					var/list/sources = alm[3]
 					dat += "<NOBR>"
 					dat += "&bull; "
-					dat += "[format_text(A.name)]"
+					dat += "[A.name]"
 					if (sources.len > 1)
 						dat += text(" - [] sources", sources.len)
 					dat += "</NOBR><BR>\n"
 			else
 				dat += "-- All Systems Nominal<BR>\n"
 			dat += "<BR>\n"
-		//user << browse(dat, "window=alerts")
-		//onclose(user, "alerts")
-		var/datum/browser/popup = new(user, "alerts", "Station Alert Console")
-		popup.add_head_content("<META HTTP-EQUIV='Refresh' CONTENT='10'>")
-		popup.set_content(dat)
-		popup.set_title_image(user.browse_rsc_icon(src.icon, src.icon_state))
-		popup.open()
+		user << browse(dat, "window=alerts")
+		onclose(user, "alerts")
 
 
 	Topic(href, href_list)
@@ -91,24 +94,17 @@
 		return !cleared
 
 
-/obj/machinery/computer/station_alert/process()
-	update_icon()
-	..()
-	return
-
-/obj/machinery/computer/station_alert/update_icon()
-	if(stat & BROKEN)
-		icon_state = "alert:b"
+	process()
+		if(stat & (BROKEN|NOPOWER))
+			icon_state = "atmos0"
+			return
+		var/active_alarms = 0
+		for (var/cat in src.alarms)
+			var/list/L = src.alarms[cat]
+			if(L.len) active_alarms = 1
+		if(active_alarms)
+			icon_state = "alert:2"
+		else
+			icon_state = "alert:0"
+		..()
 		return
-	else if (stat & NOPOWER)
-		icon_state = "alert:O"
-		return
-	var/active_alarms = 0
-	for (var/cat in src.alarms)
-		var/list/L = src.alarms[cat]
-		if(L.len) active_alarms = 1
-	if(active_alarms)
-		icon_state = "alert:2"
-	else
-		icon_state = "alert:0"
-	return

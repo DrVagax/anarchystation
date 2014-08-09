@@ -54,13 +54,15 @@
 
 // increment the power usage stats for an area
 
-/obj/machinery/proc/use_power(var/amount, var/chan = -1) // defaults to power_channel
+/obj/machinery/proc/use_power(var/amount, var/chan = -1, var/autocalled = 0) // defaults to power_channel
 	var/area/A = src.loc.loc		// make sure it's in an area
 	if(!A || !isarea(A) || !A.master)
 		return
 	if(chan == -1)
 		chan = power_channel
 	A.master.use_power(amount, chan)
+	if(!autocalled)
+		A.master.powerupdate = 2	// Decremented by 2 each GC tick, since it's not auto power change we're going to update power twice.
 
 /obj/machinery/proc/power_change()		// called whenever the power settings of the containing area change
 										// by default, check equipment channel & set flag
@@ -78,6 +80,9 @@
 
 
 // rebuild all power networks from scratch
+
+/hook/startup/proc/buildPowernets()
+	return makepowernets()
 
 /proc/makepowernets()
 	for(var/datum/powernet/PN in powernets)
@@ -98,7 +103,10 @@
 		C.powernet.cables += C
 
 	for(var/obj/machinery/power/M in machines)
-		M.connect_to_network()
+		if(!M.powernet)	continue	// APCs have powernet=0 so they don't count as network nodes directly
+		M.powernet.nodes[M] = M
+
+	return 1
 
 
 // returns a list of all power-related objects (nodes, cable, junctions) in turf,
@@ -106,7 +114,17 @@
 // if unmarked==1, only return those with no powernet
 /proc/power_list(var/turf/T, var/source, var/d, var/unmarked=0)
 	. = list()
-	var/fdir = (!d)? 0 : turn(d, 180)			// the opposite direction to d (or 0 if d==0)
+	var/fdir = (!d)? 0 : turn(d, 180)
+			// the opposite direction to d (or 0 if d==0)
+///// Z-Level Stuff
+	var/Zdir
+	if(d==11)
+		Zdir = 11
+	else if (d==12)
+		Zdir = 12
+	else
+		Zdir = 999
+///// Z-Level Stuff
 //	world.log << "d=[d] fdir=[fdir]"
 	for(var/AM in T)
 		if(AM == source)	continue			//we don't want to return source
@@ -123,7 +141,11 @@
 			var/obj/structure/cable/C = AM
 
 			if(!unmarked || !C.powernet)
-				if(C.d1 == fdir || C.d2 == fdir)
+///// Z-Level Stuff
+				if(C.d1 == fdir || C.d2 == fdir || C.d1 == Zdir || C.d2 == Zdir)
+///// Z-Level Stuff
+					. += C
+				else if(C.d1 == turn(C.d2, 180))
 					. += C
 	return .
 
@@ -132,26 +154,46 @@
 	. = list()	// this will be a list of all connected power objects
 	var/turf/T = loc
 
-	if(d1)	T = get_step(src, d1)
-	if(T)	. += power_list(T, src, d1, 1)
+///// Z-Level Stuff
+	if(d1)
+		if(d1 <= 10)
+			T = get_step(src, d1)
+			if(T)
+				. += power_list(T, src, d1, 1)
+		else if (d1 == 11 || d1 == 12)
+			var/turf/controllerlocation = locate(1, 1, z)
+			for(var/obj/effect/landmark/zcontroller/controller in controllerlocation)
+				if(controller.up && d1 == 12)
+					T = locate(src.x, src.y, controller.up_target)
+					if(T)
+						. += power_list(T, src, 11, 1)
+				if(controller.down && d1 == 11)
+					T = locate(src.x, src.y, controller.down_target)
+					if(T)
+						. += power_list(T, src, 12, 1)
+	else if(!d1)
+		if(T)
+			. += power_list(T, src, d1, 1)
 
-	T = get_step(src, d2)
-	if(T)	. += power_list(T, src, d2, 1)
+	if(d2 == 11 || d2 == 12)
+		var/turf/controllerlocation = locate(1, 1, z)
+		for(var/obj/effect/landmark/zcontroller/controller in controllerlocation)
+			if(controller.up && d2 == 12)
+				T = locate(src.x, src.y, controller.up_target)
+				if(T)
+					. += power_list(T, src, 11, 1)
+			if(controller.down && d2 == 11)
+				T = locate(src.x, src.y, controller.down_target)
+				if(T)
+					. += power_list(T, src, 12, 1)
+	else
+		T = get_step(src, d2)
+		if(T)
+			. += power_list(T, src, d2, 1)
+///// Z-Level Stuff
 
 	return .
 
-// will get both marked and unmarked connections
-/obj/structure/cable/proc/get_marked_connections()
-	. = list()	// this will be a list of all connected power objects
-	var/turf/T = loc
-
-	if(d1)	T = get_step(src, d1)
-	if(T)	. += power_list(T, src, d1, 0)
-
-	T = get_step(src, d2)
-	if(T)	. += power_list(T, src, d2, 0)
-
-	return .
 
 /obj/machinery/power/proc/get_connections()
 
@@ -172,24 +214,6 @@
 				. += C
 	return .
 
-/obj/machinery/power/proc/get_marked_connections()
-
-	. = list()
-
-	if(!directwired)
-		return get_indirect_connections()
-
-	var/cdir
-
-	for(var/card in cardinal)
-		var/turf/T = get_step(loc,card)
-		cdir = get_dir(T,loc)
-
-		for(var/obj/structure/cable/C in T)
-			if(C.d1 == cdir || C.d2 == cdir)
-				. += C
-	return .
-
 /obj/machinery/power/proc/get_indirect_connections()
 	. = list()
 	for(var/obj/structure/cable/C in loc)
@@ -200,7 +224,7 @@
 
 
 /proc/powernet_nextlink(var/obj/O, var/datum/powernet/PN)
-	var/list/P = list()
+	var/list/P
 
 	while(1)
 		if( istype(O,/obj/structure/cable) )
@@ -223,58 +247,6 @@
 		for(var/L = 2 to P.len)
 			powernet_nextlink(P[L], PN)
 
-//remove the old powernet and replace it with a new one throughout the network.
-/proc/propagate_network(var/obj/O, var/datum/powernet/PN)
-	//world.log << "propagating new network"
-	var/list/worklist = list()
-	worklist+=O
-	var/index = 1
-	while(index<=worklist.len)
-		var/obj/P = worklist[index++]
-		if( istype(P,/obj/structure/cable))
-			//world.log << "is cable"
-			var/obj/structure/cable/C = P
-			if(C.powernet==PN)
-				//world.log << "already has correct network"
-				continue
-			//world.log << "removing from old powernet[C.powernet]"
-			C.powernet.cables-=C
-			C.powernet = PN
-			PN.cables+=C
-			for(var/obj/newP in C.get_marked_connections())
-				worklist+=newP
-			//world.log << "found [P.len] children"
-		else if(P.anchored && istype(P,/obj/machinery/power))
-			//world.log << "is machine"
-			var/obj/machinery/power/M = P
-			if(M.powernet==PN)
-				//world.log << "already has correct network"
-				continue
-			//world.log << "removing from old powernet[M.powernet]"
-			M.powernet.nodes-=M
-			M.powernet = PN
-			PN.nodes+=M
-			for(var/obj/newP in M.get_marked_connections())
-				worklist+=newP
-			//world.log << "found [P.len] children"
-		else
-			continue
-//should be called after placing a cable which extends another cable, creating a "smooth" cable that no longer terminates in the centre of a turf.
-//needed as this can, unlike other placements, disconnect cables
-/obj/structure/cable/proc/denode()
-	//world.log << "denoding"
-	var/turf/T1 = loc
-	if(!T1) return
-	var/list/powerlist = power_list(T1,src,0,0) //find the other cables that ended in the centre of the turf
-	//world.log << "found [powerlist.len] power items, picking the first"
-	var/datum/powernet/oldPN = powernet
-	var/datum/powernet/PN = new()
-	powernets+=PN
-	if(powerlist.len>0)
-		propagate_network(powerlist[1],PN)
-	if(oldPN.cables.len==0&&oldPN.nodes.len==0)
-		//world.log << "There was a loop, so the old powernet was destroyed, removing it"
-		powernets-=oldPN
 
 // cut a powernet at this cable object
 /datum/powernet/proc/cut_cable(var/obj/structure/cable/C)
@@ -480,7 +452,6 @@
 
 /obj/machinery/power/proc/connect_to_network()
 	var/turf/T = src.loc
-	if(!T || !istype(T)) return 0
 	var/obj/structure/cable/C = T.get_cable_node()
 	if(!C || !C.powernet)	return 0
 //	makepowernets() //TODO: find fast way	//EWWWW what are you doing!?
@@ -519,6 +490,9 @@
 //No animations will be performed by this proc.
 /proc/electrocute_mob(mob/living/carbon/M as mob, var/power_source, var/obj/source, var/siemens_coeff = 1.0)
 	if(istype(M.loc,/obj/mecha))	return 0	//feckin mechs are dumb
+	
+	//This is for performance optimization only. 
+	//DO NOT modify siemens_coeff here. That is checked in human/electrocute_act()
 	if(istype(M,/mob/living/carbon/human))
 		var/mob/living/carbon/human/H = M
 		if(H.gloves)
@@ -534,11 +508,11 @@
 		power_source = Cable.powernet
 
 	var/datum/powernet/PN
-	var/obj/item/weapon/stock_parts/cell/cell
+	var/obj/item/weapon/cell/cell
 
 	if(istype(power_source,/datum/powernet))
 		PN = power_source
-	else if(istype(power_source,/obj/item/weapon/stock_parts/cell))
+	else if(istype(power_source,/obj/item/weapon/cell))
 		cell = power_source
 	else if(istype(power_source,/obj/machinery/power/apc))
 		var/obj/machinery/power/apc/apc = power_source
@@ -573,7 +547,7 @@
 	else if (istype(power_source,/datum/powernet))
 		var/drained_power = drained_energy/CELLRATE //convert from "joules" to "watts"
 		PN.newload+=drained_power
-	else if (istype(power_source, /obj/item/weapon/stock_parts/cell))
+	else if (istype(power_source, /obj/item/weapon/cell))
 		cell.use(drained_energy)
 	return drained_energy
 

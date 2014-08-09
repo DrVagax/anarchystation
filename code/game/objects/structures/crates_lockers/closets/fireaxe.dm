@@ -11,7 +11,7 @@
 	var/localopened = 0 //Setting this to keep it from behaviouring like a normal closet and obstructing movement in the map. -Agouri
 	opened = 1
 	var/hitstaken = 0
-	locked = 1
+	var/locked = 1
 	var/smashed = 0
 
 	attackby(var/obj/item/O as obj, var/mob/user as mob)  //Marker -Agouri
@@ -25,10 +25,10 @@
 			if(istype(O, /obj/item/device/multitool))
 				user << "\red Resetting circuitry..."
 				playsound(user, 'sound/machines/lockreset.ogg', 50, 1)
-				sleep(50) // Sleeping time~
-				src.locked = 0
-				user << "\blue You disable the locking modules."
-				update_icon()
+				if(do_after(user, 20))
+					src.locked = 0
+					user << "<span class = 'caution'> You disable the locking modules.</span>"
+					update_icon()
 				return
 			else if(istype(O, /obj/item/weapon))
 				var/obj/item/weapon/W = O
@@ -57,7 +57,7 @@
 					user << "\red Unwield the axe first."
 					return
 				fireaxe = O
-				user.drop_item()
+				user.drop_item(O)
 				src.contents += O
 				user << "\blue You place the fire axe back in the [src.name]."
 				update_icon()
@@ -87,6 +87,9 @@
 					src.locked = 1
 					user << "\blue You re-enable the locking modules."
 					playsound(user, 'sound/machines/lockenable.ogg', 50, 1)
+					if(do_after(user,20))
+						src.locked = 1
+						user << "<span class = 'caution'> You re-enable the locking modules.</span>"
 					return
 			else
 				localopened = !localopened

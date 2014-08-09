@@ -10,6 +10,9 @@
 	icon_state = "shock"
 
 	attack(mob/M as mob, mob/living/silicon/robot/user as mob)
+		M.attack_log += text("\[[time_stamp()]\] <font color='orange'>Has been attacked with [src.name] by [user.name] ([user.ckey])</font>")
+		user.attack_log += text("\[[time_stamp()]\] <font color='red'>Used the [src.name] to attack [M.name] ([M.ckey])</font>")
+		msg_admin_attack("[user.name] ([user.ckey]) used the [src.name] to attack [M.name] ([M.ckey]) (<A HREF='?_src_=holder;adminplayerobservecoodjump=1;X=[user.x];Y=[user.y];Z=[user.z]'>JMP</a>)")
 
 		user.cell.charge -= 30
 
@@ -21,7 +24,6 @@
 		for(var/mob/O in viewers(M, null))
 			if (O.client)
 				O.show_message("\red <B>[user] has prodded [M] with an electrically-charged arm!</B>", 1, "\red You hear someone fall", 2)
-		add_logs(user, M, "stunned", object="[src.name]", addition="(INTENT: [uppertext(user.a_intent)])")
 
 /obj/item/borg/overdrive
 	name = "overdrive"
@@ -45,16 +47,15 @@
 /obj/item/borg/sight/thermal
 	name = "\proper thermal vision"
 	sight_mode = BORGTHERM
-	icon = 'icons/obj/clothing/glasses.dmi'
 	icon_state = "thermal"
+	icon = 'icons/obj/clothing/glasses.dmi'
 
 
 /obj/item/borg/sight/meson
 	name = "\proper meson vision"
 	sight_mode = BORGMESON
-	icon = 'icons/obj/clothing/glasses.dmi'
 	icon_state = "meson"
-
+	icon = 'icons/obj/clothing/glasses.dmi'
 
 /obj/item/borg/sight/hud
 	name = "hud"
@@ -63,9 +64,8 @@
 
 /obj/item/borg/sight/hud/med
 	name = "medical hud"
-	icon = 'icons/obj/clothing/glasses.dmi'
 	icon_state = "healthhud"
-
+	icon = 'icons/obj/clothing/glasses.dmi'
 
 	New()
 		..()
@@ -75,8 +75,8 @@
 
 /obj/item/borg/sight/hud/sec
 	name = "security hud"
-	icon = 'icons/obj/clothing/glasses.dmi'
 	icon_state = "securityhud"
+	icon = 'icons/obj/clothing/glasses.dmi'
 
 	New()
 		..()

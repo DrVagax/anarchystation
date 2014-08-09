@@ -74,7 +74,6 @@ Radio:
 1359 - Security
 1441 - death squad
 1443 - Confession Intercom
-1349 - Miners
 1347 - Cargo techs
 
 Devices:
@@ -104,21 +103,26 @@ var/list/radiochannels = list(
 	"Medical" = 1355,
 	"Engineering" = 1357,
 	"Security" = 1359,
-	"Deathsquad" = 1441,
+	"Response Team" = 1345,
+	"Deathsquad" = 1341,
 	"Syndicate" = 1213,
 	"Supply" = 1347,
-	"Service" = 1349,
 )
 //depenging helpers
-var/const/SYND_FREQ = 1213 //nuke op frequency, coloured dark brown in chat window
-var/const/SUPP_FREQ = 1347 //supply, coloured light brown in chat window
-var/const/SERV_FREQ = 1349 //service, coloured green in chat window
-var/const/SCI_FREQ = 1351 //science, coloured plum in chat window
+var/list/DEPT_FREQS = list(1351, 1355, 1357, 1359, 1213, 1345, 1341, 1347)
+
+// central command channels, i.e deathsquid & response teams
+var/list/CENT_FREQS = list(1345, 1341)
+
 var/const/COMM_FREQ = 1353 //command, colored gold in chat window
-var/const/MED_FREQ = 1355 //medical, coloured blue in chat window
-var/const/ENG_FREQ = 1357 //engineering, coloured orange in chat window
-var/const/SEC_FREQ = 1359 //security, coloured red in chat window
-var/const/DSQUAD_FREQ = 1441 //death squad frequency, coloured grey in chat window
+var/const/SYND_FREQ = 1213
+
+// department channels
+var/const/SEC_FREQ = 1359
+var/const/ENG_FREQ = 1357
+var/const/SCI_FREQ = 1351
+var/const/MED_FREQ = 1355
+var/const/SUP_FREQ = 1347
 
 #define TRANSMISSION_WIRE	0
 #define TRANSMISSION_RADIO	1
@@ -135,6 +139,10 @@ var/const/RADIO_MULEBOT = "8"
 var/const/RADIO_MAGNETS = "9"
 
 var/global/datum/controller/radio/radio_controller
+
+/hook/startup/proc/createRadioController()
+	radio_controller = new /datum/controller/radio()
+	return 1
 
 datum/controller/radio
 	var/list/datum/radio_frequency/frequencies = list()
@@ -189,7 +197,7 @@ datum/radio_frequency
 			if(range)
 				start_point = get_turf(source)
 				if(!start_point)
-//					del(signal)
+					del(signal)
 					return 0
 			if (filter) //here goes some copypasta. It is for optimisation. -rastaf0
 				for(var/obj/device in devices[filter])
@@ -262,26 +270,11 @@ datum/radio_frequency
 					del(devices_line)
 
 
-var/list/pointers = list()
+obj/proc
+	receive_signal(datum/signal/signal, receive_method, receive_param)
+		return null
 
-/client/proc/print_pointers()
-	set name = "Debug Signals"
-	set category = "Debug"
-
-	if(!holder)
-		return
-
-	src << "There are [pointers.len] pointers:"
-	for(var/p in pointers)
-		src << p
-		var/datum/signal/S = locate(p)
-		if(istype(S))
-			src << S.debug_print()
-
-/obj/proc/receive_signal(datum/signal/signal, receive_method, receive_param)
-	return null
-
-/datum/signal
+datum/signal
 	var/obj/source
 
 	var/transmission_method = 0
@@ -294,35 +287,21 @@ var/list/pointers = list()
 
 	var/frequency = 0
 
-/datum/signal/New()
-	..()
-	pointers += "\ref[src]"
+	proc/copy_from(datum/signal/model)
+		source = model.source
+		transmission_method = model.transmission_method
+		data = model.data
+		encryption = model.encryption
+		frequency = model.frequency
 
-/datum/signal/Del()
-	pointers -= "\ref[src]"
-	..()
-
-/datum/signal/proc/copy_from(datum/signal/model)
-	source = model.source
-	transmission_method = model.transmission_method
-	data = model.data
-	encryption = model.encryption
-	frequency = model.frequency
-
-/datum/signal/proc/debug_print()
-	if (source)
-		. = "signal = {source = '[source]' ([source:x],[source:y],[source:z])\n"
-	else
-		. = "signal = {source = '[source]' ()\n"
-	for (var/i in data)
-		. += "data\[\"[i]\"\] = \"[data[i]]\"\n"
-		if(islist(data[i]))
-			var/list/L = data[i]
-			for(var/t in L)
-				. += "data\[\"[i]\"\] list has: [t]"
-
-/datum/signal/proc/sanitize_data()
-	for(var/d in data)
-		var/val = data[d]
-		if(istext(val))
-			data[d] = strip_html_simple(val)
+	proc/debug_print()
+		if (source)
+			. = "signal = {source = '[source]' ([source:x],[source:y],[source:z])\n"
+		else
+			. = "signal = {source = '[source]' ()\n"
+		for (var/i in data)
+			. += "data\[\"[i]\"\] = \"[data[i]]\"\n"
+			if(islist(data[i]))
+				var/list/L = data[i]
+				for(var/t in L)
+					. += "data\[\"[i]\"\] list has: [t]"

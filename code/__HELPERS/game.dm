@@ -1,5 +1,14 @@
 //This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:31
 
+/proc/dopage(src,target)
+	var/href_list
+	var/href
+	href_list = params2list("src=\ref[src]&[target]=1")
+	href = "src=\ref[src];[target]=1"
+	src:temphtml = null
+	src:Topic(href, href_list)
+	return null
+
 /proc/get_area(O)
 	var/atom/location = O
 	var/i
@@ -11,12 +20,6 @@
 		else
 			return null
 	return 0
-
-/proc/get_area_master(O)
-	var/area/A = get_area(O)
-	if(A && A.master)
-		A = A.master
-	return A
 
 /proc/get_area_name(N) //get area by its name
 	for(var/area/A in world)
@@ -42,16 +45,7 @@
 
 	return heard
 
-/proc/alone_in_area(var/area/the_area, var/mob/must_be_alone, var/check_type = /mob/living/carbon)
-	var/area/our_area = get_area_master(the_area)
-	for(var/C in living_mob_list)
-		if(!istype(C, check_type))
-			continue
-		if(C == must_be_alone)
-			continue
-		if(our_area == get_area_master(C))
-			return 0
-	return 1
+
 
 
 //Magic constants obtained by using linear regression on right-angled triangles of sides 0<x<1, 0<y<1
@@ -62,7 +56,7 @@
 	var/dx = abs(Ax - Bx)	//sides of right-angled triangle
 	var/dy = abs(Ay - By)
 	if(dx>=dy)	return (k1*dx) + (k2*dy)	//No sqrt or powers :)
-	else		return (k2*dx) + (k1*dy)
+	else		return (k1*dx) + (k2*dy)
 #undef k1
 #undef k2
 
@@ -134,53 +128,38 @@
 
 //var/debug_mob = 0
 
-// Better recursive loop, technically sort of not actually recursive cause that shit is retarded, enjoy.
-//No need for a recursive limit either
+// Will recursively loop through an atom's contents and check for mobs, then it will loop through every atom in that atom's contents.
+// It will keep doing this until it checks every content possible. This will fix any problems with mobs, that are inside objects,
+// being unable to hear people due to being in a box within a bag.
 
+/proc/recursive_mob_check(var/atom/O,  var/list/L = list(), var/recursion_limit = 3, var/client_check = 1, var/sight_check = 1, var/include_radio = 1)
 
-proc/recursive_mob_check(var/atom/O, var/client_check=1, var/sight_check=1, var/include_radio=1)
-
-	var/list/processing_list = list(O)
-	var/list/processed_list = list()
-	var/list/found_mobs = list()
-
-	if(!O.contents.len)
-		return found_mobs
-
-	while(processing_list.len)
-
-		var/atom/A = processing_list[1]
-
-		var/passed = 1
+	//debug_mob += O.contents.len
+	if(!recursion_limit)
+		return L
+	for(var/atom/A in O.contents)
 
 		if(ismob(A))
-			var/mob/A_tmp = A
-
-			if(client_check && !A_tmp.client)
-				passed=0
-
-			if(A_tmp && sight_check && !isInSight(A_tmp, O))
-				passed=0
+			var/mob/M = A
+			if(client_check && !M.client)
+				L |= recursive_mob_check(A, L, recursion_limit - 1, client_check, sight_check, include_radio)
+				continue
+			if(sight_check && !isInSight(A, O))
+				continue
+			L |= M
+			//world.log << "[recursion_limit] = [M] - [get_turf(M)] - ([M.x], [M.y], [M.z])"
 
 		else if(include_radio && istype(A, /obj/item/device/radio))
 			if(sight_check && !isInSight(A, O))
-				passed=0
+				continue
+			L |= A
 
-		else passed = 0
+		if(isobj(A) || ismob(A))
+			L |= recursive_mob_check(A, L, recursion_limit - 1, client_check, sight_check, include_radio)
+	return L
 
-		if(passed)
-			if(!(A in found_mobs)) found_mobs += A
-
-			for(var/atom/B in A)
-				if(!(B in processed_list) && (istype(A, /obj/item/device/radio)||ismob(B)) )
-					processing_list += B
-
-		processing_list-=A
-		processed_list += A
-
-	return found_mobs
-
-
+// The old system would loop through lists for a total of 5000 per function call, in an empty server.
+// This new system will loop at around 1000 in an empty server.
 
 /proc/get_mobs_in_view(var/R, var/atom/source)
 	// Returns a list of mobs in range of R from source. Used in radio and say code.
@@ -194,25 +173,23 @@ proc/recursive_mob_check(var/atom/O, var/client_check=1, var/sight_check=1, var/
 	var/list/range = hear(R, T)
 
 	for(var/atom/A in range)
-
-		/*if(ismob(A))
+		if(ismob(A))
 			var/mob/M = A
 			if(M.client)
 				hear += M
-					//world.log << "Start = [M] - [get_turf(M)] - ([M.x], [M.y], [M.z])"
+			//world.log << "Start = [M] - [get_turf(M)] - ([M.x], [M.y], [M.z])"
 		else if(istype(A, /obj/item/device/radio))
-			hear += A*/
+			hear += A
 
 		if(isobj(A) || ismob(A))
-			hear += recursive_mob_check(A, 1, 0, 1)
+			hear |= recursive_mob_check(A, hear, 3, 1, 0, 1)
 
 	return hear
 
 
-
 /proc/get_mobs_in_radio_ranges(var/list/obj/item/device/radio/radios)
 
-	set background = BACKGROUND_ENABLED
+	set background = 1
 
 	. = list()
 	// Returns a list of mobs who can hear any of the radios given in @radios
@@ -232,8 +209,9 @@ proc/recursive_mob_check(var/atom/O, var/client_check=1, var/sight_check=1, var/
 		if(M)
 			var/turf/ear = get_turf(M)
 			if(ear)
-				if(speaker_coverage[ear])
-					. |= M
+				// Ghostship is magic: Ghosts can hear radio chatter from anywhere
+				if(speaker_coverage[ear] || (istype(M, /mob/dead/observer) && (M.client) && (M.client.prefs.toggles & CHAT_GHOSTRADIO)))
+					. |= M		// Since we're already looping through mobs, why bother using |= ? This only slows things down.
 	return .
 
 #define SIGN(X) ((X<0)?-1:1)
@@ -298,30 +276,39 @@ proc/isInSight(var/atom/A, var/atom/B)
 		else
 			return get_step(start, EAST)
 
-/proc/try_move_adjacent(atom/movable/AM)
-	var/turf/T = get_turf(AM)
-	for(var/direction in cardinal)
-		if(AM.Move(get_step(T, direction)))
-			break
-
 /proc/get_mob_by_key(var/key)
 	for(var/mob/M in mob_list)
 		if(M.ckey == lowertext(key))
 			return M
 	return null
 
-// Will return a list of active candidates. It increases the buffer 5 times until it finds a candidate which is active within the buffer.
 
-/proc/get_candidates(be_special_flag=0, afk_bracket=3000)
-	var/list/candidates = list()
-	// Keep looping until we find a non-afk candidate within the time bracket (we limit the bracket to 10 minutes (6000))
-	while(!candidates.len && afk_bracket < 6000)
+// Will return a list of active candidates. It increases the buffer 5 times until it finds a candidate which is active within the buffer.
+/proc/get_active_candidates(var/buffer = 1)
+
+	var/list/candidates = list() //List of candidate KEYS to assume control of the new larva ~Carn
+	var/i = 0
+	while(candidates.len <= 0 && i < 5)
 		for(var/mob/dead/observer/G in player_list)
-			if(G.client != null)
+			if(((G.client.inactivity/10)/60) <= buffer + i) // the most active players are more likely to become an alien
 				if(!(G.mind && G.mind.current && G.mind.current.stat != DEAD))
-					if(!G.client.is_afk(afk_bracket) && (G.client.prefs.be_special & be_special_flag))
-						candidates += G.client
-		afk_bracket += 600 // Add a minute to the bracket, for every attempt
+					candidates += G.key
+		i++
+	return candidates
+
+// Same as above but for alien candidates.
+
+/proc/get_alien_candidates()
+
+	var/list/candidates = list() //List of candidate KEYS to assume control of the new larva ~Carn
+	var/i = 0
+	while(candidates.len <= 0 && i < 5)
+		for(var/mob/dead/observer/G in player_list)
+			if(G.client.prefs.be_special & BE_ALIEN)
+				if(((G.client.inactivity/10)/60) <= ALIEN_SELECT_AFK_BUFFER + i) // the most active players are more likely to become an alien
+					if(!(G.mind && G.mind.current && G.mind.current.stat != DEAD))
+						candidates += G.key
+		i++
 	return candidates
 
 /proc/ScreenText(obj/O, maptext="", screen_loc="CENTER-7,CENTER-7", maptext_height=480, maptext_width=480)
@@ -342,29 +329,7 @@ proc/isInSight(var/atom/A, var/atom/B)
 			for(var/client/C in group)
 				C.screen -= O
 
-/proc/flick_overlay(image/I, list/show_to, duration)
-	for(var/client/C in show_to)
-		C.images += I
-	sleep(duration)
-	for(var/client/C in show_to)
-		C.images -= I
-
-/proc/get_active_player_count()
-	// Get active players who are playing in the round
-	var/active_players = 0
-	for(var/i = 1; i <= player_list.len; i++)
-		var/mob/M = player_list[i]
-		if(M && M.client)
-			if(istype(M, /mob/new_player)) // exclude people in the lobby
-				continue
-			else if(isobserver(M)) // Ghosts are fine if they were playing once (didn't start as observers)
-				var/mob/dead/observer/O = M
-				if(O.started_as_observer) // Exclude people who started as observers
-					continue
-			active_players++
-	return active_players
-
-/datum/projectile_data
+datum/projectile_data
 	var/src_x
 	var/src_y
 	var/time
@@ -401,3 +366,36 @@ proc/isInSight(var/atom/A, var/atom/B)
 	var/dest_y = src_y + distance*cos(rotation);
 
 	return new /datum/projectile_data(src_x, src_y, time, distance, power_x, power_y, dest_x, dest_y)
+
+/proc/GetRedPart(const/hexa)
+	return hex2num(copytext(hexa,2,4))
+
+/proc/GetGreenPart(const/hexa)
+	return hex2num(copytext(hexa,4,6))
+
+/proc/GetBluePart(const/hexa)
+	return hex2num(copytext(hexa,6,8))
+
+/proc/GetHexColors(const/hexa)
+	return list(
+			GetRedPart(hexa),
+			GetGreenPart(hexa),
+			GetBluePart(hexa)
+		)
+
+/proc/MixColors(const/list/colors)
+	var/list/reds = list()
+	var/list/blues = list()
+	var/list/greens = list()
+	var/list/weights = list()
+
+	for (var/i = 0, ++i <= colors.len)
+		reds.Add(GetRedPart(colors[i]))
+		blues.Add(GetBluePart(colors[i]))
+		greens.Add(GetGreenPart(colors[i]))
+		weights.Add(1)
+
+	var/r = mixOneColor(weights, reds)
+	var/g = mixOneColor(weights, greens)
+	var/b = mixOneColor(weights, blues)
+	return rgb(r,g,b)

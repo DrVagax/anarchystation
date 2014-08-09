@@ -1,18 +1,22 @@
 /obj
-	//var/datum/module/mod		//not used
-	var/m_amt = 0	// metal
-	var/g_amt = 0	// glass
+	//Used to store information about the contents of the object.
+	var/list/matter
+
 	var/origin_tech = null	//Used by R&D to determine what research bonuses it grants.
 	var/reliability = 100	//Used by SOME devices to determine how reliable they are.
 	var/crit_fail = 0
 	var/unacidable = 0 //universal "unacidabliness" var, here so you can use it in any obj.
 	animate_movement = 2
-	var/throwforce = 0
+	var/throwforce = 1
 	var/list/attack_verb = list() //Used in attackby() to say how something was attacked "[x] has been [z.attack_verb] by [y] with [z]"
+	var/sharp = 0		// whether this object cuts
+	var/edge = 0		// whether this object is more likely to dismember
 	var/in_use = 0 // If we have a user using us, this will be set on. We will check if the user has stopped using us, and thus stop updating and LAGGING EVERYTHING!
 
 	var/damtype = "brute"
 	var/force = 0
+
+/obj/item/proc/is_used_on(obj/O, mob/user)
 
 /obj/proc/process()
 	processing_objects.Remove(src)
@@ -41,11 +45,8 @@
 	//		null if object handles breathing logic for lifeform
 	//		datum/air_group to tell lifeform to process using that breath return
 	//DEFAULT: Take air from turf to give to have mob process
-
 	if(breath_request>0)
-		var/datum/gas_mixture/environment = return_air()
-		var/breath_percentage = BREATH_VOLUME / environment.return_volume()
-		return remove_air(environment.total_moles() * breath_percentage)
+		return remove_air(breath_request)
 	else
 		return null
 
@@ -93,9 +94,6 @@
 /obj/proc/interact(mob/user)
 	return
 
-/obj/proc/container_resist()
-	return
-
 /obj/proc/update_icon()
 	return
 
@@ -123,6 +121,8 @@
 
 
 /obj/proc/hear_talk(mob/M as mob, text)
+	if(talking_atom)
+		talking_atom.catchMessage(text, M)
 /*
 	var/mob/mo = locate(/mob) in src
 	if(mo)
@@ -130,13 +130,3 @@
 		mo.show_message(rendered, 2)
 		*/
 	return
-
-
-
-//If a mob logouts/logins in side of an object you can use this proc
-/obj/proc/on_log()
-	..()
-	if(isobj(loc))
-		var/obj/Loc=loc
-		Loc.on_log()
-

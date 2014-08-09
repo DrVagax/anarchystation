@@ -10,20 +10,19 @@
 	name = "electrode"
 	icon_state = "spark"
 	nodamage = 1
-	stun = 5
-	weaken = 5
-	stutter = 5
-	hitsound = "sparks"
+	/*
+	stun = 10
+	weaken = 10
+	stutter = 10
+	*/
+	agony = 40
+	damage_type = HALLOSS
+	//Damage will be handled on the MOB side, to prevent window shattering.
 
-	on_hit(var/atom/target, var/blocked = 0)
-		if(!ismob(target) || blocked >= 2) //Fully blocked by mob or collided with dense object - burst into sparks!
-			var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread
-			sparks.set_up(1, 1, src)
-			sparks.start()
-		..()
+
 
 /obj/item/projectile/energy/declone
-	name = "declown"
+	name = "declone"
 	icon_state = "declone"
 	nodamage = 1
 	damage_type = CLONE
@@ -44,8 +43,8 @@
 	damage = 10
 	damage_type = TOX
 	nodamage = 0
-	weaken = 5
-	stutter = 5
+	agony = 40
+	stutter = 10
 
 
 /obj/item/projectile/energy/bolt/large
@@ -53,8 +52,17 @@
 	damage = 20
 
 
+/obj/item/projectile/energy/neurotoxin
+	name = "neuro"
+	icon_state = "neurotoxin"
+	damage = 5
+	damage_type = TOX
+	weaken = 5
 
-
-
-
+/obj/item/projectile/energy/phoron
+	name = "phoron bolt"
+	icon_state = "energy"
+	damage = 20
+	damage_type = TOX
+	irradiate = 20
 

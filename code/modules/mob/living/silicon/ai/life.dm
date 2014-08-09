@@ -28,12 +28,16 @@
 				src.reset_view(null)
 
 		// Handle power damage (oxy)
-		if(src.aiRestorePowerRoutine != 0)
+		if(src:aiRestorePowerRoutine != 0)
 			// Lost power
 			adjustOxyLoss(1)
 		else
 			// Gain Power
 			adjustOxyLoss(-1)
+
+		// Handle EMP-stun
+		if(stunned)
+			AdjustStunned(-1)
 
 		//stage = 1
 		//if (istype(src, /mob/living/silicon/ai)) // Are we not sure what we are?
@@ -49,22 +53,29 @@
 					//stage = 5
 					blind = 1
 
-		if (!blind)
+		if (!blind)	//lol? if(!blind)	#if(src.blind.layer)    <--something here is clearly wrong :P
+					//I'll get back to this when I find out  how this is -supposed- to work ~Carn //removed this shit since it was confusing as all hell --39kk9t
 			//stage = 4.5
-			if (src.blind.layer != 0)
-				src.blind.layer = 0
 			src.sight |= SEE_TURFS
 			src.sight |= SEE_MOBS
 			src.sight |= SEE_OBJS
 			src.see_in_dark = 8
 			src.see_invisible = SEE_INVISIBLE_LEVEL_TWO
-			if(see_override)
-				see_invisible = see_override
 
+
+			//Congratulations!  You've found a way for AI's to run without using power!
+			//Todo:  Without snowflaking up master_controller procs find a way to make AI use_power but only when APC's clear the area usage the tick prior
+			//       since mobs are in master_controller before machinery.  We also have to do it in a manner where we don't reset the entire area's need to update
+			//	 the power usage.
+			//
+			//	 We can probably create a new machine that resides inside of the AI contents that uses power using the idle_usage of 1000 and nothing else and
+			//       be fine.
+/*
 			var/area/home = get_area(src)
 			if(!home)	return//something to do with malf fucking things up I guess. <-- aisat is gone. is this still necessary? ~Carn
 			if(home.powered(EQUIP))
 				home.use_power(1000, EQUIP)
+*/
 
 			if (src:aiRestorePowerRoutine==2)
 				src << "Alert cancelled. Power has been restored without our assistance."
@@ -94,8 +105,8 @@
 
 					src << "You've lost power!"
 //							world << "DEBUG CODE TIME! [loc] is the area the AI is sucking power from"
-					//if (!is_special_character(src))
-						//src.set_zeroth_law("")
+					if (!is_special_character(src))
+						src.set_zeroth_law("")
 					//src.clear_supplied_laws() // Don't reset our laws.
 					//var/time = time2text(world.realtime,"hh:mm:ss")
 					//lawchanges.Add("[time] <b>:</b> [src.name]'s noncore laws have been reset due to power failure")
@@ -105,7 +116,7 @@
 						if (loc.master.power_equip)
 							if (!istype(T, /turf/space))
 								src << "Alert cancelled. Power has been restored without our assistance."
-								src.aiRestorePowerRoutine = 0
+								src:aiRestorePowerRoutine = 0
 								src.blind.layer = 0
 								return
 						src << "Fault confirmed: missing external power. Shutting down main control system to save power."
@@ -165,9 +176,10 @@
 
 /mob/living/silicon/ai/updatehealth()
 	if(status_flags & GODMODE)
-		health = maxHealth
+		health = 100
 		stat = CONSCIOUS
-		return
-	health = maxHealth - getOxyLoss() - getToxLoss() - getBruteLoss()
-	if(!fire_res_on_core)
-		health -= getFireLoss()
+	else
+		if(fire_res_on_core)
+			health = 100 - getOxyLoss() - getToxLoss() - getBruteLoss()
+		else
+			health = 100 - getOxyLoss() - getToxLoss() - getFireLoss() - getBruteLoss()

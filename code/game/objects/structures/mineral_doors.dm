@@ -13,29 +13,18 @@
 	var/mineralType = "metal"
 	var/state = 0 //closed, 1 == open
 	var/isSwitchingStates = 0
-	var/close_delay = -1 //-1 if does not auto close.
 	var/hardness = 1
 	var/oreAmount = 7
-	var/openSound = 'sound/effects/stonedoor_openclose.ogg'
-	var/closeSound = 'sound/effects/stonedoor_openclose.ogg'
 
 	New(location)
 		..()
 		icon_state = mineralType
 		name = "[mineralType] door"
-		air_update_turf(1)
-		return
+		update_nearby_tiles(need_rebuild=1)
 
 	Del()
-		density = 0
-		air_update_turf(1)
+		update_nearby_tiles()
 		..()
-		return
-
-	Move()
-		var/turf/T = loc
-		..()
-		move_update_air(T)
 
 	Bumped(atom/user)
 		..()
@@ -62,9 +51,6 @@
 			return !opacity
 		return !density
 
-	CanAtmosPass()
-		return !density
-
 	proc/TryToSwitchState(atom/user)
 		if(isSwitchingStates) return
 		if(ismob(user))
@@ -88,35 +74,27 @@
 
 	proc/Open()
 		isSwitchingStates = 1
-		playsound(loc, openSound, 100, 1)
+		playsound(loc, 'sound/effects/stonedoor_openclose.ogg', 100, 1)
 		flick("[mineralType]opening",src)
 		sleep(10)
 		density = 0
 		opacity = 0
 		state = 1
-		air_update_turf(1)
 		update_icon()
 		isSwitchingStates = 0
-
-		if(close_delay != -1)
-			spawn(close_delay)
-				if(!isSwitchingStates && state == 1)
-					Close()
+		update_nearby_tiles()
 
 	proc/Close()
-		var/turf/T = get_turf(src)
-		for(var/mob/living/L in T)
-			return
 		isSwitchingStates = 1
-		playsound(loc, closeSound, 100, 1)
+		playsound(loc, 'sound/effects/stonedoor_openclose.ogg', 100, 1)
 		flick("[mineralType]closing",src)
 		sleep(10)
 		density = 1
 		opacity = 1
 		state = 0
-		air_update_turf(1)
 		update_icon()
 		isSwitchingStates = 0
+		update_nearby_tiles()
 
 	update_icon()
 		if(state)
@@ -138,14 +116,6 @@
 		else
 			attack_hand(user)
 		return
-
-
-	bullet_act(var/obj/item/projectile/Proj)
-		hardness -= Proj.damage
-		..()
-		CheckHardness()
-		return
-
 
 	proc/CheckHardness()
 		if(hardness <= 0)
@@ -187,7 +157,11 @@
 				CheckHardness()
 		return
 
-
+	proc/update_nearby_tiles(need_rebuild) //Copypasta from airlock code
+		if(!air_master)
+			return 0
+		air_master.mark_for_update(get_turf(src))
+		return 1
 
 /obj/structure/mineral_door/iron
 	mineralType = "metal"
@@ -216,8 +190,8 @@
 		..()
 		opacity = 0
 
-/obj/structure/mineral_door/transparent/plasma
-	mineralType = "plasma"
+/obj/structure/mineral_door/transparent/phoron
+	mineralType = "phoron"
 
 	attackby(obj/item/weapon/W as obj, mob/user as mob)
 		if(istype(W,/obj/item/weapon/weldingtool))
@@ -226,14 +200,25 @@
 				TemperatureAct(100)
 		..()
 
-	temperature_expose(datum/gas_mixture/air, exposed_temperature, exposed_volume)
+	fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume)
 		if(exposed_temperature > 300)
 			TemperatureAct(exposed_temperature)
 
 	proc/TemperatureAct(temperature)
-		atmos_spawn_air(SPAWN_HEAT | SPAWN_TOXINS, 500)
-		hardness = 0
-		CheckHardness()
+		for(var/turf/simulated/floor/target_tile in range(2,loc))
+
+			var/datum/gas_mixture/napalm = new
+
+			var/phoronToDeduce = temperature/10
+
+			napalm.phoron = phoronToDeduce
+			napalm.temperature = 200+T0C
+
+			target_tile.assume_air(napalm)
+			spawn (0) target_tile.hotspot_expose(temperature, 400)
+
+			hardness -= phoronToDeduce/100
+			CheckHardness()
 
 /obj/structure/mineral_door/transparent/diamond
 	mineralType = "diamond"
@@ -242,8 +227,28 @@
 /obj/structure/mineral_door/wood
 	mineralType = "wood"
 	hardness = 1
-	openSound = 'sound/effects/doorcreaky.ogg'
-	closeSound = 'sound/effects/doorcreaky.ogg'
+
+	Open()
+		isSwitchingStates = 1
+		playsound(loc, 'sound/effects/doorcreaky.ogg', 100, 1)
+		flick("[mineralType]opening",src)
+		sleep(10)
+		density = 0
+		opacity = 0
+		state = 1
+		update_icon()
+		isSwitchingStates = 0
+
+	Close()
+		isSwitchingStates = 1
+		playsound(loc, 'sound/effects/doorcreaky.ogg', 100, 1)
+		flick("[mineralType]closing",src)
+		sleep(10)
+		density = 1
+		opacity = 1
+		state = 0
+		update_icon()
+		isSwitchingStates = 0
 
 	Dismantle(devastated = 0)
 		if(!devastated)
@@ -253,14 +258,38 @@
 
 /obj/structure/mineral_door/resin
 	mineralType = "resin"
-	hardness = 1
-	close_delay = 100
-	openSound = 'sound/effects/attackblob.ogg'
-	closeSound = 'sound/effects/attackblob.ogg'
+	hardness = 1.5
+	var/close_delay = 100
 
 	TryToSwitchState(atom/user)
 		if(isalien(user))
 			return ..()
+
+	Open()
+		isSwitchingStates = 1
+		playsound(loc, 'sound/effects/attackblob.ogg', 100, 1)
+		flick("[mineralType]opening",src)
+		sleep(10)
+		density = 0
+		opacity = 0
+		state = 1
+		update_icon()
+		isSwitchingStates = 0
+
+		spawn(close_delay)
+			if(!isSwitchingStates && state == 1)
+				Close()
+
+	Close()
+		isSwitchingStates = 1
+		playsound(loc, 'sound/effects/attackblob.ogg', 100, 1)
+		flick("[mineralType]closing",src)
+		sleep(10)
+		density = 1
+		opacity = 1
+		state = 0
+		update_icon()
+		isSwitchingStates = 0
 
 	Dismantle(devastated = 0)
 		del(src)

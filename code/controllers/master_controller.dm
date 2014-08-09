@@ -30,26 +30,21 @@ datum/controller/game_controller
 	var/total_cost		= 0
 
 	var/last_thing_processed
+	var/mob/list/expensive_mobs = list()
+	var/rebuild_active_areas = 0
+
+	var/list/shuttle_list	                    // For debugging and VV
+	var/datum/ore_distribution/asteroid_ore_map // For debugging and VV.
+
 
 datum/controller/game_controller/New()
 	//There can be only one master_controller. Out with the old and in with the new.
 	if(master_controller != src)
+		log_debug("Rebuilding Master Controller")
 		if(istype(master_controller))
 			Recover()
 			del(master_controller)
 		master_controller = src
-
-	createRandomZlevel()			//probably shouldn't be here!
-
-	for(var/i=0, i<max_secret_rooms, i++)
-		make_mining_asteroid_secret()
-
-	if(!events)
-		new /datum/controller/event()
-
-	if(!air_master)
-		air_master = new /datum/controller/air_system()
-		air_master.setup()
 
 	if(!job_master)
 		job_master = new /datum/controller/occupations()
@@ -59,36 +54,54 @@ datum/controller/game_controller/New()
 
 	if(!syndicate_code_phrase)		syndicate_code_phrase	= generate_code_phrase()
 	if(!syndicate_code_response)	syndicate_code_response	= generate_code_phrase()
-	if(!ticker)						ticker = new /datum/controller/gameticker()
-	if(!emergency_shuttle)			emergency_shuttle = new /datum/shuttle_controller/emergency_shuttle()
-	if(!supply_shuttle)				supply_shuttle = new /datum/controller/supply_shuttle()
-
+	if(!emergency_shuttle)			emergency_shuttle = new /datum/emergency_shuttle_controller()
+	if(!shuttle_controller)			shuttle_controller = new /datum/shuttle_controller()
 
 datum/controller/game_controller/proc/setup()
 	world.tick_lag = config.Ticklag
 
+	spawn(20)
+		createRandomZlevel()
+
+	if(!air_master)
+		air_master = new /datum/controller/air_system()
+		air_master.Setup()
+
+	if(!ticker)
+		ticker = new /datum/controller/gameticker()
+
 	setup_objects()
 	setupgenetics()
 	setupfactions()
+	setup_economy()
+	SetupXenoarch()
+
+	transfer_controller = new
+
+	for(var/i=0, i<max_secret_rooms, i++)
+		make_mining_asteroid_secret()
 
 	spawn(0)
 		if(ticker)
 			ticker.pregame()
 
+	lighting_controller.Initialize()
+
+
 datum/controller/game_controller/proc/setup_objects()
-	world << "\red \b Connection to server established..."
+	world << "\red \b Initializing objects"
 	sleep(-1)
 	for(var/atom/movable/object in world)
 		object.initialize()
 
-	world << "\red \b Generating station..."
+	world << "\red \b Initializing pipe networks"
 	sleep(-1)
-	for(var/obj/machinery/atmospherics/machine in world)
+	for(var/obj/machinery/atmospherics/machine in machines)
 		machine.build_network()
 
-	world << "\red \b CPU = i7@3.00GHz -=- RAM = 4 Gigabyte..."
+	world << "\red \b Initializing atmos machinery."
 	sleep(-1)
-	for(var/obj/machinery/atmospherics/unary/U in world)
+	for(var/obj/machinery/atmospherics/unary/U in machines)
 		if(istype(U, /obj/machinery/atmospherics/unary/vent_pump))
 			var/obj/machinery/atmospherics/unary/vent_pump/T = U
 			T.broadcast_status()
@@ -96,19 +109,25 @@ datum/controller/game_controller/proc/setup_objects()
 			var/obj/machinery/atmospherics/unary/vent_scrubber/T = U
 			T.broadcast_status()
 
-	world << "\red \b Pinging master server..."
-	sleep(-1)
-	for(var/turf/simulated/floor/F in world)
-		F.MakeDirty()
+	//Create the mining ore distribution map.
+	//Create the mining ore distribution map.
+	asteroid_ore_map = new /datum/ore_distribution()
+	asteroid_ore_map.populate_distribution_map()
 
-	world << "\red \b Server systems completely loaded!"
+	//Set up spawn points.
+	populate_spawn_points()
+
+	//Set up gear list.
+	populate_gear_list()
+
+	world << "\red \b Initializations complete."
 	sleep(-1)
 
 
 datum/controller/game_controller/proc/process()
 	processing = 1
 	spawn(0)
-		set background = BACKGROUND_ENABLED
+		set background = 1
 		while(1)	//far more efficient than recursively calling ourself
 			if(!Failsafe)	new /datum/controller/failsafe()
 
@@ -122,14 +141,27 @@ datum/controller/game_controller/proc/process()
 				controller_iteration++
 
 				vote.process()
+				transfer_controller.process()
+				shuttle_controller.process()
+				process_newscaster()
 
 				//AIR
+
 				if(!air_processing_killed)
 					timer = world.timeofday
 					last_thing_processed = air_master.type
-					air_master.process()
+
+					if(!air_master.Tick()) //Runtimed.
+						air_master.failed_ticks++
+						if(air_master.failed_ticks > 5)
+							world << "<font color='red'><b>RUNTIMES IN ATMOS TICKER.  Killing air simulation!</font></b>"
+							world.log << "### ZAS SHUTDOWN"
+							message_admins("ZASALERT: unable to run [air_master.tick_progress], shutting down!")
+							log_admin("ZASALERT: unable run zone/process() -- [air_master.tick_progress]")
+							air_processing_killed = 1
+							air_master.failed_ticks = 0
+
 					air_cost = (world.timeofday - timer) / 10
-					global_activeturfs = air_master.active_turfs.len
 
 				sleep(breather_ticks)
 
@@ -189,10 +221,11 @@ datum/controller/game_controller/proc/process()
 				process_nano()
 				nano_cost = (world.timeofday - timer) / 10
 
+				sleep(breather_ticks)
+
 				//EVENTS
 				timer = world.timeofday
-				last_thing_processed = /datum/round_event
-				events.process()
+				process_events()
 				events_cost = (world.timeofday - timer) / 10
 
 				//TICKER
@@ -205,32 +238,23 @@ datum/controller/game_controller/proc/process()
 				total_cost = air_cost + sun_cost + mobs_cost + diseases_cost + machines_cost + objects_cost + networks_cost + powernets_cost + nano_cost + events_cost + ticker_cost
 
 				var/end_time = world.timeofday
-				if(end_time < start_time)
-					start_time -= MIDNIGHT_ROLLOVER    //deciseconds in a day
+				if(end_time < start_time)	//why not just use world.time instead?
+					start_time -= 864000    //deciseconds in a day
 				sleep( round(minimum_ticks - (end_time - start_time),1) )
 			else
 				sleep(10)
 
-/*
-datum/controller/game_controller/proc/process_liquid()
-	last_thing_processed = /datum/puddle
-	var/i = 1
-	while(i<=puddles.len)
-		var/datum/puddle/Puddle = puddles[i]
-		if(Puddle)
-			Puddle.process()
-			i++
-			continue
-		puddles.Cut(i,i+1)
-*/
-
 datum/controller/game_controller/proc/process_mobs()
 	var/i = 1
+	expensive_mobs.Cut()
 	while(i<=mob_list.len)
 		var/mob/M = mob_list[i]
 		if(M)
+			var/clock = world.timeofday
 			last_thing_processed = M.type
 			M.Life()
+			if((world.timeofday - clock) > 1)
+				expensive_mobs += M
 			i++
 			continue
 		mob_list.Cut(i,i+1)
@@ -247,6 +271,10 @@ datum/controller/game_controller/proc/process_diseases()
 		active_diseases.Cut(i,i+1)
 
 datum/controller/game_controller/proc/process_machines()
+	process_machines_process()
+	process_machines_power()
+	process_machines_rebuild()
+datum/controller/game_controller/proc/process_machines_process()
 	var/i = 1
 	while(i<=machines.len)
 		var/obj/machinery/Machine = machines[i]
@@ -254,11 +282,37 @@ datum/controller/game_controller/proc/process_machines()
 			last_thing_processed = Machine.type
 			if(Machine.process() != PROCESS_KILL)
 				if(Machine)
-					if(Machine.use_power)
-						Machine.auto_use_power()
 					i++
 					continue
 		machines.Cut(i,i+1)
+
+datum/controller/game_controller/proc/process_machines_power()
+	var/i=1
+	while(i<=active_areas.len)
+		var/area/A = active_areas[i]
+		if(A.powerupdate && A.master == A)
+			A.powerupdate -= 1
+			for(var/area/SubArea in A.related)
+				for(var/obj/machinery/M in SubArea)
+					if(M)
+						if(M.use_power)
+							M.auto_use_power()
+
+		if(A.apc.len && A.master == A)
+			i++
+			continue
+
+		A.powerupdate = 0
+		active_areas.Cut(i,i+1)
+
+datum/controller/game_controller/proc/process_machines_rebuild()
+	if(controller_iteration % 150 == 0 || rebuild_active_areas)	//Every 300 seconds we retest every area/machine
+		for(var/area/A in all_areas)
+			if(A == A.master)
+				A.powerupdate += 1
+				active_areas |= A
+		rebuild_active_areas = 0
+
 
 datum/controller/game_controller/proc/process_objects()
 	var/i = 1
@@ -297,17 +351,29 @@ datum/controller/game_controller/proc/process_nano()
 	var/i = 1
 	while(i<=nanomanager.processing_uis.len)
 		var/datum/nanoui/ui = nanomanager.processing_uis[i]
-		if(ui && ui.src_object && ui.user)
+		if(ui)
 			ui.process()
 			i++
 			continue
 		nanomanager.processing_uis.Cut(i,i+1)
 
+datum/controller/game_controller/proc/process_events()
+	last_thing_processed = /datum/event
+	var/i = 1
+	while(i<=events.len)
+		var/datum/event/Event = events[i]
+		if(Event)
+			Event.process()
+			i++
+			continue
+		events.Cut(i,i+1)
+	checkEvent()
+
 datum/controller/game_controller/proc/Recover()		//Mostly a placeholder for now.
 	var/msg = "## DEBUG: [time2text(world.timeofday)] MC restarted. Reports:\n"
 	for(var/varname in master_controller.vars)
 		switch(varname)
-			if("tag","type","parent_type","vars")	continue
+			if("tag","bestF","type","parent_type","vars")	continue
 			else
 				var/varval = master_controller.vars[varname]
 				if(istype(varval,/datum))
@@ -316,3 +382,4 @@ datum/controller/game_controller/proc/Recover()		//Mostly a placeholder for now.
 				else
 					msg += "\t [varname] = [varval]\n"
 	world.log << msg
+

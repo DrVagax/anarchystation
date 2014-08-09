@@ -22,9 +22,9 @@
 
 /obj/effect/spider/attackby(var/obj/item/weapon/W, var/mob/user)
 	if(W.attack_verb.len)
-		visible_message("<span class='danger'>\The [src] has been [pick(W.attack_verb)] with \the [W][(user ? " by [user]." : ".")]!</span>")
+		visible_message("\red <B>\The [src] have been [pick(W.attack_verb)] with \the [W][(user ? " by [user]." : ".")]")
 	else
-		visible_message("<span class='danger'>\The [src] has been attacked with \the [W][(user ? " by [user]." : ".")]!</span>")
+		visible_message("\red <B>\The [src] have been attacked with \the [W][(user ? " by [user]." : ".")]")
 
 	var/damage = W.force / 4.0
 
@@ -47,7 +47,7 @@
 	if(health <= 0)
 		del(src)
 
-/obj/effect/spider/temperature_expose(datum/gas_mixture/air, exposed_temperature, exposed_volume)
+/obj/effect/spider/fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume)
 	if(exposed_temperature > 300)
 		health -= 5
 		healthcheck()
@@ -83,7 +83,7 @@
 /obj/effect/spider/eggcluster/process()
 	amount_grown += rand(0,2)
 	if(amount_grown >= 100)
-		var/num = rand(3,12)
+		var/num = rand(6,24)
 		for(var/i=0, i<num, i++)
 			new /obj/effect/spider/spiderling(src.loc)
 		del(src)
@@ -93,16 +93,18 @@
 	desc = "It never stays still for long."
 	icon_state = "spiderling"
 	anchored = 0
-	layer = 2.75
+	layer = 2.7
 	health = 3
-	var/amount_grown = 0
-	var/grow_as = null
+	var/amount_grown = -1
 	var/obj/machinery/atmospherics/unary/vent_pump/entry_vent
 	var/travelling_in_vent = 0
 	New()
 		pixel_x = rand(6,-6)
 		pixel_y = rand(6,-6)
 		processing_objects.Add(src)
+		//50% chance to grow up
+		if(prob(50))
+			amount_grown = 1
 
 /obj/effect/spider/spiderling/Bump(atom/user)
 	if(istype(user, /obj/structure/table))
@@ -112,6 +114,7 @@
 
 /obj/effect/spider/spiderling/proc/die()
 	visible_message("<span class='alert'>[src] dies!</span>")
+	new /obj/effect/decal/cleanable/spiderling_remains(src.loc)
 	del(src)
 
 /obj/effect/spider/spiderling/healthcheck()
@@ -133,8 +136,8 @@
 					entry_vent = null
 					return
 				var/obj/machinery/atmospherics/unary/vent_pump/exit_vent = pick(vents)
-				if(prob(50))
-					src.visible_message("<B>[src] scrambles into the ventillation ducts!</B>")
+				/*if(prob(50))
+					src.visible_message("<B>[src] scrambles into the ventillation ducts!</B>")*/
 
 				spawn(rand(20,60))
 					loc = exit_vent
@@ -163,27 +166,35 @@
 				entry_vent = null
 	//=================
 
-	else if(prob(33))
-		var/list/nearby = oview(10, src)
+	else if(prob(25))
+		var/list/nearby = oview(5, src)
 		if(nearby.len)
 			var/target_atom = pick(nearby)
-			walk_to(src, target_atom)
-			if(prob(40))
-				src.visible_message("\blue \The [src] skitters[pick(" away"," around","")].")
-	else if(prob(10))
+			walk_to(src, target_atom, 5)
+			if(prob(25))
+				src.visible_message("\blue \the [src] skitters[pick(" away"," around","")].")
+	else if(prob(5))
 		//ventcrawl!
 		for(var/obj/machinery/atmospherics/unary/vent_pump/v in view(7,src))
 			if(!v.welded)
 				entry_vent = v
-				walk_to(src, entry_vent, 1)
+				walk_to(src, entry_vent, 5)
 				break
-	if(isturf(loc))
+
+	if(prob(1))
+		src.visible_message("\blue \the [src] chitters.")
+	if(isturf(loc) && amount_grown > 0)
 		amount_grown += rand(0,2)
 		if(amount_grown >= 100)
-			if(!grow_as)
-				grow_as = pick(typesof(/mob/living/simple_animal/hostile/giant_spider))
-			new grow_as(src.loc)
+			var/spawn_type = pick(typesof(/mob/living/simple_animal/hostile/giant_spider))
+			new spawn_type(src.loc)
 			del(src)
+
+/obj/effect/decal/cleanable/spiderling_remains
+	name = "spiderling remains"
+	desc = "Green squishy mess."
+	icon = 'icons/effects/effects.dmi'
+	icon_state = "greenshatter"
 
 /obj/effect/spider/cocoon
 	name = "cocoon"
@@ -191,25 +202,11 @@
 	icon_state = "cocoon1"
 	health = 60
 
-/obj/effect/spider/cocoon/New()
+	New()
 		icon_state = pick("cocoon1","cocoon2","cocoon3")
 
-/obj/effect/spider/cocoon/container_resist()
-	var/mob/living/user = usr
-	var/breakout_time = 2
-	user.next_move = world.time + 100
-	user.last_special = world.time + 100
-	user << "<span class='notice'>You struggle against the tight bonds! (This will take about [breakout_time] minutes.)</span>"
-	visible_message("You see something struggling and writhing in the [src]!")
-	if(do_after(user,(breakout_time*60*10)))
-		if(!user || user.stat != CONSCIOUS || user.loc != src)
-			return
-		Del()
-
-
-
 /obj/effect/spider/cocoon/Del()
-	src.visible_message("\red \The [src] splits open.")
+	src.visible_message("\red \the [src] splits open.")
 	for(var/atom/movable/A in contents)
 		A.loc = src.loc
 	..()

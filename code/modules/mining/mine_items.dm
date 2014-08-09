@@ -30,22 +30,13 @@
 	new /obj/item/clothing/under/rank/miner(src)
 	new /obj/item/clothing/gloves/black(src)
 	new /obj/item/clothing/shoes/black(src)
-	new /obj/item/device/mining_scanner(src)
+	new /obj/item/device/analyzer(src)
 	new /obj/item/weapon/storage/bag/ore(src)
 	new /obj/item/device/flashlight/lantern(src)
 	new /obj/item/weapon/shovel(src)
 	new /obj/item/weapon/pickaxe(src)
 	new /obj/item/clothing/glasses/meson(src)
 
-
-/**********************Shuttle Computer**************************/
-
-
-/obj/machinery/computer/shuttle/mining
-	name = "Mining Shuttle Console"
-	req_access = list(access_mining)
-	circuit = /obj/item/weapon/circuitboard/mining_shuttle
-	id = "mining"
 
 /******************************Lantern*******************************/
 
@@ -61,16 +52,21 @@
 	name = "pickaxe"
 	icon = 'icons/obj/items.dmi'
 	icon_state = "pickaxe"
-	flags = CONDUCT
+	flags = FPRINT | TABLEPASS| CONDUCT
 	slot_flags = SLOT_BELT
 	force = 15.0
-	throwforce = 10.0
+	throwforce = 4.0
 	item_state = "pickaxe"
 	w_class = 4.0
-	m_amt = 3750 //one sheet, but where can you make them?
+	matter = list("metal" = 3750)
 	var/digspeed = 40 //moving the delay to an item var so R&D can make improved picks. --NEO
 	origin_tech = "materials=1;engineering=1"
 	attack_verb = list("hit", "pierced", "sliced", "attacked")
+	var/drill_sound = 'sound/weapons/Genhit.ogg'
+	var/drill_verb = "picking"
+	sharp = 1
+
+	var/excavation_amount = 100
 
 	hammer
 		name = "sledgehammer"
@@ -92,14 +88,16 @@
 		digspeed = 30
 		origin_tech = "materials=2;powerstorage=3;engineering=2"
 		desc = "Yours is the drill that will pierce through the rock walls."
+		drill_verb = "drilling"
 
 	jackhammer
 		name = "sonic jackhammer"
 		icon_state = "jackhammer"
 		item_state = "jackhammer"
-		digspeed = 15 //faster than drill, but cannot dig
+		digspeed = 20 //faster than drill, but cannot dig
 		origin_tech = "materials=3;powerstorage=2;engineering=2"
 		desc = "Cracks rocks with sonic blasts, perfect for killing cave lizards."
+		drill_verb = "hammering"
 
 	gold
 		name = "golden pickaxe"
@@ -116,8 +114,9 @@
 		w_class = 3.0 //it is smaller than the pickaxe
 		damtype = "fire"
 		digspeed = 20 //Can slice though normal walls, all girders, or be used in reinforced wall deconstruction/ light thermite on fire
-		origin_tech = "materials=4;plasmatech=3;engineering=3"
+		origin_tech = "materials=4;phorontech=3;engineering=3"
 		desc = "A rock cutter that uses bursts of hot plasma. You could use it to cut limbs off of xenos! Or, you know, mine stuff."
+		drill_verb = "cutting"
 
 	diamond
 		name = "diamond pickaxe"
@@ -134,13 +133,15 @@
 		digspeed = 5 //Digs through walls, girders, and can dig up sand
 		origin_tech = "materials=6;powerstorage=4;engineering=5"
 		desc = "Yours is the drill that will pierce the heavens!"
+		drill_verb = "drilling"
 
 	borgdrill
 		name = "cyborg mining drill"
-		icon_state = "jackhammer"
+		icon_state = "diamonddrill"
 		item_state = "jackhammer"
 		digspeed = 15
 		desc = ""
+		drill_verb = "drilling"
 
 /*****************************Shovel********************************/
 
@@ -149,13 +150,13 @@
 	desc = "A large tool for digging and moving dirt."
 	icon = 'icons/obj/items.dmi'
 	icon_state = "shovel"
-	flags = CONDUCT
+	flags = FPRINT | TABLEPASS| CONDUCT
 	slot_flags = SLOT_BELT
 	force = 8.0
 	throwforce = 4.0
 	item_state = "shovel"
 	w_class = 3.0
-	m_amt = 50
+	matter = list("metal" = 50)
 	origin_tech = "materials=1;engineering=1"
 	attack_verb = list("bashed", "bludgeoned", "thrashed", "whacked")
 
@@ -179,7 +180,4 @@
 	density = 1
 	icon_opened = "miningcaropen"
 	icon_closed = "miningcar"
-
-
-
 

@@ -17,13 +17,8 @@
 /atom/proc/attack_hand(mob/user as mob)
 	return
 
-/*
-/mob/living/carbon/human/RestrainedClickOn(var/atom/A) ---carbons will handle this
+/mob/living/carbon/human/RestrainedClickOn(var/atom/A)
 	return
-*/
-
-/mob/living/carbon/RestrainedClickOn(var/atom/A)
-	return 0
 
 /mob/living/carbon/human/RangedAttack(var/atom/A)
 	if(!gloves && !mutations.len) return
@@ -56,7 +51,6 @@
 /mob/living/RestrainedClickOn(var/atom/A)
 	return
 
-
 /*
 	Monkeys
 */
@@ -73,25 +67,21 @@
 	things considerably
 */
 /mob/living/carbon/monkey/RestrainedClickOn(var/atom/A)
-	if(..())
-		return
 	if(a_intent != "harm" || !ismob(A)) return
 	if(istype(wear_mask, /obj/item/clothing/mask/muzzle))
 		return
 	var/mob/living/carbon/ML = A
-	var/dam_zone = pick("chest", "l_hand", "r_hand", "l_leg", "r_leg")
-	var/obj/item/organ/limb/affecting = null
-	if(ishuman(ML)) // why the hell is this not more general
-		affecting = ML:get_organ(ran_zone(dam_zone))
-	var/armor = ML.run_armor_check(affecting, "melee")
+	var/dam_zone = ran_zone(pick("chest", "l_hand", "r_hand", "l_leg", "r_leg"))
+	var/armor = ML.run_armor_check(dam_zone, "melee")
 	if(prob(75))
-		ML.apply_damage(rand(1,3), BRUTE, affecting, armor)
+		ML.apply_damage(rand(1,3), BRUTE, dam_zone, armor)
 		for(var/mob/O in viewers(ML, null))
-			O.show_message("<span class='danger'>[name] bites [ML]!</span>", 1)
+			O.show_message("\red <B>[name] has bit [ML]!</B>", 1)
 		if(armor >= 2) return
-		for(var/datum/disease/D in viruses)
-			if(istype(D, /datum/disease/jungle_fever))
-				ML.contract_disease(D,1,0)
+		if(ismonkey(ML))
+			for(var/datum/disease/D in viruses)
+				if(istype(D, /datum/disease/jungle_fever))
+					ML.contract_disease(D,1,0)
 	else
 		for(var/mob/O in viewers(ML, null))
 			O.show_message("\red <B>[src] has attempted to bite [ML]!</B>", 1)

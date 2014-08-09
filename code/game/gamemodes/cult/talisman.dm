@@ -38,10 +38,9 @@
 					return
 				if("supply")
 					supply()
-//			user.take_organ_damage(5, 0)
+			user.take_organ_damage(5, 0)
 			if(src && src.imbue!="supply" && src.imbue!="runestun")
 				if(delete)
-					user.drop_item(src)
 					del(src)
 			return
 		else
@@ -54,7 +53,6 @@
 			if(imbue == "runestun")
 				user.take_organ_damage(5, 0)
 				call(/obj/effect/rune/proc/runestun)(T)
-				user.drop_item(src)
 				del(src)
 			else
 				..()   ///If its some other talisman, use the generic attack code, is this supposed to work this way?
@@ -90,37 +88,29 @@
 		if (href_list["rune"])
 			switch(href_list["rune"])
 				if("newtome")
-					var/obj/item/weapon/paper/talisman/T = new /obj/item/weapon/paper/talisman(usr)
-					usr.put_in_hands(T)
+					var/obj/item/weapon/paper/talisman/T = new /obj/item/weapon/paper/talisman(get_turf(usr))
 					T.imbue = "newtome"
 				if("teleport")
-					var/obj/item/weapon/paper/talisman/T = new /obj/item/weapon/paper/talisman(usr)
-					usr.put_in_hands(T)
+					var/obj/item/weapon/paper/talisman/T = new /obj/item/weapon/paper/talisman(get_turf(usr))
 					T.imbue = "[pick("ire", "ego", "nahlizet", "certum", "veri", "jatkaa", "balaq", "mgar", "karazet", "geeri", "orkan", "allaq")]"
 					T.info = "[T.imbue]"
 				if("emp")
-					var/obj/item/weapon/paper/talisman/T = new /obj/item/weapon/paper/talisman(usr)
-					usr.put_in_hands(T)
+					var/obj/item/weapon/paper/talisman/T = new /obj/item/weapon/paper/talisman(get_turf(usr))
 					T.imbue = "emp"
 				if("conceal")
-					var/obj/item/weapon/paper/talisman/T = new /obj/item/weapon/paper/talisman(usr)
-					usr.put_in_hands(T)
+					var/obj/item/weapon/paper/talisman/T = new /obj/item/weapon/paper/talisman(get_turf(usr))
 					T.imbue = "conceal"
 				if("communicate")
-					var/obj/item/weapon/paper/talisman/T = new /obj/item/weapon/paper/talisman(usr)
-					usr.put_in_hands(T)
+					var/obj/item/weapon/paper/talisman/T = new /obj/item/weapon/paper/talisman(get_turf(usr))
 					T.imbue = "communicate"
 				if("runestun")
-					var/obj/item/weapon/paper/talisman/T = new /obj/item/weapon/paper/talisman(usr)
-					usr.put_in_hands(T)
+					var/obj/item/weapon/paper/talisman/T = new /obj/item/weapon/paper/talisman(get_turf(usr))
 					T.imbue = "runestun"
 				if("armor")
-					var/obj/item/weapon/paper/talisman/T = new /obj/item/weapon/paper/talisman(usr)
-					usr.put_in_hands(T)
+					var/obj/item/weapon/paper/talisman/T = new /obj/item/weapon/paper/talisman(get_turf(usr))
 					T.imbue = "armor"
 				if("soulstone")
-					var/obj/item/device/soulstone/T = new /obj/item/device/soulstone(usr)
-					usr.put_in_hands(T)
+					new /obj/item/device/soulstone(get_turf(usr))
 				if("construct")
 					new /obj/structure/constructshell(get_turf(usr))
 			src.uses--

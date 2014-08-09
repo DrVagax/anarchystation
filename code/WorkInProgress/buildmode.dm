@@ -92,8 +92,8 @@
 				usr << "\blue ***********************************************************"
 			if(4)
 				usr << "\blue ***********************************************************"
-				usr << "\blue Left Mouse Button on turf/obj/mob      = Throw"
-				usr << "\blue Right Mouse Button on turf/obj/mob     = Select"
+				usr << "\blue Left Mouse Button on turf/obj/mob      = Select"
+				usr << "\blue Right Mouse Button on turf/obj/mob     = Throw"
 				usr << "\blue ***********************************************************"
 		return 1
 
@@ -171,8 +171,7 @@
 							master.buildmode.valueholder = input(usr,"Enter variable value:" ,"Value") as obj in world
 						if("turf-reference")
 							master.buildmode.valueholder = input(usr,"Enter variable value:" ,"Value") as turf in world
-		return 1
-
+    	return 1
 
 /proc/build_click(var/mob/user, buildmode, params, var/obj/object)
 	var/obj/effect/bmode/buildholder/holder = null
@@ -260,9 +259,8 @@
 
 		if(4)
 			if(pa.Find("left"))
-				if(isturf(object))
-					return
-				holder.throw_atom = object
+				if(istype(object, /atom/movable))
+					holder.throw_atom = object
 			if(pa.Find("right"))
 				if(holder.throw_atom)
 					holder.throw_atom.throw_at(object, 10, 1)

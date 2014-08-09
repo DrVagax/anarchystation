@@ -3,8 +3,8 @@
 	damage_type = BRUTE
 
 /mob/living/simple_animal/hostile/hivebot
-	name = "hivebot"
-	desc = "A small robot."
+	name = "Hivebot"
+	desc = "A small robot"
 	icon = 'icons/mob/hivebot.dmi'
 	icon_state = "basic"
 	icon_living = "basic"
@@ -26,30 +26,28 @@
 	min_n2 = 0
 	max_n2 = 0
 	minbodytemp = 0
+	speed = 4
 
 /mob/living/simple_animal/hostile/hivebot/range
-	name = "hivebot"
+	name = "Hivebot"
 	desc = "A smallish robot, this one is armed!"
 	ranged = 1
-	retreat_distance = 5
-	minimum_distance = 5
 
 /mob/living/simple_animal/hostile/hivebot/rapid
 	ranged = 1
 	rapid = 1
-	retreat_distance = 5
-	minimum_distance = 5
 
 /mob/living/simple_animal/hostile/hivebot/strong
-	name = "strong hivebot"
+	name = "Strong Hivebot"
 	desc = "A robot, this one is armed and looks tough!"
 	health = 80
 	ranged = 1
 
-/mob/living/simple_animal/hostile/hivebot/Die()
+
+/mob/living/simple_animal/hostile/hivebot/death()
 	..()
 	visible_message("<b>[src]</b> blows apart!")
-	new /obj/effect/decal/cleanable/robot_debris(src.loc)
+	new /obj/effect/decal/cleanable/blood/gibs/robot(src.loc)
 	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 	s.set_up(3, 1, src)
 	s.start()
@@ -57,8 +55,8 @@
 	return
 
 /mob/living/simple_animal/hostile/hivebot/tele//this still needs work
-	name = "beacon"
-	desc = "Some odd beacon thing."
+	name = "Beacon"
+	desc = "Some odd beacon thing"
 	icon = 'icons/mob/hivebot.dmi'
 	icon_state = "def_radar-off"
 	icon_living = "def_radar-off"
@@ -78,7 +76,7 @@
 
 	New()
 		..()
-		var/datum/effect/effect/system/harmless_smoke_spread/smoke = new /datum/effect/effect/system/harmless_smoke_spread()
+		var/datum/effect/effect/system/smoke_spread/smoke = new /datum/effect/effect/system/smoke_spread()
 		smoke.set_up(5, 0, src.loc)
 		smoke.start()
 		visible_message("\red <B>The [src] warps in!</B>")

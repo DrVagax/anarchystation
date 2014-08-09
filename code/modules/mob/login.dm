@@ -17,13 +17,14 @@
 					spawn() alert("You have logged in already with another key this round, please log out of this one NOW or risk being banned!")
 				if(matches)
 					if(M.client)
-						message_admins("<font color='red'><B>Notice: </B><font color='blue'>[key_name_admin(src)] has the same [matches] as [key_name_admin(M)].</font>", 1)
+						message_admins("<font color='red'><B>Notice: </B><font color='blue'><A href='?src=\ref[usr];priv_msg=\ref[src]'>[key_name_admin(src)]</A> has the same [matches] as <A href='?src=\ref[usr];priv_msg=\ref[M]'>[key_name_admin(M)]</A>.</font>", 1)
 						log_access("Notice: [key_name(src)] has the same [matches] as [key_name(M)].")
 					else
-						message_admins("<font color='red'><B>Notice: </B><font color='blue'>[key_name_admin(src)] has the same [matches] as [key_name_admin(M)] (no longer logged in). </font>", 1)
+						message_admins("<font color='red'><B>Notice: </B><font color='blue'><A href='?src=\ref[usr];priv_msg=\ref[src]'>[key_name_admin(src)]</A> has the same [matches] as [key_name_admin(M)] (no longer logged in). </font>", 1)
 						log_access("Notice: [key_name(src)] has the same [matches] as [key_name(M)] (no longer logged in).")
 
 /mob/Login()
+
 	player_list |= src
 	update_Login_details()
 	world.update_status()
@@ -44,7 +45,15 @@
 		client.eye = src
 		client.perspective = MOB_PERSPECTIVE
 
-	if(isobj(loc))
-		var/obj/Loc=loc
-		Loc.on_log()
+	//Clear ability list and update from mob.
+	client.verbs -= ability_verbs
 
+	if(abilities)
+		client.verbs |= abilities
+
+	if(istype(src,/mob/living/carbon/human))
+		var/mob/living/carbon/human/H = src
+		if(H.species && H.species.abilities)
+			client.verbs |= H.species.abilities
+
+	nanomanager.send_resources(client)

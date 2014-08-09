@@ -177,7 +177,7 @@
 					//Atmos Scanner
 					dat += "<h4>Atmospheric Readings</h4>"
 
-					var/turf/T = get_turf(get_turf(src.master))
+					var/turf/T = get_turf_or_move(get_turf(src.master))
 					if (isnull(T))
 						dat += "Unable to obtain a reading.<br>"
 					else
@@ -188,11 +188,11 @@
 
 						dat += "Air Pressure: [round(pressure,0.1)] kPa<br>"
 
-						if (total_moles)
-							var/o2_level = environment.oxygen/total_moles
-							var/n2_level = environment.nitrogen/total_moles
-							var/co2_level = environment.carbon_dioxide/total_moles
-							var/plasma_level = environment.toxins/total_moles
+						if (total_moles())
+							var/o2_level = environment.oxygen/total_moles()
+							var/n2_level = environment.nitrogen/total_moles()
+							var/co2_level = environment.carbon_dioxide/total_moles()
+							var/plasma_level = environment.toxins/total_moles()
 							var/unknown_level =  1-(o2_level+n2_level+co2_level+plasma_level)
 
 							dat += "Nitrogen: [round(n2_level*100)]%<br>"

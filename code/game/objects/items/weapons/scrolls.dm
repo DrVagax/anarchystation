@@ -4,25 +4,19 @@
 	icon = 'icons/obj/wizard.dmi'
 	icon_state = "scroll"
 	var/uses = 4.0
+	flags = FPRINT | TABLEPASS
 	w_class = 2.0
 	item_state = "paper"
-	throw_speed = 3
-	throw_range = 7
+	throw_speed = 4
+	throw_range = 20
 	origin_tech = "bluespace=4"
-
-/obj/item/weapon/teleportation_scroll/apprentice
-	name = "lesser scroll of teleportation"
-	uses = 1
-	origin_tech = "bluespace=2"
-
-
 
 /obj/item/weapon/teleportation_scroll/attack_self(mob/user as mob)
 	user.set_machine(src)
 	var/dat = "<B>Teleportation Scroll:</B><BR>"
 	dat += "Number of uses: [src.uses]<BR>"
 	dat += "<HR>"
-	dat += "<B>Four uses, use them wisely:</B><BR>"
+	dat += "<B>Four uses use them wisely:</B><BR>"
 	dat += "<A href='byond://?src=\ref[src];spell_teleport=1'>Teleport</A><BR>"
 	dat += "Kind regards,<br>Wizards Federation<br><br>P.S. Don't forget to bring your gear, you'll need it to cast most spells.<HR>"
 	user << browse(dat, "window=scroll")
@@ -41,8 +35,7 @@
 		if (href_list["spell_teleport"])
 			if (src.uses >= 1)
 				teleportscroll(H)
-	if(H)
-		attack_self(H)
+	attack_self(H)
 	return
 
 /obj/item/weapon/teleportation_scroll/proc/teleportscroll(var/mob/user)
@@ -52,12 +45,12 @@
 	A = input(user, "Area to jump to", "BOOYEA", A) in teleportlocs
 	var/area/thearea = teleportlocs[A]
 
-	if (!user || user.stat || user.restrained() || uses <= 0)
+	if (user.stat || user.restrained())
 		return
 	if(!((user == loc || (in_range(src, user) && istype(src.loc, /turf)))))
 		return
 
-	var/datum/effect/effect/system/harmless_smoke_spread/smoke = new /datum/effect/effect/system/harmless_smoke_spread()
+	var/datum/effect/effect/system/smoke_spread/smoke = new /datum/effect/effect/system/smoke_spread()
 	smoke.set_up(5, 0, user.loc)
 	smoke.attach(user)
 	smoke.start()

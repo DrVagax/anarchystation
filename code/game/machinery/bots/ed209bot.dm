@@ -1,5 +1,5 @@
 /obj/machinery/bot/ed209
-	name = "\improper ED-209 Security Robot"
+	name = "ED-209 Security Robot"
 	desc = "A security robot.  He looks less than thrilled."
 	icon = 'icons/obj/aibots.dmi'
 	icon_state = "ed2090"
@@ -61,7 +61,7 @@
 
 
 /obj/item/weapon/ed209_assembly
-	name = "\improper ED-209 assembly"
+	name = "ED-209 assembly"
 	desc = "Some sort of bizarre assembly."
 	icon = 'icons/obj/aibots.dmi'
 	icon_state = "ed209_frame"
@@ -88,7 +88,7 @@
 			shot_delay = 6//Longer shot delay because JESUS CHRIST
 			check_records = 0//Don't actively target people set to arrest
 			arrest_type = 1//Don't even try to cuff
-			req_access = list(access_maint_tunnels, access_theatre)
+			req_access = list(access_maint_tunnels)
 			arrest_type = 1
 			if((lasercolor == "b") && (name == "ED-209 Security Robot"))//Picks a name if there isn't already a custome one
 				name = pick("BLUE BALLER","SANIC","BLUE KILLDEATH MURDERBOT")
@@ -195,7 +195,7 @@ Auto Patrol: []"},
 				user << "<span class='notice'>Access denied.</span>"
 	else
 		..()
-		if (!istype(W, /obj/item/weapon/screwdriver) && !istype(W, /obj/item/weapon/weldingtool) && (!src.target)) // Added check for welding tool to fix #2432. Welding tool behavior is handled in superclass.
+		if (!istype(W, /obj/item/weapon/screwdriver) && (!src.target))
 			if(hasvar(W,"force") && W.force)//If force is defined and non-zero
 				src.target = user
 				if(lasercolor)//To make up for the fact that lasertag bots don't hunt
@@ -220,7 +220,7 @@ Auto Patrol: []"},
 		mode = SECBOT_IDLE
 
 /obj/machinery/bot/ed209/process()
-	set background = BACKGROUND_ENABLED
+	set background = 1
 
 	if (!src.on)
 		return
@@ -231,8 +231,6 @@ Auto Patrol: []"},
 			continue
 		if (istype(C, /mob/living/carbon/human))
 			threatlevel = src.assess_perp(C)
-		else if ((istype(C, /mob/living/carbon/monkey)) && (C.client) && (ticker.mode.name == "monkey"))
-			threatlevel = 4
 		//src.speak(C.real_name + text(": threat: []", threatlevel))
 		if (threatlevel < 4 )
 			continue
@@ -271,7 +269,7 @@ Auto Patrol: []"},
 				walk_to(src,0)
 
 			if (target)		// make sure target exists
-				if (get_dist(src, src.target) <= 1)		// if right next to perp
+				if (Adjacent(target))		// if right next to perp
 					playsound(src.loc, 'sound/weapons/Egloves.ogg', 50, 1, -1)
 					src.icon_state = "[lasercolor]ed209-c"
 					spawn(2)
@@ -279,14 +277,14 @@ Auto Patrol: []"},
 					var/mob/living/carbon/M = src.target
 					var/maxstuns = 4
 					if (istype(M, /mob/living/carbon/human))
-						if (M.stuttering < 5 && (!(HULK in M.mutations))  /*&& (!istype(M:wear_suit, /obj/item/clothing/suit/judgerobe))*/)
-							M.stuttering = 5
-						M.Stun(5)
-						M.Weaken(5)
+						if (M.stuttering < 10 && (!(HULK in M.mutations))  /*&& (!istype(M:wear_suit, /obj/item/clothing/suit/judgerobe))*/)
+							M.stuttering = 10
+						M.Stun(10)
+						M.Weaken(10)
 					else
-						M.Weaken(5)
-						M.stuttering = 5
-						M.Stun(5)
+						M.Weaken(10)
+						M.stuttering = 10
+						M.Stun(10)
 					maxstuns--
 					if (maxstuns <= 0)
 						target = null
@@ -332,7 +330,7 @@ Auto Patrol: []"},
 
 							if(istype(src.target,/mob/living/carbon))
 								src.target.handcuffed = new /obj/item/weapon/handcuffs(src.target)
-								target.update_inv_handcuffed(0)	//update handcuff overlays
+								target.update_inv_handcuffed()	//update handcuff overlays
 
 							mode = SECBOT_IDLE
 							src.target = null
@@ -614,9 +612,8 @@ Auto Patrol: []"},
 // calculates a path to the current destination
 // given an optional turf to avoid
 /obj/machinery/bot/ed209/proc/calc_path(var/turf/avoid = null)
-	src.path = AStar(src.loc, patrol_target, /turf/proc/CardinalTurfsWithAccess, /turf/proc/Distance_cardinal, 0, 120, id=botcard, exclude=avoid)
-	if(!src.path)
-		src.path = list()
+	src.path = AStar(src.loc, patrol_target, /turf/proc/CardinalTurfsWithAccess, /turf/proc/Distance, 0, 120, id=botcard, exclude=avoid)
+	if (!src.path) src.path = list()
 
 
 // look for a criminal in view of the bot
@@ -638,8 +635,6 @@ Auto Patrol: []"},
 
 		if (istype(C, /mob/living/carbon/human))
 			src.threatlevel = src.assess_perp(C)
-		else if ((istype(C, /mob/living/carbon/monkey)) && (C.client) && (ticker.mode.name == "monkey"))
-			src.threatlevel = 4
 
 		if (!src.threatlevel)
 			continue
@@ -662,12 +657,11 @@ Auto Patrol: []"},
 //If the security records say to arrest them, arrest them
 //Or if they have weapons and aren't security, arrest them.
 /obj/machinery/bot/ed209/proc/assess_perp(mob/living/carbon/human/perp as mob)
-	if(!istype(perp) || emagged == 2)
-		return 10
-
 	var/threatcount = 0
 
-	if((src.idcheck) || (isnull(perp.wear_id)) || (istype(perp.wear_id.GetID(), /obj/item/weapon/card/id/syndicate)))
+	if(src.emagged == 2) return 10 //Everyone is a criminal!
+
+	if((src.idcheck) || (isnull(perp:wear_id)) || (istype(perp:wear_id.GetID(), /obj/item/weapon/card/id/syndicate)))
 
 		if((istype(perp.l_hand, /obj/item/weapon/gun) && !istype(perp.l_hand, /obj/item/weapon/gun/projectile/shotgun)) || istype(perp.l_hand, /obj/item/weapon/melee/baton))
 			if(!istype(perp.l_hand, /obj/item/weapon/gun/energy/laser/bluetag) \
@@ -681,7 +675,7 @@ Auto Patrol: []"},
 			&& !istype(perp.r_hand, /obj/item/weapon/gun/energy/laser/practice))
 				threatcount += 4
 
-		if(istype(perp.belt, /obj/item/weapon/gun) || istype(perp.belt, /obj/item/weapon/melee))
+		if(istype(perp:belt, /obj/item/weapon/gun) || istype(perp:belt, /obj/item/weapon/melee))
 			if(!istype(perp:belt, /obj/item/weapon/gun/energy/laser/bluetag) \
 			&& !istype(perp:belt, /obj/item/weapon/gun/energy/laser/redtag) \
 			&& !istype(perp:belt, /obj/item/weapon/gun/energy/laser/practice))
@@ -715,11 +709,19 @@ Auto Patrol: []"},
 		if(istype(perp:belt, /obj/item/weapon/gun/energy/laser/bluetag))
 			threatcount += 2
 
-	if(check_records)	//check if they are set to *Arrest* on records
-		var/perpname = perp.get_face_name(perp.get_id_name())
-		var/datum/data/record/R = find_record("name", perpname, data_core.security)
-		if(R && (R.fields["criminal"] == "*Arrest*"))
-			threatcount += 4
+	if(src.check_records)
+		for (var/datum/data/record/E in data_core.general)
+			var/perpname = perp.name
+			if(perp.wear_id)
+				var/obj/item/weapon/card/id/id = perp.wear_id.GetID()
+				if(id)
+					perpname = id.registered_name
+
+			if(E.fields["name"] == perpname)
+				for (var/datum/data/record/R in data_core.security)
+					if((R.fields["id"] == E.fields["id"]) && (R.fields["criminal"] == "*Arrest*"))
+						threatcount = 4
+						break
 
 	if((src.idcheck) && (src.allowed(perp)) && !(src.lasercolor))
 		threatcount = 0//Corrupt cops cannot exist beep boop
@@ -729,7 +731,7 @@ Auto Patrol: []"},
 /obj/machinery/bot/ed209/Bump(M as mob|obj) //Leave no door unopened!
 	if ((istype(M, /obj/machinery/door)) && (!isnull(src.botcard)))
 		var/obj/machinery/door/D = M
-		if (!istype(D, /obj/machinery/door/firedoor) && D.check_access(src.botcard))
+		if (!istype(D, /obj/machinery/door/firedoor) && D.check_access(src.botcard) && !istype(D,/obj/machinery/door/poddoor))
 			D.open()
 			src.frustration = 0
 	else if ((istype(M, /mob/living/)) && (!src.anchored))
@@ -790,7 +792,7 @@ Auto Patrol: []"},
 	s.set_up(3, 1, src)
 	s.start()
 
-	new /obj/effect/decal/cleanable/oil(src.loc)
+	new /obj/effect/decal/cleanable/blood/oil(src.loc)
 	del(src)
 
 
@@ -815,17 +817,17 @@ Auto Patrol: []"},
 			if (src.emagged == 2)
 				projectile = /obj/item/projectile/beam
 			else
-				projectile = /obj/item/projectile/energy/electrode
+				projectile = /obj/item/projectile/beam/stun
 		else if(lasercolor == "b")
 			if (src.emagged == 2)
-				projectile = /obj/item/projectile/omnitag
+				projectile = /obj/item/projectile/beam/lastertag/omni
 			else
-				projectile = /obj/item/projectile/bluetag
+				projectile = /obj/item/projectile/beam/lastertag/blue
 		else if(lasercolor == "r")
 			if (src.emagged == 2)
-				projectile = /obj/item/projectile/omnitag
+				projectile = /obj/item/projectile/beam/lastertag/omni
 			else
-				projectile = /obj/item/projectile/redtag
+				projectile = /obj/item/projectile/beam/lastertag/red
 
 	if (!( istype(U, /turf) ))
 		return
@@ -895,7 +897,7 @@ Auto Patrol: []"},
 
 	switch(build_step)
 		if(0,1)
-			if(istype(W, /obj/item/robot_parts/l_leg) || istype(W, /obj/item/robot_parts/r_leg))
+			if( istype(W, /obj/item/robot_parts/l_leg) || istype(W, /obj/item/robot_parts/r_leg) )
 				user.drop_item()
 				del(W)
 				build_step++
@@ -909,11 +911,11 @@ Auto Patrol: []"},
 					icon_state = "ed209_legs"
 
 		if(2)
-			if(istype(W, /obj/item/clothing/suit/redtag))
+			if( istype(W, /obj/item/clothing/suit/redtag) )
 				lasercolor = "r"
-			else if(istype(W, /obj/item/clothing/suit/bluetag))
+			else if( istype(W, /obj/item/clothing/suit/bluetag) )
 				lasercolor = "b"
-			if(lasercolor || istype(W, /obj/item/clothing/suit/armor/vest))
+			if( lasercolor || istype(W, /obj/item/clothing/suit/armor/vest) )
 				user.drop_item()
 				del(W)
 				build_step++
@@ -923,36 +925,24 @@ Auto Patrol: []"},
 				icon_state = "[lasercolor]ed209_shell"
 
 		if(3)
-			if(istype(W, /obj/item/weapon/weldingtool))
+			if( istype(W, /obj/item/weapon/weldingtool) )
 				var/obj/item/weapon/weldingtool/WT = W
 				if(WT.remove_fuel(0,user))
 					build_step++
 					name = "shielded frame assembly"
 					user << "<span class='notice'>You welded the vest to [src].</span>"
 		if(4)
-			switch(lasercolor)
-				if("b")
-					if(!istype(W, /obj/item/clothing/head/helmet/bluetaghelm))
-						return
-
-				if("r")
-					if(!istype(W, /obj/item/clothing/head/helmet/redtaghelm))
-						return
-
-				if("")
-					if(!istype(W, /obj/item/clothing/head/helmet))
-						return
-
-			user.drop_item()
-			del(W)
-			build_step++
-			user << "<span class='notice'>You add the helmet to [src].</span>"
-			name = "covered and shielded frame assembly"
-			item_state = "[lasercolor]ed209_hat"
-			icon_state = "[lasercolor]ed209_hat"
+			if( istype(W, /obj/item/clothing/head/helmet) )
+				user.drop_item()
+				del(W)
+				build_step++
+				user << "<span class='notice'>You add the helmet to [src].</span>"
+				name = "covered and shielded frame assembly"
+				item_state = "[lasercolor]ed209_hat"
+				icon_state = "[lasercolor]ed209_hat"
 
 		if(5)
-			if(isprox(W))
+			if( isprox(W) )
 				user.drop_item()
 				del(W)
 				build_step++
@@ -962,12 +952,12 @@ Auto Patrol: []"},
 				icon_state = "[lasercolor]ed209_prox"
 
 		if(6)
-			if(istype(W, /obj/item/stack/cable_coil))
-				var/obj/item/stack/cable_coil/coil = W
+			if( istype(W, /obj/item/weapon/cable_coil) )
+				var/obj/item/weapon/cable_coil/coil = W
 				var/turf/T = get_turf(user)
 				user << "<span class='notice'>You start to wire [src]...</span>"
 				sleep(40)
-				if(get_turf(user) == T)
+				if(get_turf(user) == T && build_step == 6)
 					coil.use(1)
 					build_step++
 					user << "<span class='notice'>You wire the ED-209 assembly.</span>"
@@ -976,15 +966,15 @@ Auto Patrol: []"},
 		if(7)
 			switch(lasercolor)
 				if("b")
-					if(!istype(W, /obj/item/weapon/gun/energy/laser/bluetag))
+					if( !istype(W, /obj/item/weapon/gun/energy/laser/bluetag) )
 						return
 					name = "bluetag ED-209 assembly"
 				if("r")
-					if(!istype(W, /obj/item/weapon/gun/energy/laser/redtag))
+					if( !istype(W, /obj/item/weapon/gun/energy/laser/redtag) )
 						return
 					name = "redtag ED-209 assembly"
 				if("")
-					if(!istype(W, /obj/item/weapon/gun/energy/taser))
+					if( !istype(W, /obj/item/weapon/gun/energy/taser) )
 						return
 					name = "taser ED-209 assembly"
 				else
@@ -997,31 +987,31 @@ Auto Patrol: []"},
 			del(W)
 
 		if(8)
-			if(istype(W, /obj/item/weapon/screwdriver))
+			if( istype(W, /obj/item/weapon/screwdriver) )
 				playsound(src.loc, 'sound/items/Screwdriver.ogg', 100, 1)
 				var/turf/T = get_turf(user)
 				user << "<span class='notice'>Now attaching the gun to the frame...</span>"
 				sleep(40)
-				if(get_turf(user) == T)
+				if(get_turf(user) == T && build_step == 8)
 					build_step++
 					name = "armed [name]"
 					user << "<span class='notice'>Taser gun attached.</span>"
 
 		if(9)
-			if(istype(W, /obj/item/weapon/stock_parts/cell))
+			if( istype(W, /obj/item/weapon/cell) )
 				build_step++
 				user << "<span class='notice'>You complete the ED-209.</span>"
 				var/turf/T = get_turf(src)
 				new /obj/machinery/bot/ed209(T,created_name,lasercolor)
 				user.drop_item()
 				del(W)
-				user.unEquip(src, 1)
+				user.drop_from_inventory(src)
 				del(src)
 
 
 /obj/machinery/bot/ed209/bullet_act(var/obj/item/projectile/Proj)
 	if((src.lasercolor == "b") && (src.disabled == 0))
-		if(istype(Proj, /obj/item/projectile/redtag))
+		if(istype(Proj, /obj/item/projectile/beam/lastertag/red))
 			src.disabled = 1
 			del (Proj)
 			sleep(100)
@@ -1029,7 +1019,7 @@ Auto Patrol: []"},
 		else
 			..()
 	else if((src.lasercolor == "r") && (src.disabled == 0))
-		if(istype(Proj, /obj/item/projectile/bluetag))
+		if(istype(Proj, /obj/item/projectile/beam/lastertag/blue))
 			src.disabled = 1
 			del (Proj)
 			sleep(100)

@@ -1,14 +1,16 @@
 /atom
 	layer = 2
 	var/level = 2
-	var/flags = null
+	var/flags = FPRINT
 	var/list/fingerprints
 	var/list/fingerprintshidden
 	var/fingerprintslast = null
 	var/list/blood_DNA
+	var/blood_color
 	var/last_bumped = 0
 	var/pass_flags = 0
 	var/throwpass = 0
+	var/germ_level = GERM_LEVEL_AMBIENT // The higher the germ level, the more germ on the atom.
 
 	///Chemistry.
 	var/datum/reagents/reagents = null
@@ -17,32 +19,10 @@
 	// replaced by OPENCONTAINER flags and atom/proc/is_open_container()
 	///Chemistry.
 
-/atom/proc/throw_impact(atom/hit_atom)
-	if(istype(hit_atom,/mob/living))
-		var/mob/living/M = hit_atom
-		M.hitby(src)
-
-	else if(isobj(hit_atom))
-		var/obj/O = hit_atom
-		if(!O.anchored)
-			step(O, src.dir)
-		O.hitby(src)
-
-	else if(isturf(hit_atom))
-		var/turf/T = hit_atom
-		if(T.density)
-			spawn(2)
-				step(src, turn(src.dir, 180))
-			if(istype(src,/mob/living))
-				var/mob/living/M = src
-				M.take_organ_damage(20)
-
-
-/atom/proc/CheckParts()
-	return
+	//Detective Work, used for the duplicate data points kept in the scanners
+	var/list/original_atom
 
 /atom/proc/assume_air(datum/gas_mixture/giver)
-	del(giver)
 	return null
 
 /atom/proc/remove_air(amount)
@@ -90,11 +70,15 @@
 /atom/proc/CheckExit()
 	return 1
 
+/atom/proc/HasEntered(atom/movable/AM as mob|obj)
+	return
+
 /atom/proc/HasProximity(atom/movable/AM as mob|obj)
 	return
 
 /atom/proc/emp_act(var/severity)
 	return
+
 
 /atom/proc/bullet_act(obj/item/projectile/P, def_zone)
 	P.on_hit(src, 0, def_zone)
@@ -113,7 +97,7 @@
  * Recursevly searches all atom contens (including contents contents and so on).
  *
  * ARGS: path - search atom contents for atoms of this type
- *       list/filter_path - if set, contents of atoms not of types in this list are excluded from search.
+ *	   list/filter_path - if set, contents of atoms not of types in this list are excluded from search.
  *
  * RETURNS: list of found atoms
  */
@@ -209,13 +193,12 @@ its easier to just keep the beam vertical.
 /atom/verb/examine()
 	set name = "Examine"
 	set category = "IC"
-	set src in oview(12)	//make it work from farther away
+	set src in view(usr.client) //If it can be seen, it can be examined.
 
 	if (!( usr ))
 		return
-	usr << "\icon[src]That's \a [src]." //changed to "That's" from "This is" because "This is some metal sheets" sounds dumb compared to "That's some metal sheets" ~Carn
-	if(desc)
-		usr << desc
+	usr << "That's \a [src]." //changed to "That's" from "This is" because "This is some metal sheets" sounds dumb compared to "That's some metal sheets" ~Carn
+	usr << desc
 	// *****RM
 	//usr << "[name]: Dn:[density] dir:[dir] cont:[contents] icon:[icon] is:[icon_state] loc:[loc]"
 	return
@@ -233,79 +216,179 @@ its easier to just keep the beam vertical.
 	return
 
 /atom/proc/hitby(atom/movable/AM as mob|obj)
+	if (density)
+		AM.throwing = 0
+	return
+
+/atom/proc/add_hiddenprint(mob/living/M as mob)
+	if(isnull(M)) return
+	if(isnull(M.key)) return
+	if (!( src.flags ) & FPRINT)
+		return
+	if (ishuman(M))
+		var/mob/living/carbon/human/H = M
+		if (!istype(H.dna, /datum/dna))
+			return 0
+		if (H.gloves)
+			if(src.fingerprintslast != H.key)
+				src.fingerprintshidden += text("\[[time_stamp()]\] (Wearing gloves). Real name: [], Key: []",H.real_name, H.key)
+				src.fingerprintslast = H.key
+			return 0
+		if (!( src.fingerprints ))
+			if(src.fingerprintslast != H.key)
+				src.fingerprintshidden += text("\[[time_stamp()]\] Real name: [], Key: []",H.real_name, H.key)
+				src.fingerprintslast = H.key
+			return 1
+	else
+		if(src.fingerprintslast != M.key)
+			src.fingerprintshidden += text("\[[time_stamp()]\] Real name: [], Key: []",M.real_name, M.key)
+			src.fingerprintslast = M.key
+	return
+
+/atom/proc/add_fingerprint(mob/living/M as mob)
+	if(isnull(M)) return
+	if(isAI(M)) return
+	if(isnull(M.key)) return
+	if (!( src.flags ) & FPRINT)
+		return
+	if (ishuman(M))
+		//Add the list if it does not exist.
+		if(!fingerprintshidden)
+			fingerprintshidden = list()
+
+		//Fibers~
+		add_fibers(M)
+
+		//He has no prints!
+		if (mFingerprints in M.mutations)
+			if(fingerprintslast != M.key)
+				fingerprintshidden += "(Has no fingerprints) Real name: [M.real_name], Key: [M.key]"
+				fingerprintslast = M.key
+			return 0		//Now, lets get to the dirty work.
+		//First, make sure their DNA makes sense.
+		var/mob/living/carbon/human/H = M
+		if (!istype(H.dna, /datum/dna) || !H.dna.uni_identity || (length(H.dna.uni_identity) != 32))
+			if(!istype(H.dna, /datum/dna))
+				H.dna = new /datum/dna(null)
+				H.dna.real_name = H.real_name
+		H.check_dna()
+
+		//Now, deal with gloves.
+		if (H.gloves && H.gloves != src)
+			if(fingerprintslast != H.key)
+				fingerprintshidden += text("\[[]\](Wearing gloves). Real name: [], Key: []",time_stamp(), H.real_name, H.key)
+				fingerprintslast = H.key
+			H.gloves.add_fingerprint(M)
+
+		//Deal with gloves the pass finger/palm prints.
+		if(H.gloves != src)
+			if(prob(75) && istype(H.gloves, /obj/item/clothing/gloves/latex))
+				return 0
+			else if(H.gloves && !istype(H.gloves, /obj/item/clothing/gloves/latex))
+				return 0
+
+		//More adminstuffz
+		if(fingerprintslast != H.key)
+			fingerprintshidden += text("\[[]\]Real name: [], Key: []",time_stamp(), H.real_name, H.key)
+			fingerprintslast = H.key
+
+		//Make the list if it does not exist.
+		if(!fingerprints)
+			fingerprints = list()
+
+		//Hash this shit.
+		var/full_print = md5(H.dna.uni_identity)
+
+		// Add the fingerprints
+		//
+		if(fingerprints[full_print])
+			switch(stringpercent(fingerprints[full_print]))		//tells us how many stars are in the current prints.
+
+				if(28 to 32)
+					if(prob(1))
+						fingerprints[full_print] = full_print 		// You rolled a one buddy.
+					else
+						fingerprints[full_print] = stars(full_print, rand(0,40)) // 24 to 32
+
+				if(24 to 27)
+					if(prob(3))
+						fingerprints[full_print] = full_print     	//Sucks to be you.
+					else
+						fingerprints[full_print] = stars(full_print, rand(15, 55)) // 20 to 29
+
+				if(20 to 23)
+					if(prob(5))
+						fingerprints[full_print] = full_print		//Had a good run didn't ya.
+					else
+						fingerprints[full_print] = stars(full_print, rand(30, 70)) // 15 to 25
+
+				if(16 to 19)
+					if(prob(5))
+						fingerprints[full_print] = full_print		//Welp.
+					else
+						fingerprints[full_print]  = stars(full_print, rand(40, 100))  // 0 to 21
+
+				if(0 to 15)
+					if(prob(5))
+						fingerprints[full_print] = stars(full_print, rand(0,50)) 	// small chance you can smudge.
+					else
+						fingerprints[full_print] = full_print
+
+		else
+			fingerprints[full_print] = stars(full_print, rand(0, 20))	//Initial touch, not leaving much evidence the first time.
+
+
+		return 1
+	else
+		//Smudge up dem prints some
+		if(fingerprintslast != M.key)
+			fingerprintshidden += text("\[[]\]Real name: [], Key: []",time_stamp(), M.real_name, M.key)
+			fingerprintslast = M.key
+
+	//Cleaning up shit.
+	if(fingerprints && !fingerprints.len)
+		del(fingerprints)
 	return
 
 
-var/list/blood_splatter_icons = list()
+/atom/proc/transfer_fingerprints_to(var/atom/A)
 
-/atom/proc/blood_splatter_index()
-	return "\ref[initial(icon)]-[initial(icon_state)]"
+	if(!istype(A.fingerprints,/list))
+		A.fingerprints = list()
 
-/atom/proc/add_blood_list(mob/living/carbon/M)
-	// Returns 1 if we had blood already
-	if(!istype(blood_DNA, /list))	//if our list of DNA doesn't exist yet (or isn't a list) initialise it.
-		blood_DNA = list()
-	//if this blood isn't already in the list, add it
-	if(blood_DNA[M.dna.unique_enzymes])
-		return 0 //already bloodied with this blood. Cannot add more.
-	blood_DNA[M.dna.unique_enzymes] = M.dna.blood_type
-	return 1
+	if(!istype(A.fingerprintshidden,/list))
+		A.fingerprintshidden = list()
+
+	if(!istype(fingerprintshidden, /list))
+		fingerprintshidden = list()
+
+	//skytodo
+	//A.fingerprints |= fingerprints            //detective
+	//A.fingerprintshidden |= fingerprintshidden    //admin
+	if(A.fingerprints && fingerprints)
+		A.fingerprints |= fingerprints.Copy()            //detective
+	if(A.fingerprintshidden && fingerprintshidden)
+		A.fingerprintshidden |= fingerprintshidden.Copy()    //admin	A.fingerprintslast = fingerprintslast
+
 
 //returns 1 if made bloody, returns 0 otherwise
-/atom/proc/add_blood(mob/living/carbon/M)
-	if(rejects_blood())
+/atom/proc/add_blood(mob/living/carbon/human/M as mob)
+	if(flags & NOBLOODY) return 0
+	.=1
+	if (!( istype(M, /mob/living/carbon/human) ))
 		return 0
-	if(!istype(M))
+	if (!istype(M.dna, /datum/dna))
+		M.dna = new /datum/dna(null)
+		M.dna.real_name = M.real_name
+	M.check_dna()
+	if (!( src.flags ) & FPRINT)
 		return 0
-	if(!check_dna_integrity(M))		//check dna is valid and create/setup if necessary
-		return 0					//no dna!
+	if(!blood_DNA || !istype(blood_DNA, /list))	//if our list of DNA doesn't exist yet (or isn't a list) initialise it.
+		blood_DNA = list()
+	blood_color = "#A10808"
+	if (M.species)
+		blood_color = M.species.blood_color
 	return
-
-/obj/add_blood(mob/living/carbon/M)
-	if(..() == 0)   return 0
-	return add_blood_list(M)
-
-/obj/item/add_blood(mob/living/carbon/M)
-	var/blood_count = blood_DNA == null ? 0 : blood_DNA.len
-	if(..() == 0)	return 0
-	//apply the blood-splatter overlay if it isn't already in there
-	if(!blood_count && initial(icon) && initial(icon_state))
-		//try to find a pre-processed blood-splatter. otherwise, make a new one
-		var/index = blood_splatter_index()
-		var/icon/blood_splatter_icon = blood_splatter_icons[index]
-		if(!blood_splatter_icon )
-			blood_splatter_icon = icon(initial(icon), initial(icon_state), , 1)		//we only want to apply blood-splatters to the initial icon_state for each object
-			blood_splatter_icon.Blend("#fff", ICON_ADD) 			//fills the icon_state with white (except where it's transparent)
-			blood_splatter_icon.Blend(icon('icons/effects/blood.dmi', "itemblood"), ICON_MULTIPLY) //adds blood and the remaining white areas become transparant
-			blood_splatter_icon = fcopy_rsc(blood_splatter_icon)
-			blood_splatter_icons[index] = blood_splatter_icon
-		overlays += blood_splatter_icon
-	return 1 //we applied blood to the item
-
-/obj/item/clothing/gloves/add_blood(mob/living/carbon/M)
-	if(..() == 0) return 0
-	transfer_blood = rand(2, 4)
-	bloody_hands_mob = M
-	return 1
-
-/turf/simulated/add_blood(mob/living/carbon/M)
-	if(..() == 0)	return 0
-
-	var/obj/effect/decal/cleanable/blood/B = locate() in contents	//check for existing blood splatter
-	if(!B)	B = new /obj/effect/decal/cleanable/blood(src)			//make a bloood splatter if we couldn't find one
-	B.add_blood_list(M)
-	return 1 //we bloodied the floor
-
-/mob/living/carbon/human/add_blood(mob/living/carbon/M)
-	if(..() == 0)	return 0
-	add_blood_list(M)
-	bloody_hands = rand(2, 4)
-	bloody_hands_mob = M
-	update_inv_gloves()	//handles bloody hands overlays and updating
-	return 1 //we applied blood to the item
-
-/atom/proc/rejects_blood()
-	return 0
 
 /atom/proc/add_vomit_floor(mob/living/carbon/M as mob, var/toxvomit = 0)
 	if( istype(src, /turf/simulated) )
@@ -315,29 +398,11 @@ var/list/blood_splatter_icons = list()
 		if(toxvomit)
 			this.icon_state = "vomittox_[pick(1,4)]"
 
-		/*for(var/datum/disease/D in M.viruses)
-			var/datum/disease/newDisease = D.Copy(1)
-			this.viruses += newDisease
-			newDisease.holder = this*/
-
-// Only adds blood on the floor -- Skie
-/atom/proc/add_blood_floor(mob/living/carbon/M as mob)
-	if(istype(src, /turf/simulated))
-		if(check_dna_integrity(M))	//mobs with dna = (monkeys + humans at time of writing)
-			var/obj/effect/decal/cleanable/blood/B = locate() in contents
-			if(!B)	B = new(src)
-			B.blood_DNA[M.dna.unique_enzymes] = M.dna.blood_type
-		else if(istype(M, /mob/living/carbon/alien))
-			var/obj/effect/decal/cleanable/xenoblood/B = locate() in contents
-			if(!B)	B = new(src)
-			B.blood_DNA["UNKNOWN BLOOD"] = "X*"
-		else if(istype(M, /mob/living/silicon/robot))
-			var/obj/effect/decal/cleanable/oil/B = locate() in contents
-			if(!B)	B = new(src)
 
 /atom/proc/clean_blood()
+	src.germ_level = 0
 	if(istype(blood_DNA, /list))
-		blood_DNA = null
+		del(blood_DNA)
 		return 1
 
 
@@ -359,15 +424,3 @@ var/list/blood_splatter_icons = list()
 
 /atom/proc/checkpass(passflag)
 	return pass_flags&passflag
-
-/atom/proc/isinspace()
-	if(istype(get_turf(src), /turf/space))
-		return 1
-	else
-		return 0
-
-/atom/proc/handle_fall()
-	return
-
-/atom/proc/handle_slip()
-	return

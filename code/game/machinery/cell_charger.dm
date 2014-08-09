@@ -8,8 +8,9 @@
 	idle_power_usage = 5
 	active_power_usage = 60
 	power_channel = EQUIP
-	var/obj/item/weapon/stock_parts/cell/charging = null
+	var/obj/item/weapon/cell/charging = null
 	var/chargelevel = -1
+	var/efficiency = 0.875	//<1.0 means some power is lost in the charging process, >1.0 means free energy.
 	proc
 		updateicon()
 			icon_state = "ccharger[charging ? 1 : 0]"
@@ -38,7 +39,7 @@
 		if(stat & BROKEN)
 			return
 
-		if(istype(W, /obj/item/weapon/stock_parts/cell) && anchored)
+		if(istype(W, /obj/item/weapon/cell) && anchored)
 			if(charging)
 				user << "\red There is already a cell in the charger."
 				return
@@ -67,22 +68,12 @@
 
 	attack_hand(mob/user)
 		if(charging)
-			user.put_in_hands(charging)
+			usr.put_in_hands(charging)
 			charging.add_fingerprint(user)
 			charging.updateicon()
 
-			charging = null
+			src.charging = null
 			user.visible_message("[user] removes the cell from the charger.", "You remove the cell from the charger.")
-			chargelevel = -1
-			updateicon()
-
-	attack_tk(mob/user)
-		if(charging)
-			charging.loc = loc
-			charging.updateicon()
-			user << "<span class='notice'>You telekinetically remove [charging] from [src].</span>"
-
-			charging = null
 			chargelevel = -1
 			updateicon()
 
@@ -101,8 +92,10 @@
 		//world << "ccpt [charging] [stat]"
 		if(!charging || (stat & (BROKEN|NOPOWER)) || !anchored)
 			return
-
-		use_power(200)		//this used to use CELLRATE, but CELLRATE is fucking awful. feel free to fix this properly!
-		charging.give(175)	//inefficiency.
-
+		
+		var/power_used = 100000	//for 200 units of charge. Yes, thats right, 100 kW. Is something wrong with CELLRATE?
+		
+		power_used = charging.give(power_used*CELLRATE*efficiency)
+		use_power(power_used)
+		
 		updateicon()

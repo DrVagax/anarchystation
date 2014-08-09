@@ -1,5 +1,5 @@
 /obj/machinery/robotic_fabricator
-	name = "robotic fabricator"
+	name = "Robotic Fabricator"
 	icon = 'icons/obj/robotics.dmi'
 	icon_state = "fab-idle"
 	density = 1
@@ -21,18 +21,18 @@
 					if(!O:amount)
 						return
 					while(metal_amount < 150000 && O:amount)
-						src.metal_amount += O:m_amt /*O:height * O:width * O:length * 100000.0*/
+						src.metal_amount += O.matter["metal"] /*O:height * O:width * O:length * 100000.0*/
 						O:amount--
 						count++
 
 					if (O:amount < 1)
 						del(O)
 
-					user << "You insert [count] metal sheet\s into \the [src]."
+					user << "You insert [count] metal sheet\s into the fabricator."
 					src.overlays -= "fab-load-metal"
 					updateDialog()
 		else
-			user << "\The [src] is full."
+			user << "The robot part maker is full. Please remove metal from the robot part maker in order to insert more."
 
 /obj/machinery/robotic_fabricator/power_change()
 	if (powered())

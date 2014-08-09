@@ -5,17 +5,18 @@
 	icon = 'icons/obj/doors/door_assembly.dmi'
 	icon_state = "door_electronics"
 	w_class = 2.0 //It should be tiny! -Agouri
-	m_amt = 50
-	g_amt = 50
 
-	req_access = list(access_maint_tunnels)
+	matter = list("metal" = 50,"glass" = 50)
+
+	req_access = list(access_engine)
 
 	var/list/conf_access = null
+	var/one_access = 0 //if set to 1, door would receive req_one_access instead of req_access
 	var/last_configurator = null
 	var/locked = 1
 
 	attack_self(mob/user as mob)
-		if (!ishuman(user))
+		if (!ishuman(user) && !istype(user,/mob/living/silicon/robot/drone))
 			return ..(user)
 
 		var/mob/living/carbon/human/H = user
@@ -33,6 +34,8 @@
 		else
 			t1 += "<a href='?src=\ref[src];logout=1'>Block</a><hr>"
 
+			t1 += "Access requirement is set to "
+			t1 += one_access ? "<a style='color: green' href='?src=\ref[src];one_access=1'>ONE</a><hr>" : "<a style='color: red' href='?src=\ref[src];one_access=1'>ALL</a><hr>"
 
 			t1 += conf_access == null ? "<font color=red>All</font><br>" : "<a href='?src=\ref[src];access=all'>All</a><br>"
 
@@ -44,6 +47,8 @@
 
 				if (!conf_access || !conf_access.len || !(acc in conf_access))
 					t1 += "<a href='?src=\ref[src];access=[acc]'>[aname]</a><br>"
+				else if(one_access)
+					t1 += "<a style='color: green' href='?src=\ref[src];access=[acc]'>[aname]</a><br>"
 				else
 					t1 += "<a style='color: red' href='?src=\ref[src];access=[acc]'>[aname]</a><br>"
 
@@ -54,26 +59,33 @@
 
 	Topic(href, href_list)
 		..()
-		if (usr.stat || usr.restrained() || !ishuman(usr))
+		if (usr.stat || usr.restrained() || (!ishuman(usr) && !istype(usr,/mob/living/silicon)))
 			return
 		if (href_list["close"])
 			usr << browse(null, "window=airlock")
 			return
 
 		if (href_list["login"])
-			var/obj/item/I = usr.get_active_hand()
-			if (istype(I, /obj/item/device/pda))
-				var/obj/item/device/pda/pda = I
-				I = pda.id
-			if (I && src.check_access(I))
+			if(istype(usr,/mob/living/silicon))
 				src.locked = 0
-				src.last_configurator = I:registered_name
+				src.last_configurator = usr.name
+			else
+				var/obj/item/I = usr.get_active_hand()
+				if (istype(I, /obj/item/device/pda))
+					var/obj/item/device/pda/pda = I
+					I = pda.id
+				if (I && src.check_access(I))
+					src.locked = 0
+					src.last_configurator = I:registered_name
 
 		if (locked)
 			return
 
 		if (href_list["logout"])
 			locked = 1
+
+		if (href_list["one_access"])
+			one_access = !one_access
 
 		if (href_list["access"])
 			toggle_access(href_list["access"])
@@ -97,3 +109,8 @@
 					if (!conf_access.len)
 						conf_access = null
 
+
+/obj/item/weapon/airlock_electronics/secure
+	name = "secure airlock electronics"
+	desc = "designed to be somewhat more resistant to hacking than standard electronics."
+	origin_tech = "programming=3"

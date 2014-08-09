@@ -1,4 +1,4 @@
-//CONTAINS: Evidence bags
+//CONTAINS: Evidence bags and fingerprint cards
 
 /obj/item/weapon/evidencebag
 	name = "evidence bag"
@@ -6,10 +6,11 @@
 	icon = 'icons/obj/storage.dmi'
 	icon_state = "evidenceobj"
 	item_state = ""
-	w_class = 1
+	w_class = 2
 
-/obj/item/weapon/evidencebag/afterattack(obj/item/I, mob/user as mob,proximity)
-	if(!proximity)
+/obj/item/weapon/evidencebag/afterattack(obj/item/I, mob/user as mob, proximity)
+	if(!proximity) return
+	if(!in_range(I, user))
 		return
 
 	if(!istype(I) || I.anchored == 1)
@@ -88,3 +89,23 @@
 		new /obj/item/weapon/evidencebag(src)
 		..()
 		return
+
+/obj/item/weapon/f_card
+	name = "finger print card"
+	desc = "Used to take fingerprints."
+	icon = 'icons/obj/card.dmi'
+	icon_state = "fingerprint0"
+	var/amount = 10.0
+	item_state = "paper"
+	throwforce = 1
+	w_class = 1.0
+	throw_speed = 3
+	throw_range = 5
+
+
+/obj/item/weapon/fcardholder
+	name = "fingerprint card case"
+	desc = "Apply finger print card."
+	icon = 'icons/obj/items.dmi'
+	icon_state = "fcardholder0"
+	item_state = "clipboard"

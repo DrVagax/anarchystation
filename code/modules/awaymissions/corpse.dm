@@ -7,7 +7,6 @@
 /obj/effect/landmark/corpse
 	name = "Unknown"
 	var/mobname = "Unknown"  //Unused now but it'd fuck up maps to remove it now
-	var/mobgender = MALE //Set to male by default due to the patriarchy. Other options include FEMALE and NEUTER
 	var/corpseuniform = null //Set this to an object path to have the slot filled with said object on the corpse.
 	var/corpsesuit = null
 	var/corpseshoes = null
@@ -23,23 +22,17 @@
 	var/corpseid = 0     //Just set to 1 if you want them to have an ID
 	var/corpseidjob = null // Needs to be in quotes, such as "Clown" or "Chef." This just determines what the ID reads as, not their access
 	var/corpseidaccess = null //This is for access. See access.dm for which jobs give what access. Again, put in quotes. Use "Captain" if you want it to be all access.
-	var/corpseidicon = null //For setting it to be a gold, silver, centcom etc ID
-	var/corpsehusk = null
-	var/corpsebrute = null //set brute damage on the corpse
-	var/corpseoxy = null //set suffocation damage on the corpse
+	var/corpseidicon = null //For setting it to be a gold, silver, centcomm etc ID
+	var/mutantrace = "human"
 
 /obj/effect/landmark/corpse/initialize()
 	createCorpse()
 
 /obj/effect/landmark/corpse/proc/createCorpse() //Creates a mob and checks for gear in each slot before attempting to equip it.
 	var/mob/living/carbon/human/M = new /mob/living/carbon/human (src.loc)
+	M.dna.mutantrace = mutantrace
 	M.real_name = src.name
-	M.gender = src.mobgender
 	M.death(1) //Kills the new mob
-	if(src.corpsehusk)
-		M.Drain()
-	M.adjustBruteLoss(src.corpsebrute)
-	M.adjustOxyLoss(src.corpseoxy)
 	if(src.corpseuniform)
 		M.equip_to_slot_or_del(new src.corpseuniform(M), slot_w_uniform)
 	if(src.corpsesuit)
@@ -49,7 +42,7 @@
 	if(src.corpsegloves)
 		M.equip_to_slot_or_del(new src.corpsegloves(M), slot_gloves)
 	if(src.corpseradio)
-		M.equip_to_slot_or_del(new src.corpseradio(M), slot_ears)
+		M.equip_to_slot_or_del(new src.corpseradio(M), slot_l_ear)
 	if(src.corpseglasses)
 		M.equip_to_slot_or_del(new src.corpseglasses(M), slot_glasses)
 	if(src.corpsemask)
@@ -66,7 +59,7 @@
 		M.equip_to_slot_or_del(new src.corpseback(M), slot_back)
 	if(src.corpseid == 1)
 		var/obj/item/weapon/card/id/W = new(M)
-		W.name = "[M.real_name]'s ID Card ([corpseidjob])"
+		W.name = "[M.real_name]'s ID Card"
 		var/datum/job/jobdatum
 		for(var/jobtype in typesof(/datum/job))
 			var/datum/job/J = new jobtype
@@ -86,48 +79,20 @@
 		M.equip_to_slot_or_del(W, slot_wear_id)
 	del(src)
 
-/obj/effect/landmark/corpse/AICorpse/createCorpse() //Creates a corrupted AI
-	var/A = locate(/mob/living/silicon/ai) in loc //variable A looks for an AI at the location of the landmark
-	if(A) //if variable A is true
-		return //stop executing the proc
-	var/L = new /datum/ai_laws/default/asimov/ //variable L is a new Asimov lawset
-	var/B = new /obj/item/device/mmi/ //variable B is a new MMI
-	var/mob/living/silicon/ai/M = new(src.loc, L, B, 1) //spawn new AI at landmark as var M
-	M.name = src.name
-	M.real_name = src.name
-	M.aiPDA.toff = 1 //turns the AI's PDA messenger off, stopping it showing up on player PDAs
-	M.death() //call the AI's death proc
-	del(src)
-
-/obj/effect/landmark/corpse/slimeCorpse
-	var/mobcolour = "grey"
-	icon = 'icons/mob/slimes.dmi'
-	icon_state = "grey baby slime" //sets the icon in the map editor
-
-/obj/effect/landmark/corpse/slimeCorpse/createCorpse() //proc creates a dead slime
-	var/A = locate(/mob/living/carbon/slime/) in loc //variable A looks for a slime at the location of the landmark
-	if(A) //if variable A is true
-		return //stop executing the proc
-	var/mob/living/carbon/slime/M = new(src.loc) //variable M is a new slime at the location of the landmark
-	M.colour = src.mobcolour //slime colour is set by landmark's mobcolour var
-	M.adjustToxLoss(9001) //kills the slime, death() doesn't update its icon correctly
-	del(src)
-
-/obj/effect/landmark/corpse/facehugCorpse/createCorpse() //Creates a squashed facehugger
-	var/obj/item/clothing/mask/facehugger/O = new(src.loc) //variable O is a new facehugger at the location of the landmark
-	O.name = src.name
-	O.Die() //call the facehugger's death proc
-	del(src)
 
 
 // I'll work on making a list of corpses people request for maps, or that I think will be commonly used. Syndicate operatives for example.
+
+
+
+
 
 /obj/effect/landmark/corpse/syndicatesoldier
 	name = "Syndicate Operative"
 	corpseuniform = /obj/item/clothing/under/syndicate
 	corpsesuit = /obj/item/clothing/suit/armor/vest
 	corpseshoes = /obj/item/clothing/shoes/swat
-	corpsegloves = /obj/item/clothing/gloves/combat
+	corpsegloves = /obj/item/clothing/gloves/swat
 	corpseradio = /obj/item/device/radio/headset
 	corpsemask = /obj/item/clothing/mask/gas
 	corpsehelmet = /obj/item/clothing/head/helmet/swat
@@ -143,7 +108,7 @@
 	corpseuniform = /obj/item/clothing/under/syndicate
 	corpsesuit = /obj/item/clothing/suit/space/rig/syndi
 	corpseshoes = /obj/item/clothing/shoes/swat
-	corpsegloves = /obj/item/clothing/gloves/combat
+	corpsegloves = /obj/item/clothing/gloves/swat
 	corpseradio = /obj/item/device/radio/headset
 	corpsemask = /obj/item/clothing/mask/gas/syndicate
 	corpsehelmet = /obj/item/clothing/head/helmet/space/rig/syndi
@@ -174,7 +139,7 @@
 	name = "Doctor"
 	corpseradio = /obj/item/device/radio/headset/headset_med
 	corpseuniform = /obj/item/clothing/under/rank/medical
-	corpsesuit = /obj/item/clothing/suit/labcoat
+	corpsesuit = /obj/item/clothing/suit/storage/labcoat
 	corpseback = /obj/item/weapon/storage/backpack/medic
 	corpsepocket1 = /obj/item/device/flashlight/pen
 	corpseshoes = /obj/item/clothing/shoes/black
@@ -196,9 +161,9 @@
 	corpseidaccess = "Station Engineer"
 
 /obj/effect/landmark/corpse/engineer/rig
-	corpsesuit = /obj/item/clothing/suit/space/rig
+	corpsesuit = /obj/item/clothing/suit/space/rig/engineering
 	corpsemask = /obj/item/clothing/mask/breath
-	corpsehelmet = /obj/item/clothing/head/helmet/space/rig
+	corpsehelmet = /obj/item/clothing/head/helmet/space/rig/engineering
 
 /obj/effect/landmark/corpse/clown
 	name = "Clown"
@@ -216,7 +181,7 @@
 	name = "Scientist"
 	corpseradio = /obj/item/device/radio/headset/headset_sci
 	corpseuniform = /obj/item/clothing/under/rank/scientist
-	corpsesuit = /obj/item/clothing/suit/labcoat/science
+	corpsesuit = /obj/item/clothing/suit/storage/labcoat/science
 	corpseback = /obj/item/weapon/storage/backpack
 	corpseshoes = /obj/item/clothing/shoes/white
 	corpseid = 1
@@ -260,7 +225,7 @@
 	corpseglasses = /obj/item/clothing/glasses/eyepatch
 	corpsemask = /obj/item/clothing/mask/cigarette/cigar/cohiba
 	corpsehelmet = /obj/item/clothing/head/centhat
-	corpsegloves = /obj/item/clothing/gloves/combat
+	corpsegloves = /obj/item/clothing/gloves/swat
 	corpseshoes = /obj/item/clothing/shoes/swat
 	corpsepocket1 = /obj/item/weapon/lighter/zippo
 	corpseid = 1

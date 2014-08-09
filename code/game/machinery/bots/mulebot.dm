@@ -4,10 +4,9 @@
 // Navigates via floor navbeacons
 // Remote Controlled from QM's PDA
 
-var/global/mulebot_count = 0
 
 /obj/machinery/bot/mulebot
-	name = "\improper MULEbot"
+	name = "Mulebot"
 	desc = "A Multiple Utility Load Effector bot."
 	icon_state = "mulebot0"
 	layer = MOB_LAYER
@@ -48,25 +47,31 @@ var/global/mulebot_count = 0
 	var/auto_return = 1	// true if auto return to home beacon after unload
 	var/auto_pickup = 1 // true if auto-pickup at beacon
 
-	var/obj/item/weapon/stock_parts/cell/cell
-	var/datum/wires/mulebot/wires = null
+	var/obj/item/weapon/cell/cell
 						// the installed power cell
 
 	// constants for internal wiring bitflags
-	/*
+	var/const/wire_power1 = 1			// power connections
+	var/const/wire_power2 = 2
+	var/const/wire_mobavoid = 4		// mob avoidance
+	var/const/wire_loadcheck = 8		// load checking (non-crate)
+	var/const/wire_motor1 = 16		// motor wires
+	var/const/wire_motor2 = 32		//
+	var/const/wire_remote_rx = 64		// remote recv functions
+	var/const/wire_remote_tx = 128	// remote trans status
+	var/const/wire_beacon_rx = 256	// beacon ping recv
+	var/const/wire_beacon_tx = 512	// beacon ping trans
 
 	var/wires = 1023		// all flags on
 
 	var/list/wire_text	// list of wire colours
 	var/list/wire_order	// order of wire indices
-	*/
 
 
 	var/bloodiness = 0		// count of bloodiness
 
 /obj/machinery/bot/mulebot/New()
 	..()
-	wires = new(src)
 	botcard = new(src)
 	var/datum/job/cargo_tech/J = new/datum/job/cargo_tech
 	botcard.access = J.get_access()
@@ -74,19 +79,39 @@ var/global/mulebot_count = 0
 	cell = new(src)
 	cell.charge = 2000
 	cell.maxcharge = 2000
+	setup_wires()
 
 	spawn(5)	// must wait for map loading to finish
 		if(radio_controller)
 			radio_controller.add_object(src, control_freq, filter = RADIO_MULEBOT)
 			radio_controller.add_object(src, beacon_freq, filter = RADIO_NAVBEACONS)
 
-		mulebot_count += 1
+		var/count = 0
+		for(var/obj/machinery/bot/mulebot/other in world)
+			count++
 		if(!suffix)
-			suffix = "#[mulebot_count]"
-		name = "\improper Mulebot ([suffix])"
-
+			suffix = "#[count]"
+		name = "Mulebot ([suffix])"
 
 	verbs -= /atom/movable/verb/pull
+
+
+// set up the wire colours in random order
+// and the random wire display order
+// needs 10 wire colours
+/obj/machinery/bot/mulebot/proc/setup_wires()
+	var/list/colours = list("Red", "Green", "Blue", "Magenta", "Cyan", "Yellow", "Black", "White", "Orange", "Grey")
+	var/list/orders = list("0","1","2","3","4","5","6","7","8","9")
+	wire_text = list()
+	wire_order = list()
+	while(colours.len > 0)
+		var/colour = colours[ rand(1,colours.len) ]
+		wire_text += colour
+		colours -= colour
+
+		var/order = orders[ rand(1,orders.len) ]
+		wire_order += text2num(order)
+		orders -= order
 
 
 
@@ -101,12 +126,8 @@ var/global/mulebot_count = 0
 		user << "\blue You [locked ? "lock" : "unlock"] the mulebot's controls!"
 		flick("mulebot-emagged", src)
 		playsound(src.loc, 'sound/effects/sparks1.ogg', 100, 0)
-	else if(istype(I, /obj/item/weapon/card/id))
-		if(toggle_lock(user))
-			user << "\blue Controls [(locked ? "locked" : "unlocked")]."
-
-	else if(istype(I,/obj/item/weapon/stock_parts/cell) && open && !cell)
-		var/obj/item/weapon/stock_parts/cell/C = I
+	else if(istype(I,/obj/item/weapon/cell) && open && !cell)
+		var/obj/item/weapon/cell/C = I
 		user.drop_item()
 		C.loc = src
 		cell = C
@@ -135,9 +156,6 @@ var/global/mulebot_count = 0
 			)
 		else
 			user << "\blue [src] does not need a repair!"
-	else if(istype(I, /obj/item/device/multitool) || istype(I, /obj/item/weapon/wirecutters))
-		if(open)
-			attack_hand(usr)
 	else if(load && ismob(load))  // chance to knock off rider
 		if(prob(1+I.force * 2))
 			unload(0)
@@ -153,10 +171,11 @@ var/global/mulebot_count = 0
 	unload(0)
 	switch(severity)
 		if(2)
-			for(var/i = 1; i < 3; i++)
-				wires.RandomCut()
+			wires &= ~(1 << rand(0,9))
+			wires &= ~(1 << rand(0,9))
+			wires &= ~(1 << rand(0,9))
 		if(3)
-			wires.RandomCut()
+			wires &= ~(1 << rand(0,9))
 	..()
 	return
 
@@ -165,7 +184,11 @@ var/global/mulebot_count = 0
 		unload(0)
 	if(prob(25))
 		src.visible_message("\red Something shorts out inside [src]!")
-		wires.RandomCut()
+		var/index = 1<< (rand(0,9))
+		if(wires & index)
+			wires &= ~index
+		else
+			wires |= index
 	..()
 
 
@@ -182,39 +205,38 @@ var/global/mulebot_count = 0
 
 /obj/machinery/bot/mulebot/interact(var/mob/user, var/ai=0)
 	var/dat
-	dat += "<h3>Multiple Utility Load Effector Mk. III</h3>"
-	dat += "<b>ID:</b> [suffix]<BR>"
-	dat += "<b>Power:</b> [on ? "On" : "Off"]<BR>"
+	dat += "<TT><B>Multiple Utility Load Effector Mk. III</B></TT><BR><BR>"
+	dat += "ID: [suffix]<BR>"
+	dat += "Power: [on ? "On" : "Off"]<BR>"
 
 	if(!open)
 
-		dat += "<h3>Status</h3>"
-		dat += "<div class='statusDisplay'>"
+		dat += "Status: "
 		switch(mode)
 			if(0)
 				dat += "Ready"
 			if(1)
-				dat += "<span class='good'>Loading/Unloading</span>"
+				dat += "Loading/Unloading"
 			if(2)
-				dat += "<span class='good'>Navigating to Delivery Location</span>"
+				dat += "Navigating to Delivery Location"
 			if(3)
-				dat += "<span class='good'>Navigating to Home</span>"
+				dat += "Navigating to Home"
 			if(4)
-				dat += "<span class='average'>Waiting for clear path</span>"
+				dat += "Waiting for clear path"
 			if(5,6)
-				dat += "<span class='average'>Calculating navigation path</span>"
+				dat += "Calculating navigation path"
 			if(7)
-				dat += "<span class='bad'>Unable to reach destination</span>"
-		dat += "</div>"
+				dat += "Unable to locate destination"
 
-		dat += "<b>Current Load:</b> [load ? load.name : "<i>none</i>"]<BR>"
-		dat += "<b>Destination:</b> [!destination ? "<i>none</i>" : destination]<BR>"
-		dat += "<b>Power level:</b> [cell ? cell.percent() : 0]%"
+
+		dat += "<BR>Current Load: [load ? load.name : "<i>none</i>"]<BR>"
+		dat += "Destination: [!destination ? "<i>none</i>" : destination]<BR>"
+		dat += "Power level: [cell ? cell.percent() : 0]%<BR>"
 
 		if(locked && !ai)
-			dat += "&nbsp;<br /><div class='notice'>Controls are locked</div><A href='byond://?src=\ref[src];op=unlock'>Unlock Controls</A>"
+			dat += "<HR>Controls are locked <A href='byond://?src=\ref[src];op=unlock'><I>(unlock)</I></A>"
 		else
-			dat += "&nbsp;<br /><div class='notice'>Controls are unlocked</div><A href='byond://?src=\ref[src];op=lock'>Lock Controls</A><BR><BR>"
+			dat += "<HR>Controls are unlocked <A href='byond://?src=\ref[src];op=lock'><I>(lock)</I></A><BR><BR>"
 
 			dat += "<A href='byond://?src=\ref[src];op=power'>Toggle Power</A><BR>"
 			dat += "<A href='byond://?src=\ref[src];op=stop'>Stop</A><BR>"
@@ -228,12 +250,12 @@ var/global/mulebot_count = 0
 
 			if(load)
 				dat += "<A href='byond://?src=\ref[src];op=unload'>Unload Now</A><BR>"
-			dat += "<div class='notice'>The maintenance hatch is closed.</div>"
+			dat += "<HR>The maintenance hatch is closed.<BR>"
 
 	else
 		if(!ai)
-			dat += "<div class='notice'>The maintenance hatch is open.</div><BR>"
-			dat += "<b>Power cell:</b> "
+			dat += "The maintenance hatch is open.<BR><BR>"
+			dat += "Power cell: "
 			if(cell)
 				dat += "<A href='byond://?src=\ref[src];op=cellremove'>Installed</A><BR>"
 			else
@@ -241,19 +263,26 @@ var/global/mulebot_count = 0
 
 			dat += wires()
 		else
-			dat += "<div class='notice'>The bot is in maintenance mode and cannot be controlled.</div><BR>"
+			dat += "The bot is in maintenance mode and cannot be controlled.<BR>"
 
-	//user << browse("<HEAD><TITLE>M.U.L.E. Mk. III [suffix ? "([suffix])" : ""]</TITLE></HEAD>[dat]", "window=mulebot;size=350x500")
-	//onclose(user, "mulebot")
-	var/datum/browser/popup = new(user, "mulebot", "M.U.L.E. Mk. III [suffix ? "([suffix])" : ""]", 350, 500)
-	popup.set_content(dat)
-	popup.set_title_image(user.browse_rsc_icon(src.icon, src.icon_state))
-	popup.open()
+	user << browse("<HEAD><TITLE>Mulebot [suffix ? "([suffix])" : ""]</TITLE></HEAD>[dat]", "window=mulebot;size=350x500")
+	onclose(user, "mulebot")
 	return
 
 // returns the wire panel text
 /obj/machinery/bot/mulebot/proc/wires()
-	return wires.GetInteractWindow()
+	var/t = ""
+	for(var/i = 0 to 9)
+		var/index = 1<<wire_order[i+1]
+		t += "[wire_text[i+1]] wire: "
+		if(index & wires)
+			t += "<A href='byond://?src=\ref[src];op=wirecut;wire=[index]'>(cut)</A> <A href='byond://?src=\ref[src];op=wirepulse;wire=[index]'>(pulse)</A><BR>"
+		else
+			t += "<A href='byond://?src=\ref[src];op=wiremend;wire=[index]'>(mend)</A><BR>"
+
+	return t
+
+
 
 
 /obj/machinery/bot/mulebot/Topic(href, href_list)
@@ -266,8 +295,12 @@ var/global/mulebot_count = 0
 
 		switch(href_list["op"])
 			if("lock", "unlock")
-				toggle_lock(usr)
-
+				if(src.allowed(usr))
+					locked = !locked
+					updateDialog()
+				else
+					usr << "\red Access denied."
+					return
 			if("power")
 				if (src.on)
 					turn_off()
@@ -293,7 +326,7 @@ var/global/mulebot_count = 0
 
 			if("cellinsert")
 				if(open && !cell)
-					var/obj/item/weapon/stock_parts/cell/C = usr.get_active_hand()
+					var/obj/item/weapon/cell/C = usr.get_active_hand()
 					if(istype(C))
 						usr.drop_item()
 						cell = C
@@ -333,7 +366,7 @@ var/global/mulebot_count = 0
 				refresh=1
 				if(new_id)
 					suffix = new_id
-					name = "\improper Mulebot ([suffix])"
+					name = "Mulebot ([suffix])"
 					updateDialog()
 
 			if("sethome")
@@ -361,6 +394,38 @@ var/global/mulebot_count = 0
 				usr.unset_machine()
 				usr << browse(null,"window=mulebot")
 
+
+			if("wirecut")
+				if(istype(usr.get_active_hand(), /obj/item/weapon/wirecutters))
+					var/wirebit = text2num(href_list["wire"])
+					wires &= ~wirebit
+				else
+					usr << "\blue You need wirecutters!"
+			if("wiremend")
+				if(istype(usr.get_active_hand(), /obj/item/weapon/wirecutters))
+					var/wirebit = text2num(href_list["wire"])
+					wires |= wirebit
+				else
+					usr << "\blue You need wirecutters!"
+
+			if("wirepulse")
+				if(istype(usr.get_active_hand(), /obj/item/device/multitool))
+					switch(href_list["wire"])
+						if("1","2")
+							usr << "\blue \icon[src] The charge light flickers."
+						if("4")
+							usr << "\blue \icon[src] The external warning lights flash briefly."
+						if("8")
+							usr << "\blue \icon[src] The load platform clunks."
+						if("16", "32")
+							usr << "\blue \icon[src] The drive motor whines briefly."
+						else
+							usr << "\blue \icon[src] You hear a radio crackle."
+				else
+					usr << "\blue You need a multitool!"
+
+
+
 		updateDialog()
 		//src.updateUsrDialog()
 	else
@@ -372,16 +437,7 @@ var/global/mulebot_count = 0
 
 // returns true if the bot has power
 /obj/machinery/bot/mulebot/proc/has_power()
-	return !open && cell && cell.charge > 0 && wires.HasPower()
-
-/obj/machinery/bot/mulebot/proc/toggle_lock(var/mob/user)
-	if(src.allowed(user))
-		locked = !locked
-		updateDialog()
-		return 1
-	else
-		user << "\red Access denied."
-		return 0
+	return !open && cell && cell.charge>0 && (wires & wire_power1) && (wires & wire_power2)
 
 // mousedrop a crate to load the bot
 // can load anything if emagged
@@ -402,7 +458,7 @@ var/global/mulebot_count = 0
 
 // called to load a crate
 /obj/machinery/bot/mulebot/proc/load(var/atom/movable/C)
-	if(wires.LoadCheck() && !istype(C,/obj/structure/closet/crate))
+	if((wires & wire_loadcheck) && !istype(C,/obj/structure/closet/crate))
 		src.visible_message("[src] makes a sighing buzz.", "You hear an electronic buzzing sound.")
 		playsound(src.loc, 'sound/machines/buzz-sigh.ogg', 50, 0)
 		return		// if not emagged, only allow crates to be loaded
@@ -450,13 +506,16 @@ var/global/mulebot_count = 0
 // called to unload the bot
 // argument is optional direction to unload
 // if zero, unload at bot's location
-/obj/machinery/bot/mulebot/proc/unload(var/dirn)
+/obj/machinery/bot/mulebot/proc/unload(var/dirn = 0)
 	if(!load)
 		return
 
 	mode = 1
 	overlays.Cut()
 
+	load.loc = src.loc
+	load.pixel_y -= 9
+	load.layer = initial(load.layer)
 	if(ismob(load))
 		var/mob/M = load
 		if(M.client)
@@ -464,14 +523,13 @@ var/global/mulebot_count = 0
 			M.client.eye = src
 
 
-	load.loc = src.loc
-	load.pixel_y -= 9
-	load.layer = initial(load.layer)
 	if(dirn)
 		var/turf/T = src.loc
-		var/turf/newT = get_step(T,dirn)
-		if(load.CanPass(load,newT)) //Can't get off onto anything that wouldn't let you pass normally
+		T = get_step(T,dirn)
+		if(CanPass(load,T))//Can't get off onto anything that wouldn't let you pass normally
 			step(load, dirn)
+		else
+			load.loc = src.loc//Drops you right there, so you shouldn't be able to get yourself stuck
 
 	load = null
 
@@ -498,7 +556,7 @@ var/global/mulebot_count = 0
 		on = 0
 		return
 	if(on)
-		var/speed = (wires.Motor1() ? 1 : 0) + (wires.Motor2() ? 2 : 0)
+		var/speed = ((wires & wire_motor1) ? 1:0) + ((wires & wire_motor2) ? 2:0)
 		//world << "speed: [speed]"
 		switch(speed)
 			if(0)
@@ -591,7 +649,7 @@ var/global/mulebot_count = 0
 						blockcount++
 						mode = 4
 						if(blockcount == 3)
-							src.visible_message("[src] makes an annoyed buzzing sound.", "You hear an electronic buzzing sound.")
+							src.visible_message("[src] makes an annoyed buzzing sound", "You hear an electronic buzzing sound.")
 							playsound(src.loc, 'sound/machines/buzz-two.ogg', 50, 0)
 
 						if(blockcount > 5)	// attempt 5 times before recomputing
@@ -609,7 +667,7 @@ var/global/mulebot_count = 0
 							return
 						return
 				else
-					src.visible_message("[src] makes an annoyed buzzing sound.", "You hear an electronic buzzing sound.")
+					src.visible_message("[src] makes an annoyed buzzing sound", "You hear an electronic buzzing sound.")
 					playsound(src.loc, 'sound/machines/buzz-two.ogg', 50, 0)
 					//world << "Bad turf."
 					mode = 5
@@ -647,7 +705,7 @@ var/global/mulebot_count = 0
 // calculates a path to the current destination
 // given an optional turf to avoid
 /obj/machinery/bot/mulebot/proc/calc_path(var/turf/avoid = null)
-	src.path = AStar(src.loc, src.target, /turf/proc/CardinalTurfsWithAccess, /turf/proc/Distance_cardinal, 0, 250, id=botcard, exclude=avoid)
+	src.path = AStar(src.loc, src.target, /turf/proc/CardinalTurfsWithAccess, /turf/proc/Distance, 0, 250, id=botcard, exclude=avoid)
 	if(!src.path)
 		src.path = list()
 
@@ -667,7 +725,7 @@ var/global/mulebot_count = 0
 		mode = 3
 	else
 		mode = 2
-	icon_state = "mulebot[(wires.MobAvoid() != 0)]"
+	icon_state = "mulebot[(wires & wire_mobavoid) == wire_mobavoid]"
 
 // starts bot moving to home
 // sends a beacon query to find
@@ -675,7 +733,7 @@ var/global/mulebot_count = 0
 	spawn(0)
 		set_destination(home_destination)
 		mode = 4
-	icon_state = "mulebot[(wires.MobAvoid() != 0)]"
+	icon_state = "mulebot[(wires & wire_mobavoid) == wire_mobavoid]"
 
 // called when bot reaches current target
 /obj/machinery/bot/mulebot/proc/at_target()
@@ -690,7 +748,7 @@ var/global/mulebot_count = 0
 			// not loaded
 			if(auto_pickup)		// find a crate
 				var/atom/movable/AM
-				if(!wires.LoadCheck())		// if emagged, load first unanchored thing we find
+				if(!(wires & wire_loadcheck))		// if emagged, load first unanchored thing we find
 					for(var/atom/movable/A in get_step(loc, loaddir))
 						if(!A.anchored)
 							AM = A
@@ -714,7 +772,7 @@ var/global/mulebot_count = 0
 
 // called when bot bumps into anything
 /obj/machinery/bot/mulebot/Bump(var/atom/obs)
-	if(!wires.MobAvoid())		//usually just bumps, but if avoidance disabled knock over mobs
+	if(!(wires & wire_mobavoid))		//usually just bumps, but if avoidance disabled knock over mobs
 		var/mob/M = obs
 		if(ismob(M))
 			if(istype(M,/mob/living/silicon/robot))
@@ -731,7 +789,7 @@ var/global/mulebot_count = 0
 	return get_turf(src)
 
 
-// called from mob/living/carbon/human/Crossed()
+// called from mob/living/carbon/human/HasEntered()
 // when mulebot is in the same loc
 /obj/machinery/bot/mulebot/proc/RunOver(var/mob/living/carbon/human/H)
 	src.visible_message("\red [src] drives over [H]!")
@@ -747,7 +805,7 @@ var/global/mulebot_count = 0
 
 	var/obj/effect/decal/cleanable/blood/B = new(src.loc)
 	B.blood_DNA = list()
-	B.blood_DNA[H.dna.unique_enzymes] = H.dna.blood_type
+	B.blood_DNA[H.dna.unique_enzymes] = H.dna.b_type
 
 	bloodiness += 4
 
@@ -774,12 +832,12 @@ var/global/mulebot_count = 0
 	*/
 	var/recv = signal.data["command"]
 	// process all-bot input
-	if(recv=="bot_status" && wires.RemoteRX())
+	if(recv=="bot_status" && (wires & wire_remote_rx))
 		send_status()
 
 
 	recv = signal.data["command [suffix]"]
-	if(wires.RemoteRX())
+	if(wires & wire_remote_rx)
 		// process control input
 		switch(recv)
 			if("stop")
@@ -819,7 +877,7 @@ var/global/mulebot_count = 0
 
 	// receive response from beacon
 	recv = signal.data["beacon"]
-	if(wires.BeaconRX())
+	if(wires & wire_beacon_rx)
 		if(recv == new_destination)	// if the recvd beacon location matches the set destination
 									// the we will navigate there
 			destination = new_destination
@@ -829,7 +887,7 @@ var/global/mulebot_count = 0
 				loaddir = text2num(direction)
 			else
 				loaddir = 0
-			icon_state = "mulebot[(wires.MobAvoid() != null)]"
+			icon_state = "mulebot[(wires & wire_mobavoid) == wire_mobavoid]"
 			calc_path()
 			updateDialog()
 
@@ -840,9 +898,9 @@ var/global/mulebot_count = 0
 // send a radio signal with multiple data key/values
 /obj/machinery/bot/mulebot/proc/post_signal_multiple(var/freq, var/list/keyval)
 
-	if(freq == beacon_freq && !(wires.BeaconRX()))
+	if(freq == beacon_freq && !(wires & wire_beacon_tx))
 		return
-	if(freq == control_freq && !(wires.RemoteTX()))
+	if(freq == control_freq && !(wires & wire_remote_tx))
 		return
 
 	var/datum/radio_frequency/frequency = radio_controller.return_frequency(freq)
@@ -896,7 +954,7 @@ var/global/mulebot_count = 0
 	new /obj/item/device/assembly/prox_sensor(Tsec)
 	new /obj/item/stack/rods(Tsec)
 	new /obj/item/stack/rods(Tsec)
-	new /obj/item/stack/cable_coil/cut(Tsec)
+	new /obj/item/weapon/cable_coil/cut(Tsec)
 	if (cell)
 		cell.loc = Tsec
 		cell.update_icon()
@@ -906,6 +964,6 @@ var/global/mulebot_count = 0
 	s.set_up(3, 1, src)
 	s.start()
 
-	new /obj/effect/decal/cleanable/oil(src.loc)
+	new /obj/effect/decal/cleanable/blood/oil(src.loc)
 	unload(0)
 	del(src)

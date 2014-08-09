@@ -1,0 +1,53 @@
+
+
+Starting up. 01:00.11
+---------------------
+[01:00:11]MISC: Adding game mode AutoTraitor (extend-a-traitormongous) to configuration.
+[01:00:11]MISC: Adding game mode traitor+changeling (traitorchan) to configuration.
+[01:00:11]MISC: Adding game mode traitor (traitor) to configuration.
+[01:00:11]MISC: Adding game mode changeling (changeling) to configuration.
+[01:00:11]MISC: Adding game mode cult (cult) to configuration.
+[01:00:11]MISC: Adding game mode extended (extended) to configuration.
+[01:00:11]MISC: Adding game mode heist (heist) to configuration.
+[01:00:11]MISC: Adding game mode AI malfunction (malfunction) to configuration.
+[01:00:11]MISC: Adding game mode meteor (meteor) to configuration.
+[01:00:11]MISC: Adding game mode mutiny (mutiny) to configuration.
+[01:00:11]MISC: Adding game mode ninja (ninja) to configuration.
+[01:00:11]MISC: Adding game mode nuclear emergency (nuclear) to configuration.
+[01:00:11]MISC: Adding game mode rp-revolution (rp-revolution) to configuration.
+[01:00:11]MISC: Adding game mode revolution (revolution) to configuration.
+[01:00:11]MISC: Adding game mode wizard (wizard) to configuration.
+[01:00:11]MISC: Unknown setting in configuration: '$admin_legacy_system'
+[01:00:11]MISC: Unknown setting in configuration: '$ban_legacy_system'
+[01:00:11]MISC: Unknown setting in configuration: 'metroid_delay'
+[01:00:19]ADMIN: Loading Banlist
+[01:00:20]DEBUG: Rebuilding Master Controller
+[01:02:48]ACCESS: Login: DrVagax/(DrVagax) from 192.168.0.1-1872704441 || BYOND v506
+[01:03:40]VOTE: Gamemode vote started by the server.
+[01:03:40]DEBUG: The server has called a gamemode vote
+[01:04:40]VOTE: <b>Vote Result: Inconclusive - No Votes!</b>
+[01:05:14]ACCESS: Logout: DrVagax/(DrVagax)
+
+
+Starting up. 01:06.05
+---------------------
+[01:06:05]MISC: Adding game mode AutoTraitor (extend-a-traitormongous) to configuration.
+[01:06:05]MISC: Adding game mode traitor+changeling (traitorchan) to configuration.
+[01:06:05]MISC: Adding game mode traitor (traitor) to configuration.
+[01:06:05]MISC: Adding game mode changeling (changeling) to configuration.
+[01:06:05]MISC: Adding game mode cult (cult) to configuration.
+[01:06:05]MISC: Adding game mode extended (extended) to configuration.
+[01:06:05]MISC: Adding game mode heist (heist) to configuration.
+[01:06:05]MISC: Adding game mode AI malfunction (malfunction) to configuration.
+[01:06:05]MISC: Adding game mode meteor (meteor) to configuration.
+[01:06:05]MISC: Adding game mode mutiny (mutiny) to configuration.
+[01:06:05]MISC: Adding game mode ninja (ninja) to configuration.
+[01:06:05]MISC: Adding game mode nuclear emergency (nuclear) to configuration.
+[01:06:05]MISC: Adding game mode rp-revolution (rp-revolution) to configuration.
+[01:06:05]MISC: Adding game mode revolution (revolution) to configuration.
+[01:06:05]MISC: Adding game mode wizard (wizard) to configuration.
+[01:06:05]MISC: Unknown setting in configuration: '$admin_legacy_system'
+[01:06:05]MISC: Unknown setting in configuration: '$ban_legacy_system'
+[01:06:05]MISC: Unknown setting in configuration: 'metroid_delay'
+[01:06:10]ADMIN: Loading Banlist
+[01:06:10]DEBUG: Rebuilding Master Controller

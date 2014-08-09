@@ -1,5 +1,5 @@
 /obj/machinery/meter
-	name = "gas flow meter"
+	name = "meter"
 	desc = "It measures something."
 	icon = 'icons/obj/meter.dmi'
 	icon_state = "meterX"
@@ -10,7 +10,7 @@
 	var/id
 	use_power = 1
 	idle_power_usage = 2
-	active_power_usage = 4
+	active_power_usage = 5
 
 /obj/machinery/meter/New()
 	..()
@@ -30,7 +30,7 @@
 		icon_state = "meter0"
 		return 0
 
-	use_power(5)
+	//use_power(5)
 
 	var/datum/gas_mixture/environment = target.return_air()
 	if(!environment)
@@ -82,37 +82,40 @@
 
 /obj/machinery/meter/examine()
 	set src in view(3)
-	..()
-	usr << status()
+
+	var/t = "A gas flow meter. "
+	t += status()
+	usr << t
 
 
-/obj/machinery/meter/attackby(var/obj/item/weapon/W as obj, var/mob/user as mob)
-	if (istype(W, /obj/item/weapon/wrench))
-		playsound(src.loc, 'sound/items/Ratchet.ogg', 50, 1)
-		user << "\blue You begin to unfasten \the [src]..."
-		if (do_after(user, 40))
-			user.visible_message( \
-				"[user] unfastens \the [src].", \
-				"\blue You have unfastened \the [src].", \
-				"You hear ratchet.")
-			new /obj/item/pipe_meter(src.loc)
-			del(src)
-		return
-	..()
 
-/obj/machinery/meter/attack_ai(var/mob/user as mob)
-	return src.attack_hand(user)
-
-/obj/machinery/meter/attack_paw(var/mob/user as mob)
-	return src.attack_hand(user)
-
-/obj/machinery/meter/attack_hand(var/mob/user as mob)
+/obj/machinery/meter/Click()
 
 	if(stat & (NOPOWER|BROKEN))
 		return 1
+
+	var/t = null
+	if (get_dist(usr, src) <= 3 || istype(usr, /mob/living/silicon/ai) || istype(usr, /mob/dead))
+		t += status()
 	else
-		usr << status()
+		usr << "\blue <B>You are too far away.</B>"
 		return 1
+
+	usr << t
+	return 1
+
+/obj/machinery/meter/attackby(var/obj/item/weapon/W as obj, var/mob/user as mob)
+	if (!istype(W, /obj/item/weapon/wrench))
+		return ..()
+	playsound(src.loc, 'sound/items/Ratchet.ogg', 50, 1)
+	user << "\blue You begin to unfasten \the [src]..."
+	if (do_after(user, 40))
+		user.visible_message( \
+			"[user] unfastens \the [src].", \
+			"\blue You have unfastened \the [src].", \
+			"You hear ratchet.")
+		new /obj/item/pipe_meter(src.loc)
+		del(src)
 
 // TURF METER - REPORTS A TILE'S AIR CONTENTS
 
@@ -126,3 +129,5 @@
 	if (!target)
 		src.target = loc
 
+/obj/machinery/meter/turf/attackby(var/obj/item/weapon/W as obj, var/mob/user as mob)
+	return

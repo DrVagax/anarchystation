@@ -62,10 +62,12 @@
 					dat += "\blue Unable to scan [A]'s fingerprints.\n"
 				else
 					dat += "\blue [H]'s Fingerprints: [md5(H.dna.uni_identity)]\n"
-				if ( !(H.blood_DNA) )
+				if ( !(H.blood_DNA.len) )
 					dat += "\blue No blood found on [H]\n"
 				else
-					dat += "\blue Blood type: [H.blood_type]\nDNA: [H.blood_DNA]\n"
+					for(var/i = 1, i < H.blood_DNA.len, i++)
+						var/list/templist = H.blood_DNA[i]
+						user << "\blue Blood type: [templist[2]]\nDNA: [templist[1]]"
 
 			if (!A.fingerprints)
 				dat += "\blue Unable to locate any fingerprints on [A]!\n"

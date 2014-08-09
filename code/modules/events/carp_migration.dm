@@ -1,22 +1,24 @@
-/datum/round_event_control/carp_migration
-	name = "Carp Migration"
-	typepath = /datum/round_event/carp_migration
-	weight = 15
-	earliest_start = 6000
-	max_occurrences = 6
+/datum/event/carp_migration
+	announceWhen	= 50
+	oneShot			= 1
+	endWhen = 900
+	var/list/spawned_carp = list()
 
-/datum/round_event/carp_migration
-	announceWhen	= 3
-	startWhen = 50
+/datum/event/carp_migration/setup()
+	announceWhen = rand(40, 60)
+	endWhen = rand(600,1200)
 
-/datum/round_event/carp_migration/setup()
-	startWhen = rand(40, 60)
-
-/datum/round_event/carp_migration/announce()
+/datum/event/carp_migration/announce()
 	command_alert("Unknown biological entities have been detected near [station_name()], please stand-by.", "Lifesign Alert")
 
-
-/datum/round_event/carp_migration/start()
+/datum/event/carp_migration/start()
 	for(var/obj/effect/landmark/C in landmarks_list)
 		if(C.name == "carpspawn")
-			new /mob/living/simple_animal/hostile/carp(C.loc)
+			spawned_carp.Add(new /mob/living/simple_animal/hostile/carp(C.loc))
+
+/datum/event/carp_migration/end()
+	for(var/mob/living/simple_animal/hostile/carp/C in spawned_carp)
+		if(!C.stat)
+			var/turf/T = get_turf(C)
+			if(istype(T, /turf/space))
+				del(C)

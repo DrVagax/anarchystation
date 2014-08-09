@@ -5,38 +5,15 @@
 		//If there is a defined "parent" AI, it is actually an AI, and it is alive, anything the AI tries to say is said by the parent instead.
 	..(message)
 
-/mob/living/silicon/ai/say_understands(var/other)
-	if (istype(other, /mob/living/carbon/human))
-		return 1
-	if (istype(other, /mob/living/silicon/robot))
-		return 1
-	if (istype(other, /mob/living/silicon/decoy))
-		return 1
-	if (istype(other, /mob/living/carbon/brain))
-		return 1
-	if (istype(other, /mob/living/silicon/pai))
-		return 1
-	return ..()
+// These Verbs are commented out since we've disabled the AI vocal (VOX) announcements.
+// If you re-enable them there is 3 lines in ai.dm Topic() that you need to uncomment as well.
+// just search for VOX in there.
 
-/mob/living/silicon/ai/say_quote(var/text)
-	var/ending = copytext(text, length(text))
-
-	if (ending == "?")
-		return "queries, \"[text]\"";
-	else if (ending == "!")
-		return "declares, \"[text]\"";
-
-	return "states, \"[text]\"";
-
-/mob/living/silicon/ai/IsVocal()
-	return !config.silent_ai
-
-// Make sure that the code compiles with AI_VOX undefined
-#ifdef AI_VOX
-
+/*
 var/announcing_vox = 0 // Stores the time of the last announcement
 var/const/VOX_CHANNEL = 200
-var/const/VOX_DELAY = 600
+var/const/VOX_DELAY = 100 // 10 seconds
+var/const/VOX_PATH = "sound/vox/"
 
 /mob/living/silicon/ai/verb/announcement_help()
 
@@ -52,15 +29,15 @@ var/const/VOX_DELAY = 600
 	<font class='bad'>WARNING:</font><BR>Misuse of the announcement system will get you job banned.<HR>"
 
 	var/index = 0
-	for(var/word in vox_sounds)
+	var/list/vox_words = flist(VOX_PATH) // flist will return a list of strings with all the files in the path
+	for(var/word in vox_words)
 		index++
-		dat += "<A href='?src=\ref[src];say_word=[word]'>[capitalize(word)]</A>"
-		if(index != vox_sounds.len)
+		var/stripped_word = copytext(word, 1, length(word) - 3) // Remove the .wav
+		dat += "<A href='?src=\ref[src];say_word=[stripped_word]'>[capitalize(stripped_word)]</A>"
+		if(index != vox_words.len)
 			dat += " / "
 
-	var/datum/browser/popup = new(src, "announce_help", "Announcement Help", 500, 400)
-	popup.set_content(dat)
-	popup.open()
+	src << browse(dat, "window=announce_help;size=500x400")
 
 
 /mob/living/silicon/ai/verb/announcement()
@@ -80,25 +57,19 @@ var/const/VOX_DELAY = 600
 	if(!message || announcing_vox > world.time)
 		return
 
-	if(stat != CONSCIOUS)
-		return
-
-	if(control_disabled)
-		src << "<span class='notice'>Wireless interface disabled, unable to interact with announcement PA.</span>"
-		return
-
 	var/list/words = text2list(trim(message), " ")
 	var/list/incorrect_words = list()
 
 	if(words.len > 30)
 		words.len = 30
 
+	// Detect incorrect words which aren't .wav files.
 	for(var/word in words)
-		word = lowertext(trim(word))
+		word = trim(word)
 		if(!word)
 			words -= word
 			continue
-		if(!vox_sounds[word])
+		if(!vox_word_exists(word))
 			incorrect_words += word
 
 	if(incorrect_words.len)
@@ -107,27 +78,19 @@ var/const/VOX_DELAY = 600
 
 	announcing_vox = world.time + VOX_DELAY
 
-	log_game("[key_name(src)] made a vocal announcement with the following message: [message].")
+	log_game("[key_name_admin(src)] made a vocal announcement with the following message: [message].")
 
 	for(var/word in words)
 		play_vox_word(word, src.z, null)
-/*
-	for(var/mob/M in player_list)
-		if(M.client)
-			var/turf/T = get_turf(M)
-			var/turf/our_turf = get_turf(src)
-			if(T.z == our_turf.z)
-				M << "<b><font size = 3><font color = red>AI announcement:</font color> [message]</font size></b>"
-*/
 
 
 /proc/play_vox_word(var/word, var/z_level, var/mob/only_listener)
 
 	word = lowertext(word)
 
-	if(vox_sounds[word])
+	if(vox_word_exists(word))
 
-		var/sound_file = vox_sounds[word]
+		var/sound_file = get_vox_file(word)
 		var/sound/voice = sound(sound_file, wait = 1, channel = VOX_CHANNEL)
 		voice.status = SOUND_STREAM
 
@@ -144,4 +107,23 @@ var/const/VOX_DELAY = 600
 		return 1
 	return 0
 
-#endif
+
+/proc/vox_word_exists(var/word)
+	return fexists("[VOX_PATH][word].wav")
+
+/proc/get_vox_file(var/word)
+	if(vox_word_exists(word))
+		return file("[VOX_PATH][word].wav")
+
+// Dynamically loading it has bad results with sounds overtaking each other, even with the wait variable.
+// We send the file to the user when they login.
+
+/client/proc/preload_vox()
+	var/list/vox_files = flist(VOX_PATH)
+	for(var/file in vox_files)
+	//	src << "Downloading [file]"
+		var/sound/S = sound("[VOX_PATH][file]")
+		src << browse_rsc(S)
+
+
+*/

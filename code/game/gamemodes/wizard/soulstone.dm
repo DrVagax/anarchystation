@@ -5,6 +5,7 @@
 	item_state = "electronic"
 	desc = "A fragment of the legendary treasure known simply as the 'Soul Stone'. The shard still flickers with a fraction of the full artefacts power."
 	w_class = 1.0
+	flags = FPRINT | TABLEPASS
 	slot_flags = SLOT_BELT
 	origin_tech = "bluespace=4;materials=4"
 	var/imprinted = "empty"
@@ -17,7 +18,14 @@
 			return ..()
 		if(istype(M, /mob/living/carbon/human/dummy))
 			return..()
-		add_logs(user, M, "captured [M.name]'s soul", object=src)
+
+		if(M.has_brain_worms()) //Borer stuff - RR
+			user << "<span class='warning'>This being is corrupted by an alien intelligence and cannot be soul trapped.</span>"
+			return..()
+
+		M.attack_log += text("\[[time_stamp()]\] <font color='orange'>Has had their soul captured with [src.name] by [user.name] ([user.ckey])</font>")
+		user.attack_log += text("\[[time_stamp()]\] <font color='red'>Used the [src.name] to capture the soul of [M.name] ([M.ckey])</font>")
+		msg_admin_attack("[user.name] ([user.ckey]) used the [src.name] to capture the soul of [M.name] ([M.ckey]) (<A HREF='?_src_=holder;adminplayerobservecoodjump=1;X=[user.x];Y=[user.y];Z=[user.z]'>JMP</a>)")
 
 		transfer_soul("VICTIM", M, user)
 		return
@@ -80,6 +88,7 @@
 	icon = 'icons/obj/wizard.dmi'
 	icon_state = "construct"
 	desc = "A wicked machine used by those skilled in magical arts. It is inactive"
+	flags = FPRINT | TABLEPASS
 
 /obj/structure/constructshell/attackby(obj/item/O as obj, mob/user as mob)
 	if(istype(O, /obj/item/device/soulstone))
@@ -107,7 +116,7 @@
 							U << "\red <b>Capture failed!</b>: \black The soul stone is full! Use or free an existing soul to make room."
 						else
 							for(var/obj/item/W in T)
-								T.unEquip(W)
+								T.drop_from_inventory(W)
 							new /obj/effect/decal/remains/human(T.loc) //Spawns a skeleton
 							T.invisibility = 101
 							var/atom/movable/overlay/animation = new /atom/movable/overlay( T.loc )
@@ -168,7 +177,7 @@
 								ticker.mode.cult+=Z.mind
 							ticker.mode.update_cult_icons_added(Z.mind)
 						del(T)
-						Z << "<B>You are a Juggernaut. Though slow, your shell can withstand extreme punishment, create shield walls and even deflect energy weapons, and rip apart enemies and walls alike.</B>"
+						Z << "<B>You are playing a Juggernaut. Though slow, you can withstand extreme punishment, and rip apart enemies and walls alike.</B>"
 						Z << "<B>You are still bound to serve your creator, follow their orders and help them complete their goals at all costs.</B>"
 						Z.cancel_camera()
 						del(C)
@@ -183,7 +192,7 @@
 								ticker.mode.cult+=Z.mind
 							ticker.mode.update_cult_icons_added(Z.mind)
 						del(T)
-						Z << "<B>You are a Wraith. Though relatively fragile, you are fast, deadly, and even able to phase through walls.</B>"
+						Z << "<B>You are playing a Wraith. Though relatively fragile, you are fast, deadly, and even able to phase through walls.</B>"
 						Z << "<B>You are still bound to serve your creator, follow their orders and help them complete their goals at all costs.</B>"
 						Z.cancel_camera()
 						del(C)
@@ -198,7 +207,7 @@
 								ticker.mode.cult+=Z.mind
 							ticker.mode.update_cult_icons_added(Z.mind)
 						del(T)
-						Z << "<B>You are an Artificer. You are incredibly weak and fragile, but you are able to construct fortifications, use magic missile, repair allied constructs (by clicking on them), </B><I>and most important of all create new constructs</I><B> (Use your Artificer spell to summon a new construct shell and Summon Soulstone to create a new soulstone).</B>"
+						Z << "<B>You are playing an Artificer. You are incredibly weak and fragile, but you are able to construct fortifications, repair allied constructs (by clicking on them), and even create new constructs</B>"
 						Z << "<B>You are still bound to serve your creator, follow their orders and help them complete their goals at all costs.</B>"
 						Z.cancel_camera()
 						del(C)

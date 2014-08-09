@@ -9,6 +9,7 @@
 	throw_speed = 2
 	throw_range = 5
 	w_class = 3.0
+	flags = TABLEPASS
 	var/created_name = "Floorbot"
 
 /obj/item/weapon/toolbox_tiles_sensor
@@ -21,11 +22,12 @@
 	throw_speed = 2
 	throw_range = 5
 	w_class = 3.0
+	flags = TABLEPASS
 	var/created_name = "Floorbot"
 
 //Floorbot
 /obj/machinery/bot/floorbot
-	name = "\improper Floorbot"
+	name = "Floorbot"
 	desc = "A little floor repairing robot, he looks so excited!"
 	icon = 'icons/obj/aibots.dmi'
 	icon_state = "floorbot0"
@@ -163,7 +165,7 @@
 			src.updateUsrDialog()
 
 /obj/machinery/bot/floorbot/process()
-	set background = BACKGROUND_ENABLED
+	set background = 1
 
 	if(!src.on)
 		return
@@ -239,12 +241,10 @@
 	if(src.target && (src.target != null) && src.path.len == 0)
 		spawn(0)
 			if(!istype(src.target, /turf/))
-				var/turf/TL = get_turf(target)
-				src.path = AStar(src.loc, TL, /turf/proc/AdjacentTurfsSpace, /turf/proc/Distance, 0, 30)
+				src.path = AStar(src.loc, src.target.loc, /turf/proc/AdjacentTurfsSpace, /turf/proc/Distance, 0, 30, id=botcard)
 			else
-				src.path = AStar(src.loc, src.target, /turf/proc/AdjacentTurfsSpace, /turf/proc/Distance, 0, 30)
-			if(!src.path)
-				src.path = list()
+				src.path = AStar(src.loc, src.target, /turf/proc/AdjacentTurfsSpace, /turf/proc/Distance, 0, 30, id=botcard)
+			if (!src.path) src.path = list()
 			if(src.path.len == 0)
 				src.oldtarget = src.target
 				src.target = null
@@ -404,7 +404,7 @@
 	var/obj/item/weapon/toolbox_tiles/B = new /obj/item/weapon/toolbox_tiles
 	user.put_in_hands(B)
 	user << "<span class='notice'>You add the tiles into the empty toolbox. They protrude from the top.</span>"
-	user.unEquip(src, 1)
+	user.drop_from_inventory(src)
 	del(src)
 
 /obj/item/weapon/toolbox_tiles/attackby(var/obj/item/W, mob/user as mob)
@@ -415,7 +415,7 @@
 		B.created_name = src.created_name
 		user.put_in_hands(B)
 		user << "<span class='notice'>You add the sensor to the toolbox and tiles!</span>"
-		user.unEquip(src, 1)
+		user.drop_from_inventory(src)
 		del(src)
 
 	else if (istype(W, /obj/item/weapon/pen))
@@ -435,7 +435,7 @@
 		var/obj/machinery/bot/floorbot/A = new /obj/machinery/bot/floorbot(T)
 		A.name = src.created_name
 		user << "<span class='notice'>You add the robot arm to the odd looking toolbox assembly! Boop beep!</span>"
-		user.unEquip(src, 1)
+		user.drop_from_inventory(src)
 		del(src)
 	else if (istype(W, /obj/item/weapon/pen))
 		var/t = stripped_input(user, "Enter new robot name", src.name, src.created_name)

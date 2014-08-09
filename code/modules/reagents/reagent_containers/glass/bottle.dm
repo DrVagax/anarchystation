@@ -9,13 +9,20 @@
 	item_state = "atoxinbottle"
 	amount_per_transfer_from_this = 10
 	possible_transfer_amounts = list(5,10,15,25,30)
-	flags = OPENCONTAINER
+	flags = FPRINT | TABLEPASS | OPENCONTAINER
 	volume = 30
 
 	New()
 		..()
 		if(!icon_state)
 			icon_state = "bottle[rand(1,20)]"
+
+	update_icon()
+		overlays.Cut()
+
+		if (!is_open_container())
+			var/image/lid = image(icon, src, "lid_bottle")
+			overlays += lid
 
 /obj/item/weapon/reagent_containers/glass/bottle/inaprovaline
 	name = "inaprovaline bottle"
@@ -86,27 +93,6 @@
 	New()
 		..()
 		reagents.add_reagent("mutagen", 30)
-
-/obj/item/weapon/reagent_containers/glass/bottle/plasma
-	name = "liquid plasma bottle"
-	desc = "A small bottle of liquid plasma. Extremely toxic and reacts with micro-organisms inside blood."
-	icon = 'icons/obj/chemical.dmi'
-	icon_state = "bottle8"
-
-	New()
-		..()
-		reagents.add_reagent("plasma", 30)
-
-
-/obj/item/weapon/reagent_containers/glass/bottle/synaptizine
-	name = "synaptizine bottle"
-	desc = "A small bottle of synaptizine."
-	icon = 'icons/obj/chemical.dmi'
-	icon_state = "bottle20"
-
-	New()
-		..()
-		reagents.add_reagent("synaptizine", 30)
 
 /obj/item/weapon/reagent_containers/glass/bottle/ammonia
 	name = "ammonia bottle"
@@ -225,10 +211,12 @@
 	amount_per_transfer_from_this = 5
 
 	New()
-		..()
+		var/datum/reagents/R = new/datum/reagents(20)
+		reagents = R
+		R.my_atom = src
 		var/datum/disease/F = new /datum/disease/gbs
 		var/list/data = list("virus"= F)
-		reagents.add_reagent("blood", 20, data)
+		R.add_reagent("blood", 20, data)
 
 /obj/item/weapon/reagent_containers/glass/bottle/fake_gbs
 	name = "GBS culture bottle"
@@ -249,7 +237,9 @@
 	amount_per_transfer_from_this = 5
 
 	New()
-		..()
+		var/datum/reagents/R = new/datum/reagents(20)
+		reagents = R
+		R.my_atom = src
 		var/datum/disease/F = new /datum/disease/rhumba_beat
 		var/list/data = list("virus"= F)
 		R.add_reagent("blood", 20, data)

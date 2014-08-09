@@ -1,7 +1,8 @@
+
 /datum/admins/proc/player_panel_new()//The new one
-	if(!check_rights())
+	if (!usr.client.holder)
 		return
-	var/dat = "<html><head><title>Player Panel</title></head>"
+	var/dat = "<html><head><title>Admin Player Panel</title></head>"
 
 	//javascript, the part that does most of the work~
 	dat += {"
@@ -65,7 +66,6 @@
 					clearAll();
 
 					var span = document.getElementById(id);
-					var ckey = key.toLowerCase().replace(/\[^a-z@0-9\]+/g,"");
 
 					body = "<table><tr><td>";
 
@@ -75,15 +75,15 @@
 
 					body += "</td><td align='center'>";
 
-					body += "<a href='?_src_=holder;adminplayeropts="+ref+"'>PP</a> - "
-					body += "<a href='?_src_=holder;notes=show;ckey="+ckey+"'>N</a> - "
+					body += "<a href='?src=\ref[src];adminplayeropts="+ref+"'>PP</a> - "
+					body += "<a href='?src=\ref[src];notes=show;mob="+ref+"'>N</a> - "
 					body += "<a href='?_src_=vars;Vars="+ref+"'>VV</a> - "
-					body += "<a href='?_src_=holder;traitor="+ref+"'>TP</a> - "
-					body += "<a href='?priv_msg="+ckey+"'>PM</a> - "
-					body += "<a href='?_src_=holder;subtlemessage="+ref+"'>SM</a> - "
-					body += "<a href='?_src_=holder;adminplayerobservejump="+ref+"'>JMP</a><br>"
+					body += "<a href='?src=\ref[src];traitor="+ref+"'>TP</a> - "
+					body += "<a href='?src=\ref[usr];priv_msg=\ref"+ref+"'>PM</a> - "
+					body += "<a href='?src=\ref[src];subtlemessage="+ref+"'>SM</a> - "
+					body += "<a href='?src=\ref[src];adminplayerobservejump="+ref+"'>JMP</a><br>"
 					if(antagonist > 0)
-						body += "<font size='2'><a href='?_src_=holder;secretsadmin=check_antagonist'><font color='red'><b>Antagonist</b></font></a></font>";
+						body += "<font size='2'><a href='?src=\ref[src];check_antagonist=1'><font color='red'><b>Antagonist</b></font></a></font>";
 
 					body += "</td></tr></table>";
 
@@ -194,7 +194,7 @@
 			<tr id='title_tr'>
 				<td align='center'>
 					<font size='5'><b>Player panel</b></font><br>
-					Hover over a line to see more information - <a href='?_src_=holder;secretsadmin=check_antagonist'>Check antagonists</a> - Kick <a href='?_src_=holder;secretsadmin=kick_all_from_lobby;afkonly=0'>everyone</a>/<a href='?_src_=holder;secretsadmin=kick_all_from_lobby;afkonly=1'>AFKers</a> in lobby
+					Hover over a line to see more information - <a href='?src=\ref[src];check_antagonist=1'>Check antagonists</a>
 					<p>
 				</td>
 			</tr>
@@ -266,9 +266,23 @@
 			else if(isobserver(M))
 				M_job = "Ghost"
 
-			var/M_name = html_encode(M.name)
-			var/M_rname = html_encode(M.real_name)
-			var/M_key = html_encode(M.key)
+			M_job = replacetext(M_job, "'", "")
+			M_job = replacetext(M_job, "\"", "")
+			M_job = replacetext(M_job, "\\", "")
+
+			var/M_name = M.name
+			M_name = replacetext(M_name, "'", "")
+			M_name = replacetext(M_name, "\"", "")
+			M_name = replacetext(M_name, "\\", "")
+			var/M_rname = M.real_name
+			M_rname = replacetext(M_rname, "'", "")
+			M_rname = replacetext(M_rname, "\"", "")
+			M_rname = replacetext(M_rname, "\\", "")
+
+			var/M_key = M.key
+			M_key = replacetext(M_key, "'", "")
+			M_key = replacetext(M_key, "\"", "")
+			M_key = replacetext(M_key, "\\", "")
 
 			//output for each mob
 			dat += {"
@@ -306,8 +320,9 @@
 
 //The old one
 /datum/admins/proc/player_panel_old()
-	if(!check_rights())
+	if (!usr.client.holder)
 		return
+
 	var/dat = "<html><head><title>Player Menu</title></head>"
 	dat += "<body><table border=1 cellspacing=5><B><tr><th>Name</th><th>Real Name</th><th>Assigned Job</th><th>Key</th><th>Options</th><th>PM</th><th>Traitor?</th></tr></B>"
 	//add <th>IP:</th> to this if wanting to add back in IP checking
@@ -315,7 +330,7 @@
 	var/list/mobs = sortmobs()
 
 	for(var/mob/M in mobs)
-		if(!M.ckey)	continue
+		if(!M.ckey) continue
 
 		dat += "<tr><td>[M.name]</td>"
 		if(isAI(M))
@@ -347,16 +362,28 @@
 
 
 		dat += {"<td>[(M.client ? "[M.client]" : "No client")]</td>
-		<td align=center><A HREF='?_src_=holder;adminplayeropts=\ref[M]'>X</A></td>
-		<td align=center><A href='?priv_msg=[M.ckey]'>PM</A></td>
+		<td align=center><A HREF='?src=\ref[src];adminplayeropts=\ref[M]'>X</A></td>
+		<td align=center><A href='?src=\ref[usr];priv_msg=\ref[M]'>PM</A></td>
 		"}
-		switch(is_special_character(M))
-			if(0)
-				dat += {"<td align=center><A HREF='?_src_=holder;traitor=\ref[M]'>Traitor?</A></td>"}
-			if(1)
-				dat += {"<td align=center><A HREF='?_src_=holder;traitor=\ref[M]'><font color=red>Traitor?</font></A></td>"}
-			if(2)
-				dat += {"<td align=center><A HREF='?_src_=holder;traitor=\ref[M]'><font color=red><b>Traitor?</b></font></A></td>"}
+
+
+
+		if(usr.client)
+			var/client/C = usr.client
+			if(is_mentor(C))
+				dat += {"<td align=center> N/A </td>"}
+			else
+				switch(is_special_character(M))
+					if(0)
+						dat += {"<td align=center><A HREF='?src=\ref[src];traitor=\ref[M]'>Traitor?</A></td>"}
+					if(1)
+						dat += {"<td align=center><A HREF='?src=\ref[src];traitor=\ref[M]'><font color=red>Traitor?</font></A></td>"}
+					if(2)
+						dat += {"<td align=center><A HREF='?src=\ref[src];traitor=\ref[M]'><font color=red><b>Traitor?</b></font></A></td>"}
+		else
+			dat += {"<td align=center> N/A </td>"}
+
+
 
 	dat += "</table></body></html>"
 
@@ -370,23 +397,29 @@
 		dat += "Current Game Mode: <B>[ticker.mode.name]</B><BR>"
 		dat += "Round Duration: <B>[round(world.time / 36000)]:[add_zero(world.time / 600 % 60, 2)]:[world.time / 100 % 6][world.time / 100 % 10]</B><BR>"
 		dat += "<B>Emergency shuttle</B><BR>"
-		if (!emergency_shuttle.online)
-			dat += "<a href='?_src_=holder;call_shuttle=1'>Call Shuttle</a><br>"
+		if (!emergency_shuttle.online())
+			dat += "<a href='?src=\ref[src];call_shuttle=1'>Call Shuttle</a><br>"
 		else
-			var/timeleft = emergency_shuttle.timeleft()
-			if(emergency_shuttle.location == 0)
-				dat += "ETA: <a href='?_src_=holder;edit_shuttle_time=1'>[(timeleft / 60) % 60]:[add_zero(num2text(timeleft % 60), 2)]</a><BR>"
-				dat += "<a href='?_src_=holder;call_shuttle=2'>Send Back</a><br>"
-			else
-				dat += "ETA: <a href='?_src_=holder;edit_shuttle_time=1'>[(timeleft / 60) % 60]:[add_zero(num2text(timeleft % 60), 2)]</a><BR>"
-		dat += "<a href='?_src_=holder;delay_round_end=1'>[ticker.delay_end ? "End Round Normally" : "Delay Round End"]</a><br>"
+			if (emergency_shuttle.wait_for_launch)
+				var/timeleft = emergency_shuttle.estimate_launch_time()
+				dat += "ETL: <a href='?src=\ref[src];edit_shuttle_time=1'>[(timeleft / 60) % 60]:[add_zero(num2text(timeleft % 60), 2)]</a><BR>"
+
+			else if (emergency_shuttle.shuttle.has_arrive_time())
+				var/timeleft = emergency_shuttle.estimate_arrival_time()
+				dat += "ETA: <a href='?src=\ref[src];edit_shuttle_time=1'>[(timeleft / 60) % 60]:[add_zero(num2text(timeleft % 60), 2)]</a><BR>"
+				dat += "<a href='?src=\ref[src];call_shuttle=2'>Send Back</a><br>"
+
+			if (emergency_shuttle.shuttle.moving_status == SHUTTLE_WARMUP)
+				dat += "Launching now..."
+
+		dat += "<a href='?src=\ref[src];delay_round_end=1'>[ticker.delay_end ? "End Round Normally" : "Delay Round End"]</a><br>"
 		if(ticker.mode.syndicates.len)
 			dat += "<br><table cellspacing=5><tr><td><B>Syndicates</B></td><td></td></tr>"
 			for(var/datum/mind/N in ticker.mode.syndicates)
 				var/mob/M = N.current
 				if(M)
-					dat += "<tr><td><a href='?_src_=holder;adminplayeropts=\ref[M]'>[M.real_name]</a>[M.client ? "" : " <i>(logged out)</i>"][M.stat == 2 ? " <b><font color=red>(DEAD)</font></b>" : ""]</td>"
-					dat += "<td><A href='?priv_msg=[M.ckey]'>PM</A></td></tr>"
+					dat += "<tr><td><a href='?src=\ref[src];adminplayeropts=\ref[M]'>[M.real_name]</a>[M.client ? "" : " <i>(logged out)</i>"][M.stat == 2 ? " <b><font color=red>(DEAD)</font></b>" : ""]</td>"
+					dat += "<td><A href='?src=\ref[usr];priv_msg=\ref[M]'>PM</A></td></tr>"
 				else
 					dat += "<tr><td><i>Nuclear Operative not found!</i></td></tr>"
 			dat += "</table><br><table><tr><td><B>Nuclear Disk(s)</B></td></tr>"
@@ -396,7 +429,7 @@
 				while(!istype(disk_loc, /turf))
 					if(istype(disk_loc, /mob))
 						var/mob/M = disk_loc
-						dat += "carried by <a href='?_src_=holder;adminplayeropts=\ref[M]'>[M.real_name]</a> "
+						dat += "carried by <a href='?src=\ref[src];adminplayeropts=\ref[M]'>[M.real_name]</a> "
 					if(istype(disk_loc, /obj))
 						var/obj/O = disk_loc
 						dat += "in \a [O.name] "
@@ -411,85 +444,81 @@
 				if(!M)
 					dat += "<tr><td><i>Head Revolutionary not found!</i></td></tr>"
 				else
-					dat += "<tr><td><a href='?_src_=holder;adminplayeropts=\ref[M]'>[M.real_name]</a> <b>(Leader)</b>[M.client ? "" : " <i>(logged out)</i>"][M.stat == 2 ? " <b><font color=red>(DEAD)</font></b>" : ""]</td>"
-					dat += "<td><A href='?priv_msg=[M.ckey]'>PM</A></td></tr>"
+					dat += "<tr><td><a href='?src=\ref[src];adminplayeropts=\ref[M]'>[M.real_name]</a> <b>(Leader)</b>[M.client ? "" : " <i>(logged out)</i>"][M.stat == 2 ? " <b><font color=red>(DEAD)</font></b>" : ""]</td>"
+					dat += "<td><A href='?src=\ref[usr];priv_msg=\ref[M]'>PM</A></td></tr>"
 			for(var/datum/mind/N in ticker.mode.revolutionaries)
 				var/mob/M = N.current
 				if(M)
-					dat += "<tr><td><a href='?_src_=holder;adminplayeropts=\ref[M]'>[M.real_name]</a>[M.client ? "" : " <i>(logged out)</i>"][M.stat == 2 ? " <b><font color=red>(DEAD)</font></b>" : ""]</td>"
-					dat += "<td><A href='?priv_msg=[M.ckey]'>PM</A></td></tr>"
+					dat += "<tr><td><a href='?src=\ref[src];adminplayeropts=\ref[M]'>[M.real_name]</a>[M.client ? "" : " <i>(logged out)</i>"][M.stat == 2 ? " <b><font color=red>(DEAD)</font></b>" : ""]</td>"
+					dat += "<td><A href='?src=\ref[usr];priv_msg=\ref[M]'>PM</A></td></tr>"
 			dat += "</table><table cellspacing=5><tr><td><B>Target(s)</B></td><td></td><td><B>Location</B></td></tr>"
 			for(var/datum/mind/N in ticker.mode.get_living_heads())
 				var/mob/M = N.current
 				if(M)
-					dat += "<tr><td><a href='?_src_=holder;adminplayeropts=\ref[M]'>[M.real_name]</a>[M.client ? "" : " <i>(logged out)</i>"][M.stat == 2 ? " <b><font color=red>(DEAD)</font></b>" : ""]</td>"
-					dat += "<td><A href='?priv_msg=[M.ckey]'>PM</A></td>"
+					dat += "<tr><td><a href='?src=\ref[src];adminplayeropts=\ref[M]'>[M.real_name]</a>[M.client ? "" : " <i>(logged out)</i>"][M.stat == 2 ? " <b><font color=red>(DEAD)</font></b>" : ""]</td>"
+					dat += "<td><A href='?src=\ref[usr];priv_msg=\ref[M]'>PM</A></td>"
 					var/turf/mob_loc = get_turf(M)
 					dat += "<td>[mob_loc.loc]</td></tr>"
 				else
 					dat += "<tr><td><i>Head not found!</i></td></tr>"
 			dat += "</table>"
 
-		if(ticker.mode.changelings.len > 0)
-			dat += "<br><table cellspacing=5><tr><td><B>Changelings</B></td><td></td><td></td></tr>"
-			for(var/datum/mind/changeling in ticker.mode.changelings)
-				var/mob/M = changeling.current
-				if(M)
-					dat += "<tr><td><a href='?_src_=holder;adminplayeropts=\ref[M]'>[M.real_name]</a>[M.client ? "" : " <i>(logged out)</i>"][M.stat == 2 ? " <b><font color=red>(DEAD)</font></b>" : ""]</td>"
-					dat += "<td><A href='?priv_msg=[M.ckey]'>PM</A></td>"
-					dat += "<td><A HREF='?_src_=holder;traitor=\ref[M]'>Show Objective</A></td></tr>"
-				else
-					dat += "<tr><td><i>Changeling not found!</i></td></tr>"
-			dat += "</table>"
+		if(ticker.mode.changelings.len)
+			dat += check_role_table("Changelings", ticker.mode.changelings, src)
 
-		if(ticker.mode.wizards.len > 0)
-			dat += "<br><table cellspacing=5><tr><td><B>Wizards</B></td><td></td><td></td></tr>"
-			for(var/datum/mind/wizard in ticker.mode.wizards)
-				var/mob/M = wizard.current
-				if(M)
-					dat += "<tr><td><a href='?_src_=holder;adminplayeropts=\ref[M]'>[M.real_name]</a>[M.client ? "" : " <i>(logged out)</i>"][M.stat == 2 ? " <b><font color=red>(DEAD)</font></b>" : ""]</td>"
-					dat += "<td><A href='?priv_msg=[M.ckey]'>PM</A></td>"
-					dat += "<td><A HREF='?_src_=holder;traitor=\ref[M]'>Show Objective</A></td></tr>"
-				else
-					dat += "<tr><td><i>Wizard not found!</i></td></tr>"
-			dat += "</table>"
+		if(ticker.mode.wizards.len)
+			dat += check_role_table("Wizards", ticker.mode.wizards, src)
+
+		if(ticker.mode.raiders.len)
+			dat += check_role_table("Raiders", ticker.mode.raiders, src)
+
+		if(ticker.mode.ninjas.len)
+			dat += check_role_table("Ninjas", ticker.mode.ninjas, src)
 
 		if(ticker.mode.cult.len)
-			dat += "<br><table cellspacing=5><tr><td><B>Cultists</B></td><td></td></tr>"
-			for(var/datum/mind/N in ticker.mode.cult)
-				var/mob/M = N.current
-				if(M)
-					dat += "<tr><td><a href='?_src_=holder;adminplayeropts=\ref[M]'>[M.real_name]</a>[M.client ? "" : " <i>(logged out)</i>"][M.stat == 2 ? " <b><font color=red>(DEAD)</font></b>" : ""]</td>"
-					dat += "<td><A href='?priv_msg=[M.ckey]'>PM</A></td></tr>"
-			dat += "</table>"
+			dat += check_role_table("Cultists", ticker.mode.cult, src, 0)
 
-		if(ticker.mode.traitors.len > 0)
-			dat += "<br><table cellspacing=5><tr><td><B>Traitors</B></td><td></td><td></td></tr>"
-			for(var/datum/mind/traitor in ticker.mode.traitors)
-				var/mob/M = traitor.current
-				if(M)
-					dat += "<tr><td><a href='?_src_=holder;adminplayeropts=\ref[M]'>[M.real_name]</a>[M.client ? "" : " <i>(logged out)</i>"][M.stat == 2 ? " <b><font color=red>(DEAD)</font></b>" : ""]</td>"
-					dat += "<td><A href='?priv_msg=[M.ckey]'>PM</A></td>"
-					dat += "<td><A HREF='?_src_=holder;traitor=\ref[M]'>Show Objective</A></td></tr>"
-				else
-					dat += "<tr><td><i>Traitor not found!</i></td></tr>"
-			dat += "</table>"
+		if(ticker.mode.traitors.len)
+			dat += check_role_table("Traitors", ticker.mode.traitors, src)
 
-		if(istype(ticker.mode, /datum/game_mode/blob))
-			var/datum/game_mode/blob/mode = ticker.mode
-			dat += "<br><table cellspacing=5><tr><td><B>Blob</B></td><td></td><td></td></tr>"
-			dat += "<tr><td><i>Progress: [blobs.len]/[mode.blobwincount]</i></td></tr>"
-
-			for(var/datum/mind/blob in mode.infected_crew)
-				var/mob/M = blob.current
-				if(M)
-					dat += "<tr><td><a href='?_src_=holder;adminplayeropts=\ref[M]'>[M.real_name]</a>[M.client ? "" : " <i>(logged out)</i>"][M.stat == 2 ? " <b><font color=red>(DEAD)</font></b>" : ""]</td>"
-					dat += "<td><A href='?priv_msg=[M.ckey]'>PM</A></td>"
-				else
-					dat += "<tr><td><i>Blob not found!</i></td></tr>"
-			dat += "</table>"
+		var/datum/game_mode/mutiny/mutiny = get_mutiny_mode()
+		if(mutiny)
+			dat += mutiny.check_antagonists_ui(src)
 
 		dat += "</body></html>"
 		usr << browse(dat, "window=roundstatus;size=400x500")
 	else
 		alert("The game hasn't started yet!")
+
+/proc/check_role_table(name, list/members, admins, show_objectives=1)
+	var/txt = "<br><table cellspacing=5><tr><td><b>[name]</b></td><td></td></tr>"
+	for(var/datum/mind/M in members)
+		txt += check_role_table_row(M.current, admins, show_objectives)
+	txt += "</table>"
+	return txt
+
+/proc/check_role_table_row(mob/M, admins=src, show_objectives)
+	if (!istype(M))
+		return "<tr><td><i>Not found!</i></td></tr>"
+
+	var/txt = {"
+		<tr>
+			<td>
+				<a href='?src=\ref[admins];adminplayeropts=\ref[M]'>[M.real_name]</a>
+				[M.client ? "" : " <i>(logged out)</i>"]
+				[M.is_dead() ? " <b><font color='red'>(DEAD)</font></b>" : ""]
+			</td>
+			<td>
+				<a href='?src=\ref[usr];priv_msg=\ref[M]'>PM</a>
+			</td>
+	"}
+
+	if (show_objectives)
+		txt += {"
+			<td>
+				<a href='?src=\ref[admins];traitor=\ref[M]'>Show Objective</a>
+			</td>
+		"}
+
+	txt += "</tr>"
+	return txt

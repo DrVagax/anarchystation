@@ -3,13 +3,12 @@
 	desc = "A small electronic device that should never exist."
 	icon = 'icons/obj/assemblies/new_assemblies.dmi'
 	icon_state = ""
-	flags = CONDUCT
+	flags = FPRINT | TABLEPASS| CONDUCT
 	w_class = 2.0
-	m_amt = 100
-	g_amt = 0
+	matter = list("metal" = 100)
 	throwforce = 2
 	throw_speed = 3
-	throw_range = 7
+	throw_range = 10
 	origin_tech = "magnets=1"
 
 	var/secured = 1
@@ -48,8 +47,6 @@
 	interact(mob/user as mob)					//Called when attack_self is called
 		return
 
-	proc/describe()									// Called by grenades to describe the state of the trigger (time left, etc)
-		return "The trigger assembly looks broken!"
 
 	process_cooldown()
 		cooldown--
@@ -72,10 +69,6 @@
 			holder.process_activation(src, 1, 0)
 		if(holder && (wires & WIRE_PULSE_SPECIAL))
 			holder.process_activation(src, 0, 1)
-
-		if(istype(loc,/obj/item/weapon/grenade)) // This is a hack.  Todo: Manage this better -Sayu
-			var/obj/item/weapon/grenade/G = loc
-			G.prime() 							 // Adios, muchachos
 //		if(radio && (wires & WIRE_RADIO_PULSE))
 			//Not sure what goes here quite yet send signal?
 		return 1
@@ -109,7 +102,7 @@
 			if((!A.secured) && (!secured))
 				attach_assembly(A,user)
 				return
-		if(istype(W, /obj/item/weapon/screwdriver))
+		if(isscrewdriver(W))
 			if(toggle_secure())
 				user << "\blue \The [src] is ready!"
 			else

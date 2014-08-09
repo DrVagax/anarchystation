@@ -1,30 +1,111 @@
 /mob/living/carbon/monkey
 	name = "monkey"
 	voice_name = "monkey"
-	voice_message = "chimpers"
-	say_message = "chimpers"
-	icon = 'icons/mob/monkey.dmi'
+	speak_emote = list("chimpers")
 	icon_state = "monkey1"
+	icon = 'icons/mob/monkey.dmi'
 	gender = NEUTER
 	pass_flags = PASSTABLE
 	update_icon = 0		///no need to call regenerate_icon
-	ventcrawler = 1
+
+	var/obj/item/weapon/card/id/wear_id = null // Fix for station bounced radios -- Skie
+	var/greaterform = "Human"                  // Used when humanizing a monkey.
+	icon_state = "monkey1"
+	//var/uni_append = "12C4E2"                // Small appearance modifier for different species.
+	var/list/uni_append = list(0x12C,0x4E2)    // Same as above for DNA2.
+	var/update_muts = 1                        // Monkey gene must be set at start.
+	var/alien = 0				   //Used for reagent metabolism.
+
+/mob/living/carbon/monkey/tajara
+	name = "farwa"
+	voice_name = "farwa"
+	speak_emote = list("mews")
+	icon_state = "tajkey1"
+	uni_append = list(0x0A0,0xE00) // 0A0E00
+
+/mob/living/carbon/monkey/skrell
+	name = "neaera"
+	voice_name = "neaera"
+	speak_emote = list("squicks")
+	icon_state = "skrellkey1"
+	uni_append = list(0x01C,0xC92) // 01CC92
+
+/mob/living/carbon/monkey/unathi
+	name = "stok"
+	voice_name = "stok"
+	speak_emote = list("hisses")
+	icon_state = "stokkey1"
+	uni_append = list(0x044,0xC5D) // 044C5D
 
 /mob/living/carbon/monkey/New()
-	create_reagents(1000)
-	verbs += /mob/living/proc/mob_sleep
-	verbs += /mob/living/proc/lay_down
+	var/datum/reagents/R = new/datum/reagents(1000)
+	reagents = R
+	R.my_atom = src
 
-	internal_organs += new /obj/item/organ/appendix
-	internal_organs += new /obj/item/organ/heart
-	internal_organs += new /obj/item/organ/brain
+	if(name == initial(name)) //To stop Pun-Pun becoming generic.
+		name = "[name] ([rand(1, 1000)])"
+		real_name = name
 
-	if(name == "monkey")
-		name = text("monkey ([rand(1, 1000)])")
-	real_name = name
-	gender = pick(MALE, FEMALE)
+	if (!(dna))
+		if(gender == NEUTER)
+			gender = pick(MALE, FEMALE)
+		dna = new /datum/dna( null )
+		dna.real_name = real_name
+		dna.ResetSE()
+		dna.ResetUI()
+		//dna.uni_identity = "00600200A00E0110148FC01300B009"
+		//dna.SetUI(list(0x006,0x002,0x00A,0x00E,0x011,0x014,0x8FC,0x013,0x00B,0x009))
+		//dna.struc_enzymes = "43359156756131E13763334D1C369012032164D4FE4CD61544B6C03F251B6C60A42821D26BA3B0FD6"
+		//dna.SetSE(list(0x433,0x591,0x567,0x561,0x31E,0x137,0x633,0x34D,0x1C3,0x690,0x120,0x321,0x64D,0x4FE,0x4CD,0x615,0x44B,0x6C0,0x3F2,0x51B,0x6C6,0x0A4,0x282,0x1D2,0x6BA,0x3B0,0xFD6))
+		dna.unique_enzymes = md5(name)
+
+		// We're a monkey
+		dna.SetSEState(MONKEYBLOCK,   1)
+		dna.SetSEValueRange(MONKEYBLOCK,0xDAC, 0xFFF)
+		// Fix gender
+		dna.SetUIState(DNA_UI_GENDER, gender != MALE, 1)
+
+		// Set the blocks to uni_append, if needed.
+		if(uni_append.len>0)
+			for(var/b=1;b<=uni_append.len;b++)
+				dna.SetUIValue(DNA_UI_LENGTH-(uni_append.len-b),uni_append[b], 1)
+		dna.UpdateUI()
+
+		update_muts=1
 
 	..()
+	update_icons()
+	return
+
+/mob/living/carbon/monkey/unathi/New()
+
+	..()
+	dna.mutantrace = "lizard"
+	greaterform = "Unathi"
+	add_language("Sinta'unathi")
+
+/mob/living/carbon/monkey/skrell/New()
+
+	..()
+	dna.mutantrace = "skrell"
+	greaterform = "Skrell"
+	add_language("Skrellian")
+
+/mob/living/carbon/monkey/tajara/New()
+
+	..()
+	dna.mutantrace = "tajaran"
+	greaterform = "Tajaran"
+	add_language("Siik'tajr")
+
+/mob/living/carbon/monkey/diona/New()
+
+	..()
+	alien = 1
+	gender = NEUTER
+	dna.mutantrace = "plant"
+	greaterform = "Diona"
+	add_language("Rootspeak")
 
 /mob/living/carbon/monkey/movement_delay()
 	var/tally = 0
@@ -41,32 +122,61 @@
 	return tally+config.monkey_delay
 
 /mob/living/carbon/monkey/Bump(atom/movable/AM as mob|obj, yes)
-	if ((!( yes ) || now_pushing))
-		return
-	now_pushing = 1
-	if(ismob(AM))
-		var/mob/tmob = AM
-		if(!(tmob.status_flags & CANPUSH))
-			now_pushing = 0
+
+	spawn( 0 )
+		if ((!( yes ) || now_pushing))
 			return
-
-		tmob.LAssailant = src
-	now_pushing = 0
-	..()
-	if (!istype(AM, /atom/movable))
-		return
-	if (!( now_pushing ))
 		now_pushing = 1
-		if (!( AM.anchored ))
-			var/t = get_dir(src, AM)
-			if (istype(AM, /obj/structure/window))
-				if(AM:ini_dir == NORTHWEST || AM:ini_dir == NORTHEAST || AM:ini_dir == SOUTHWEST || AM:ini_dir == SOUTHEAST)
-					for(var/obj/structure/window/win in get_step(AM,t))
-						now_pushing = 0
-						return
-			step(AM, t)
-		now_pushing = null
+		if(ismob(AM))
+			var/mob/tmob = AM
+			if(istype(tmob, /mob/living/carbon/human) && (HULK in tmob.mutations))
+				if(prob(70))
+					usr << "\red <B>You fail to push [tmob]'s fat ass out of the way.</B>"
+					now_pushing = 0
+					return
+			if(!(tmob.status_flags & CANPUSH))
+				now_pushing = 0
+				return
 
+			tmob.LAssailant = src
+		now_pushing = 0
+		..()
+		if (!( istype(AM, /atom/movable) ))
+			return
+		if (!( now_pushing ))
+			now_pushing = 1
+			if (!( AM.anchored ))
+				var/t = get_dir(src, AM)
+				if (istype(AM, /obj/structure/window))
+					if(AM:ini_dir == NORTHWEST || AM:ini_dir == NORTHEAST || AM:ini_dir == SOUTHWEST || AM:ini_dir == SOUTHEAST)
+						for(var/obj/structure/window/win in get_step(AM,t))
+							now_pushing = 0
+							return
+				step(AM, t)
+			now_pushing = null
+		return
+	return
+
+/mob/living/carbon/monkey/Topic(href, href_list)
+	..()
+	if (href_list["mach_close"])
+		var/t1 = text("window=[]", href_list["mach_close"])
+		unset_machine()
+		src << browse(null, t1)
+	if ((href_list["item"] && !( usr.stat ) && !( usr.restrained() ) && in_range(src, usr) ))
+		var/obj/effect/equip_e/monkey/O = new /obj/effect/equip_e/monkey(  )
+		O.source = usr
+		O.target = src
+		O.item = usr.get_active_hand()
+		O.s_loc = usr.loc
+		O.t_loc = loc
+		O.place = href_list["item"]
+		requests += O
+		spawn( 0 )
+			O.process()
+			return
+	..()
+	return
 
 /mob/living/carbon/monkey/meteorhit(obj/O as obj)
 	for(var/mob/M in viewers(src, null))
@@ -81,17 +191,18 @@
 
 //mob/living/carbon/monkey/bullet_act(var/obj/item/projectile/Proj)taken care of in living
 
+
 /mob/living/carbon/monkey/attack_paw(mob/M as mob)
 	..()
 
 	if (M.a_intent == "help")
 		help_shake_act(M)
 	else
-		if ((M.a_intent == "harm" && !( istype(wear_mask, /obj/item/clothing/mask/muzzle) )))
+		if ((M.a_intent == "hurt" && !( istype(wear_mask, /obj/item/clothing/mask/muzzle) )))
 			if ((prob(75) && health > 0))
 				playsound(loc, 'sound/weapons/bite.ogg', 50, 1, -1)
 				for(var/mob/O in viewers(src, null))
-					O.show_message("<span class='danger'>[M.name] bites [name]!</span>", 1)
+					O.show_message("\red <B>[M.name] has bit [name]!</B>", 1)
 				var/damage = rand(1, 5)
 				adjustBruteLoss(damage)
 				health = 100 - getOxyLoss() - getToxLoss() - getFireLoss() - getBruteLoss()
@@ -100,7 +211,7 @@
 						contract_disease(D,1,0)
 			else
 				for(var/mob/O in viewers(src, null))
-					O.show_message("<span class='danger'>[M.name] has attempted to bite [name]!</span>", 1)
+					O.show_message("\red <B>[M.name] has attempted to bite [name]!</B>", 1)
 	return
 
 /mob/living/carbon/monkey/attack_hand(mob/living/carbon/human/M as mob)
@@ -112,29 +223,44 @@
 		M << "No attacking people at spawn, you jackass."
 		return
 
-	if(..())	//To allow surgery to return properly.
-		return
+	if(M.gloves && istype(M.gloves,/obj/item/clothing/gloves))
+		var/obj/item/clothing/gloves/G = M.gloves
+		if(G.cell)
+			if(M.a_intent == "hurt")//Stungloves. Any contact will stun the alien.
+				if(G.cell.charge >= 2500)
+					G.cell.use(2500)
+					Weaken(5)
+					if (stuttering < 5)
+						stuttering = 5
+					Stun(5)
+
+					for(var/mob/O in viewers(src, null))
+						if (O.client)
+							O.show_message("\red <B>[src] has been touched with the stun gloves by [M]!</B>", 1, "\red You hear someone fall", 2)
+					return
+				else
+					M << "\red Not enough charge! "
+					return
 
 	if (M.a_intent == "help")
 		help_shake_act(M)
-
 	else
-		if (M.a_intent == "harm")
-			if (prob(75))
+		if (M.a_intent == "hurt")
+			if ((prob(75) && health > 0))
 				for(var/mob/O in viewers(src, null))
 					if ((O.client && !( O.blinded )))
-						O.show_message(text("<span class='danger'>[] has punched [name]!</span>", M), 1)
+						O.show_message(text("\red <B>[] has punched [name]!</B>", M), 1)
 
 				playsound(loc, "punch", 25, 1, -1)
 				var/damage = rand(5, 10)
 				if (prob(40))
 					damage = rand(10, 15)
-					if ( (paralysis < 5)  && (health > 0) )
+					if (paralysis < 5)
 						Paralyse(rand(10, 15))
 						spawn( 0 )
 							for(var/mob/O in viewers(src, null))
 								if ((O.client && !( O.blinded )))
-									O.show_message(text("<span class='danger'>[] has knocked out [name]!</span>", M), 1)
+									O.show_message(text("\red <B>[] has knocked out [name]!</B>", M), 1)
 							return
 				adjustBruteLoss(damage)
 				updatehealth()
@@ -142,7 +268,7 @@
 				playsound(loc, 'sound/weapons/punchmiss.ogg', 25, 1, -1)
 				for(var/mob/O in viewers(src, null))
 					if ((O.client && !( O.blinded )))
-						O.show_message(text("<span class='danger'>[] has attempted to punch [name]!</span>", M), 1)
+						O.show_message(text("\red <B>[] has attempted to punch [name]!</B>", M), 1)
 		else
 			if (M.a_intent == "grab")
 				if (M == src || anchored)
@@ -152,6 +278,7 @@
 
 				M.put_in_active_hand(G)
 
+				grabbed_by += G
 				G.synch()
 
 				LAssailant = M
@@ -166,13 +293,13 @@
 						playsound(loc, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
 						for(var/mob/O in viewers(src, null))
 							if ((O.client && !( O.blinded )))
-								O.show_message(text("<span class='danger'>[] has pushed down [name]!</span>", M), 1)
+								O.show_message(text("\red <B>[] has pushed down [name]!</B>", M), 1)
 					else
-						if(drop_item())
-							playsound(loc, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
-							for(var/mob/O in viewers(src, null))
-								if ((O.client && !( O.blinded )))
-									O.show_message(text("<span class='danger'>[] has disarmed [name]!</span>", M), 1)
+						drop_item()
+						playsound(loc, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
+						for(var/mob/O in viewers(src, null))
+							if ((O.client && !( O.blinded )))
+								O.show_message(text("\red <B>[] has disarmed [name]!</B>", M), 1)
 	return
 
 /mob/living/carbon/monkey/attack_alien(mob/living/carbon/alien/humanoid/M as mob)
@@ -190,7 +317,7 @@
 				if ((O.client && !( O.blinded )))
 					O.show_message(text("\blue [M] caresses [src] with its scythe like arm."), 1)
 
-		if ("harm")
+		if ("hurt")
 			if ((prob(95) && health > 0))
 				playsound(loc, 'sound/weapons/slice.ogg', 25, 1, -1)
 				var/damage = rand(15, 30)
@@ -200,26 +327,27 @@
 						Paralyse(rand(10, 15))
 					for(var/mob/O in viewers(src, null))
 						if ((O.client && !( O.blinded )))
-							O.show_message(text("<span class='danger'>[] has wounded [name]!</span>", M), 1)
+							O.show_message(text("\red <B>[] has wounded [name]!</B>", M), 1)
 				else
 					for(var/mob/O in viewers(src, null))
 						if ((O.client && !( O.blinded )))
-							O.show_message(text("<span class='danger'>[] has slashed [name]!</span>", M), 1)
+							O.show_message(text("\red <B>[] has slashed [name]!</B>", M), 1)
 				adjustBruteLoss(damage)
 				updatehealth()
 			else
 				playsound(loc, 'sound/weapons/slashmiss.ogg', 25, 1, -1)
 				for(var/mob/O in viewers(src, null))
 					if ((O.client && !( O.blinded )))
-						O.show_message(text("<span class='danger'>[] has attempted to lunge at [name]!</span>", M), 1)
+						O.show_message(text("\red <B>[] has attempted to lunge at [name]!</B>", M), 1)
 
 		if ("grab")
-			if (M == src || anchored)
+			if (M == src)
 				return
-			var/obj/item/weapon/grab/G = new /obj/item/weapon/grab(M, src )
+			var/obj/item/weapon/grab/G = new /obj/item/weapon/grab( M, M, src )
 
 			M.put_in_active_hand(G)
 
+			grabbed_by += G
 			G.synch()
 
 			LAssailant = M
@@ -232,15 +360,15 @@
 			playsound(loc, 'sound/weapons/pierce.ogg', 25, 1, -1)
 			var/damage = 5
 			if(prob(95))
-				Weaken(10)
+				Weaken(15)
 				for(var/mob/O in viewers(src, null))
 					if ((O.client && !( O.blinded )))
-						O.show_message(text("<span class='danger'>[] has tackled down [name]!</span>", M), 1)
+						O.show_message(text("\red <B>[] has tackled down [name]!</B>", M), 1)
 			else
-				if(drop_item())
-					for(var/mob/O in viewers(src, null))
-						if ((O.client && !( O.blinded )))
-							O.show_message(text("<span class='danger'>[] has disarmed [name]!</span>", M), 1)
+				drop_item()
+				for(var/mob/O in viewers(src, null))
+					if ((O.client && !( O.blinded )))
+						O.show_message(text("\red <B>[] has disarmed [name]!</B>", M), 1)
 			adjustBruteLoss(damage)
 			updatehealth()
 	return
@@ -252,8 +380,9 @@
 		if(M.attack_sound)
 			playsound(loc, M.attack_sound, 50, 1, 1)
 		for(var/mob/O in viewers(src, null))
-			O.show_message("<span class='danger'>[M] [M.attacktext] [src]!</span>", 1)
-		add_logs(M, src, "attacked", admin=0)
+			O.show_message("\red <B>[M]</B> [M.attacktext] [src]!", 1)
+		M.attack_log += text("\[[time_stamp()]\] <font color='red'>attacked [src.name] ([src.ckey])</font>")
+		src.attack_log += text("\[[time_stamp()]\] <font color='orange'>was attacked by [M.name] ([M.ckey])</font>")
 		var/damage = rand(M.melee_damage_lower, M.melee_damage_upper)
 		adjustBruteLoss(damage)
 		updatehealth()
@@ -270,11 +399,11 @@
 
 		for(var/mob/O in viewers(src, null))
 			if ((O.client && !( O.blinded )))
-				O.show_message(text("<span class='danger'>The [M.name] glomps []!</span>", src), 1)
+				O.show_message(text("\red <B>The [M.name] glomps []!</B>", src), 1)
 
 		var/damage = rand(1, 3)
 
-		if(M.is_adult)
+		if(istype(src, /mob/living/carbon/slime/adult))
 			damage = rand(20, 40)
 		else
 			damage = rand(5, 35)
@@ -298,7 +427,9 @@
 				if(M.powerlevel < 0)
 					M.powerlevel = 0
 
-				visible_message("<span class='danger'>[M] shocked [src]!</span>", "<span class='userdanger'>[M] shocked [src]!</span>")
+				for(var/mob/O in viewers(src, null))
+					if ((O.client && !( O.blinded )))
+						O.show_message(text("\red <B>The [M.name] has shocked []!</B>", src), 1)
 
 				Weaken(power)
 				if (stuttering < power)
@@ -325,8 +456,8 @@
 	if(client && mind)
 		if (client.statpanel == "Status")
 			if(mind.changeling)
-				stat("Chemical Storage", "[mind.changeling.chem_charges]/[mind.changeling.chem_storage]")
-				stat("Absorbed DNA", mind.changeling.absorbedcount)
+				stat("Chemical Storage", mind.changeling.chem_charges)
+				stat("Genetic Damage Time", mind.changeling.geneticdamage)
 	return
 
 
@@ -339,19 +470,31 @@
 /mob/living/carbon/monkey/var/co2overloadtime = null
 /mob/living/carbon/monkey/var/temperature_resistance = T0C+75
 
-/mob/living/carbon/monkey/ex_act(severity)
+/mob/living/carbon/monkey/emp_act(severity)
+	if(wear_id) wear_id.emp_act(severity)
 	..()
+
+/mob/living/carbon/monkey/ex_act(severity)
+	if(!blinded)
+		flick("flash", flash)
+
 	switch(severity)
 		if(1.0)
-			gib()
-			return
+			if (stat != 2)
+				adjustBruteLoss(200)
+				health = 100 - getOxyLoss() - getToxLoss() - getFireLoss() - getBruteLoss()
 		if(2.0)
-			adjustBruteLoss(60)
-			adjustFireLoss(60)
+			if (stat != 2)
+				adjustBruteLoss(60)
+				adjustFireLoss(60)
+				health = 100 - getOxyLoss() - getToxLoss() - getFireLoss() - getBruteLoss()
 		if(3.0)
-			adjustBruteLoss(30)
+			if (stat != 2)
+				adjustBruteLoss(30)
+				health = 100 - getOxyLoss() - getToxLoss() - getFireLoss() - getBruteLoss()
 			if (prob(50))
 				Paralyse(10)
+		else
 	return
 
 /mob/living/carbon/monkey/blob_act()
@@ -370,7 +513,21 @@
 
 
 /mob/living/carbon/monkey/IsAdvancedToolUser()//Unless its monkey mode monkeys cant use advanced tools
-	if(!ticker)	return 0
-	if(!ticker.mode.name == "monkey")	return 0
-	return 1
+	return 0
 
+/mob/living/carbon/monkey/say(var/message, var/datum/language/speaking = null, var/verb="says", var/alt_name="", var/italics=0, var/message_range = world.view, var/list/used_radios = list())
+        if(stat)
+                return
+
+        if(copytext(message,1,2) == "*")
+                return emote(copytext(message,2))
+
+        if(stat)
+                return
+
+        if(speak_emote.len)
+                verb = pick(speak_emote)
+
+        message = capitalize(trim_left(message))
+
+        ..(message, speaking, verb, alt_name, italics, message_range, used_radios)

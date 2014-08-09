@@ -1,54 +1,58 @@
 var/list/sec_departments = list("engineering", "supply", "medical", "science")
 
-/datum/job/officer/proc/assign_sec_to_department(var/mob/living/carbon/human/H)
-	if(!H) return 0
-	if(!sec_departments.len)
-		H.equip_to_slot_or_del(new /obj/item/clothing/under/rank/security(H), slot_w_uniform)
-		H.equip_to_slot_or_del(new /obj/item/device/radio/headset/headset_sec(H), slot_ears)
-	else
+proc/assign_sec_to_department(var/mob/living/carbon/human/H)
+	if(sec_departments.len)
 		var/department = pick(sec_departments)
 		sec_departments -= department
-		var/dep_access = null
+		var/access = null
 		var/destination = null
 		switch(department)
 			if("supply")
 				H.equip_to_slot_or_del(new /obj/item/clothing/under/rank/security/cargo(H), slot_w_uniform)
 				H.equip_to_slot_or_del(new /obj/item/device/radio/headset/headset_sec/department/supply(H), slot_ears)
-				dep_access = list(access_mailsorting, access_mining)
+				access = list(access_mailsorting, access_mining)
 				destination = /area/security/checkpoint/supply
 			if("engineering")
 				H.equip_to_slot_or_del(new /obj/item/clothing/under/rank/security/engine(H), slot_w_uniform)
 				H.equip_to_slot_or_del(new /obj/item/device/radio/headset/headset_sec/department/engi(H), slot_ears)
-				dep_access = list(access_construction, access_engine)
+				access = list(access_construction, access_engine)
 				destination = /area/security/checkpoint/engineering
 			if("medical")
 				H.equip_to_slot_or_del(new /obj/item/clothing/under/rank/security/med(H), slot_w_uniform)
 				H.equip_to_slot_or_del(new /obj/item/device/radio/headset/headset_sec/department/med(H), slot_ears)
-				dep_access = list(access_medical)
+				access = list(access_medical)
 				destination = /area/security/checkpoint/medical
 			if("science")
 				H.equip_to_slot_or_del(new /obj/item/clothing/under/rank/security/science(H), slot_w_uniform)
 				H.equip_to_slot_or_del(new /obj/item/device/radio/headset/headset_sec/department/sci(H), slot_ears)
-				dep_access = list(access_research)
+				access = list(access_research)
 				destination = /area/security/checkpoint/science
-		var/teleport = 0
-		if(!config.sec_start_brig)
-			if(destination)
-				if(!ticker || ticker.current_state <= GAME_STATE_SETTING_UP)
-					teleport = 1
-		if(teleport)
-			var/turf/T
-			var/safety = 0
-			while(safety < 25)
-				T = safepick(get_area_turfs(destination))
-				if(T && !H.Move(T))
-					safety += 1
-					continue
-				else
-					break
-		H << "<b>You have been assigned to [department]!</b>"
-		access += dep_access
+			else
+				H.equip_to_slot_or_del(new /obj/item/clothing/under/rank/security(H), slot_w_uniform)
+				H.equip_to_slot_or_del(new /obj/item/device/radio/headset/headset_sec(H), slot_ears)
 
+
+		if(destination)
+			var/teleport = 0
+			if(!ticker || ticker.current_state <= GAME_STATE_SETTING_UP)
+				teleport = 1
+			spawn(15)
+				if(H)
+					if(teleport)
+						var/turf/T
+						var/safety = 0
+						while(safety < 25)
+							T = pick(get_area_turfs(destination))
+							if(!H.Move(T))
+								safety += 1
+								continue
+							else
+								break
+					H << "<b>You have been assigned to [department]!</b>"
+					if(locate(/obj/item/weapon/card/id, H))
+						var/obj/item/weapon/card/id/I = locate(/obj/item/weapon/card/id, H)
+						if(I)
+							I.access |= access
 
 
 /datum/job/officer
@@ -85,9 +89,6 @@ var/list/sec_departments = list("engineering", "supply", "medical", "science")
 		return 1
 
 /obj/item/device/radio/headset/headset_sec/department/New()
-	wires = new(src)
-	secure_radio_connections = new
-
 	if(radio_controller)
 		initialize()
 	recalculateChannels()
@@ -109,13 +110,17 @@ var/list/sec_departments = list("engineering", "supply", "medical", "science")
 	keyslot2 = new /obj/item/device/encryptionkey/headset_sci
 
 /obj/item/clothing/under/rank/security/cargo/New()
-	attachTie(new /obj/item/clothing/tie/armband/cargo)
+	var/obj/item/clothing/tie/armband/cargo/A		= new /obj/item/clothing/tie/armband/cargo
+	hastie = A
 
 /obj/item/clothing/under/rank/security/engine/New()
-	attachTie(new /obj/item/clothing/tie/armband/engine)
+	var/obj/item/clothing/tie/armband/engine/A		= new /obj/item/clothing/tie/armband/engine
+	hastie = A
 
 /obj/item/clothing/under/rank/security/science/New()
-	attachTie(new /obj/item/clothing/tie/armband/science)
+	var/obj/item/clothing/tie/armband/science/A		= new /obj/item/clothing/tie/armband/science
+	hastie = A
 
 /obj/item/clothing/under/rank/security/med/New()
-	attachTie(new /obj/item/clothing/tie/armband/medgreen)
+	var/obj/item/clothing/tie/armband/medgreen/A	= new /obj/item/clothing/tie/armband/medgreen
+	hastie = A

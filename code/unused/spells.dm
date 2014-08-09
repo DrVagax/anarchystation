@@ -124,6 +124,28 @@
 //	smoke.set_up(10, 0, usr.loc)
 //	smoke.start()
 
+//FORCE WALL
+
+/obj/effect/forcefield
+	desc = "A space wizard's magic wall."
+	name = "FORCEWALL"
+	icon = 'icons/effects/effects.dmi'
+	icon_state = "m_shield"
+	anchored = 1.0
+	opacity = 0
+	density = 1
+	unacidable = 1
+
+
+	bullet_act(var/obj/item/projectile/Proj, var/def_zone)
+		var/turf/T = get_turf(src.loc)
+		if(T)
+			for(var/mob/M in T)
+				Proj.on_hit(M,M.bullet_act(Proj, def_zone))
+		return
+
+
+
 /client/proc/forcewall()
 
 	set category = "Spells"
@@ -296,7 +318,7 @@
 		if(T.y>world.maxy-4 || T.y<4)	continue
 		turfs += T
 	if(!turfs.len) turfs += pick(/turf in orange(6))
-	var/datum/effect/effect/system/harmless_smoke_spread/smoke = new /datum/effect/effect/system/harmless_smoke_spread()
+	var/datum/effect/effect/system/smoke_spread/smoke = new /datum/effect/effect/system/smoke_spread()
 	smoke.set_up(10, 0, usr.loc)
 	smoke.start()
 	var/turf/picked = pick(turfs)
@@ -338,7 +360,7 @@
 
 	usr.say("SCYAR NILA [uppertext(A)]")
 
-	var/datum/effect/effect/system/harmless_smoke_spread/smoke = new /datum/effect/effect/system/harmless_smoke_spread()
+	var/datum/effect/effect/system/smoke_spread/smoke = new /datum/effect/effect/system/smoke_spread()
 	smoke.set_up(5, 0, usr.loc)
 	smoke.attach(usr)
 	smoke.start()

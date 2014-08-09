@@ -9,8 +9,7 @@
 	maxHealth = 15
 	health = 15
 	meat_type = /obj/item/weapon/reagent_containers/food/snacks/tomatomeat
-	response_help  = "prods"
-	response_disarm = "pushes aside"
-	response_harm   = "smacks"
+	response_help  = "prods the"
+	response_disarm = "pushes aside the"
+	response_harm   = "smacks the"
 	harm_intent_damage = 5
-	ventcrawler = 2

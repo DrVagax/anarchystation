@@ -2,6 +2,8 @@
  * Contains:
  *		Glass sheets
  *		Reinforced glass sheets
+ *		Phoron Glass Sheets
+ *		Reinforced Phoron Glass Sheets (AKA Holy fuck strong windows)
  *		Glass shards - TODO: Move this into code/game/object/item/weapons
  */
 
@@ -13,25 +15,31 @@
 	desc = "HOLY SHEET! That is a lot of glass."
 	singular_name = "glass sheet"
 	icon_state = "sheet-glass"
-	g_amt = 3750
+	matter = list("glass" = 3750)
 	origin_tech = "materials=1"
+	var/created_window = /obj/structure/window/basic
 
+/obj/item/stack/sheet/glass/cyborg
+	name = "glass"
+	desc = "HOLY SHEET! That is a lot of glass."
+	singular_name = "glass sheet"
+	icon_state = "sheet-glass"
+	matter = null
+	created_window = /obj/structure/window/basic
 
 /obj/item/stack/sheet/glass/attack_self(mob/user as mob)
 	construct_window(user)
 
 /obj/item/stack/sheet/glass/attackby(obj/item/W, mob/user)
 	..()
-	add_fingerprint(user)
-	if(istype(W,/obj/item/stack/cable_coil))
-		var/obj/item/stack/cable_coil/CC = W
+	if(istype(W,/obj/item/weapon/cable_coil))
+		var/obj/item/weapon/cable_coil/CC = W
 		if(CC.amount < 5)
 			user << "\b There is not enough wire in this coil. You need 5 lengths."
 			return
 		CC.use(5)
 		user << "\blue You attach wire to the [name]."
-		var/obj/item/stack/light_w/new_tile = new(user.loc)
-		new_tile.add_fingerprint(user)
+		new /obj/item/stack/light_w(user.loc)
 		src.use(1)
 	else if( istype(W, /obj/item/stack/rods) )
 		var/obj/item/stack/rods/V  = W
@@ -83,15 +91,12 @@
 				if(!found)
 					dir_to_set = direction
 					break
-
 			var/obj/structure/window/W
-			W = new /obj/structure/window/basic( user.loc, 0 )
+			W = new created_window( user.loc, 0 )
 			W.dir = dir_to_set
 			W.ini_dir = W.dir
 			W.anchored = 0
-			W.air_update_turf(1)
 			src.use(1)
-			W.add_fingerprint(user)
 		if("Full Window")
 			if(!src)	return 1
 			if(src.loc != user)	return 1
@@ -102,12 +107,10 @@
 				user << "\red There is a window in the way."
 				return 1
 			var/obj/structure/window/W
-			W = new /obj/structure/window/basic( user.loc, 0 )
+			W = new created_window( user.loc, 0 )
 			W.dir = SOUTHWEST
 			W.ini_dir = SOUTHWEST
 			W.anchored = 0
-			W.air_update_turf(1)
-			W.add_fingerprint(user)
 			src.use(2)
 	return 0
 
@@ -120,8 +123,9 @@
 	desc = "Glass which seems to have rods or something stuck in them."
 	singular_name = "reinforced glass sheet"
 	icon_state = "sheet-rglass"
-	g_amt = 3750
-	m_amt = 1875
+
+	matter = list("metal" = 1875,"glass" = 3750)
+
 	origin_tech = "materials=2"
 
 /obj/item/stack/sheet/rglass/cyborg
@@ -129,8 +133,6 @@
 	desc = "Glass which seems to have rods or something stuck in them."
 	singular_name = "reinforced glass sheet"
 	icon_state = "sheet-rglass"
-	g_amt = 0
-	m_amt = 0
 
 /obj/item/stack/sheet/rglass/attack_self(mob/user as mob)
 	construct_window(user)
@@ -176,46 +178,44 @@
 			W.dir = dir_to_set
 			W.ini_dir = W.dir
 			W.anchored = 0
-			W.add_fingerprint(user)
 			src.use(1)
 
 		if("Full Window")
 			if(!src)	return 1
 			if(src.loc != user)	return 1
 			if(src.amount < 2)
-				user << "<span class='warning'>You need more glass to do that.</span>"
+				user << "\red You need more glass to do that."
 				return 1
 			if(locate(/obj/structure/window) in user.loc)
-				user << "<span class='warning'>There is a window in the way.</span>"
+				user << "\red There is a window in the way."
 				return 1
 			var/obj/structure/window/W
-			W = new /obj/structure/window/reinforced(user.loc, 1)
+			W = new /obj/structure/window/reinforced( user.loc, 1 )
 			W.state = 0
 			W.dir = SOUTHWEST
 			W.ini_dir = SOUTHWEST
 			W.anchored = 0
-			W.add_fingerprint(user)
 			src.use(2)
 
 		if("Windoor")
 			if(!src || src.loc != user) return 1
 
 			if(isturf(user.loc) && locate(/obj/structure/windoor_assembly/, user.loc))
-				user << "<span class='warning'>There is already a windoor assembly in that location.</span>"
+				user << "\red There is already a windoor assembly in that location."
 				return 1
 
 			if(isturf(user.loc) && locate(/obj/machinery/door/window/, user.loc))
-				user << "<span class='warning'>There is already a windoor in that location.</span>"
+				user << "\red There is already a windoor in that location."
 				return 1
 
 			if(src.amount < 5)
-				user << "<span class='warning'>You need more glass to do that.</span>"
+				user << "\red You need more glass to do that."
 				return 1
 
-			var/obj/structure/windoor_assembly/WD = new(user.loc)
+			var/obj/structure/windoor_assembly/WD
+			WD = new /obj/structure/windoor_assembly(user.loc)
 			WD.state = "01"
 			WD.anchored = 0
-			WD.add_fingerprint(user)
 			src.use(5)
 			switch(user.dir)
 				if(SOUTH)
@@ -227,7 +227,7 @@
 				if(WEST)
 					WD.dir = WEST
 					WD.ini_dir = WEST
-				else //If the user is facing northeast. northwest, southeast, southwest or north, default to north
+				else//If the user is facing northeast. northwest, southeast, southwest or north, default to north
 					WD.dir = NORTH
 					WD.ini_dir = NORTH
 		else
@@ -236,81 +236,122 @@
 
 	return 0
 
+/*
+ * Glass shards - TODO: Move this into code/game/object/item/weapons
+ */
+/obj/item/weapon/shard/Bump()
 
-/obj/item/weapon/shard
-	name = "shard"
-	desc = "A nasty looking shard of glass."
-	icon = 'icons/obj/shards.dmi'
-	icon_state = "large"
-	w_class = 1.0
-	force = 5.0
-	throwforce = 10.0
-	item_state = "shard-glass"
-	g_amt = 3750
-	attack_verb = list("stabbed", "slashed", "sliced", "cut")
-	hitsound = 'sound/weapons/bladeslice.ogg'
-
-	suicide_act(mob/user)
-		viewers(user) << pick("<span class='suicide'>[user] is slitting \his wrists with the shard of glass! It looks like \he's trying to commit suicide.</span>", \
-							"<span class='suicide'>[user] is slitting \his throat with the shard of glass! It looks like \he's trying to commit suicide.</span>")
-		return (BRUTELOSS)
-
+	spawn( 0 )
+		if (prob(20))
+			src.force = 15
+		else
+			src.force = 4
+		..()
+		return
+	return
 
 /obj/item/weapon/shard/New()
-	icon_state = pick("large", "medium", "small")
-	switch(icon_state)
+
+	src.icon_state = pick("large", "medium", "small")
+	switch(src.icon_state)
 		if("small")
-			pixel_x = rand(-12, 12)
-			pixel_y = rand(-12, 12)
+			src.pixel_x = rand(-12, 12)
+			src.pixel_y = rand(-12, 12)
 		if("medium")
-			pixel_x = rand(-8, 8)
-			pixel_y = rand(-8, 8)
+			src.pixel_x = rand(-8, 8)
+			src.pixel_y = rand(-8, 8)
 		if("large")
-			pixel_x = rand(-5, 5)
-			pixel_y = rand(-5, 5)
+			src.pixel_x = rand(-5, 5)
+			src.pixel_y = rand(-5, 5)
+		else
+	return
 
-/obj/item/weapon/shard/afterattack(atom/A as mob|obj, mob/user, proximity)
-	if(!proximity || !(src in user)) return
-	if(isturf(A))
-		return
-	if(istype(A, /obj/item/weapon/storage))
-		return
-
-	if(ishuman(user))
-		var/mob/living/carbon/human/H = user
-		if(!H.gloves)
-			H << "<span class='warning'>[src] cuts into your hand!</span>"
-			var/organ = (H.hand ? "l_" : "r_") + "arm"
-			var/obj/item/organ/limb/affecting = H.get_organ(organ)
-			if(affecting.take_damage(force / 2))
-				H.update_damage_overlays(0)
-	else if(isliving(user))
-		var/mob/living/L = user
-		L << "<span class='warning'>[src] cuts into your hand!</span>"
-		L.adjustBruteLoss(force / 2)
-
-
-/obj/item/weapon/shard/attackby(obj/item/I, mob/user)
-	if(istype(I, /obj/item/weapon/weldingtool))
-		var/obj/item/weapon/weldingtool/WT = I
+/obj/item/weapon/shard/attackby(obj/item/weapon/W as obj, mob/user as mob)
+	..()
+	if ( istype(W, /obj/item/weapon/weldingtool))
+		var/obj/item/weapon/weldingtool/WT = W
 		if(WT.remove_fuel(0, user))
 			var/obj/item/stack/sheet/glass/NG = new (user.loc)
-			for(var/obj/item/stack/sheet/glass/G in user.loc)
-				if(G == NG)
+			for (var/obj/item/stack/sheet/glass/G in user.loc)
+				if(G==NG)
 					continue
-				if(G.amount >= G.max_amount)
+				if(G.amount>=G.max_amount)
 					continue
 				G.attackby(NG, user)
-				user << "<span class='notice'>You add the newly-formed glass to the stack. It now contains [NG.amount] sheet\s.</span>"
+				usr << "You add the newly-formed glass to the stack. It now contains [NG.amount] sheets."
+			//SN src = null
 			del(src)
+			return
+	return ..()
+
+/obj/item/weapon/shard/HasEntered(AM as mob|obj)
+	if(ismob(AM))
+		var/mob/M = AM
+		M << "\red <B>You step in the broken glass!</B>"
+		playsound(src.loc, 'sound/effects/glass_step.ogg', 50, 1)
+		if(ishuman(M))
+			var/mob/living/carbon/human/H = M
+
+			if(H.species.flags & IS_SYNTHETIC)
+				return
+
+			if( !H.shoes && ( !H.wear_suit || !(H.wear_suit.body_parts_covered & FEET) ) )
+				var/datum/organ/external/affecting = H.get_organ(pick("l_foot", "r_foot"))
+				if(affecting.status & ORGAN_ROBOT)
+					return
+				H.Weaken(3)
+				if(affecting.take_damage(5, 0))
+					H.UpdateDamageIcon()
+				H.updatehealth()
 	..()
 
-/obj/item/weapon/shard/Crossed(var/mob/AM)
-	if(istype(AM))
-		playsound(loc, 'sound/effects/glass_step.ogg', 50, 1)
-		if(ishuman(AM))
-			var/mob/living/carbon/human/H = AM
-			if(!H.shoes)
-				H << "<span class='userdanger'>You step in the broken glass!</span>"
-				H.apply_damage(5,BRUTE,(pick("l_leg", "r_leg")))
-				H.Weaken(3)
+
+
+
+/*
+ * Phoron Glass sheets
+ */
+/obj/item/stack/sheet/glass/phoronglass
+	name = "phoron glass"
+	desc = "A very strong and very resistant sheet of a phoron-glass alloy."
+	singular_name = "phoron glass sheet"
+	icon_state = "sheet-phoronglass"
+	matter = list("glass" = 7500)
+	origin_tech = "materials=3;phoron=2"
+	created_window = /obj/structure/window/phoronbasic
+
+/obj/item/stack/sheet/glass/phoronglass/attack_self(mob/user as mob)
+	construct_window(user)
+
+/obj/item/stack/sheet/glass/phoronglass/attackby(obj/item/W, mob/user)
+	..()
+	if( istype(W, /obj/item/stack/rods) )
+		var/obj/item/stack/rods/V  = W
+		var/obj/item/stack/sheet/glass/phoronrglass/RG = new (user.loc)
+		RG.add_fingerprint(user)
+		RG.add_to_stacks(user)
+		V.use(1)
+		var/obj/item/stack/sheet/glass/G = src
+		src = null
+		var/replace = (user.get_inactive_hand()==G)
+		G.use(1)
+		if (!G && !RG && replace)
+			user.put_in_hands(RG)
+	else
+		return ..()
+
+/*
+ * Reinforced phoron glass sheets
+ */
+/obj/item/stack/sheet/glass/phoronrglass
+	name = "reinforced phoron glass"
+	desc = "Phoron glass which seems to have rods or something stuck in them."
+	singular_name = "reinforced phoron glass sheet"
+	icon_state = "sheet-phoronrglass"
+	matter = list("glass" = 7500,"metal" = 1875)
+
+	origin_tech = "materials=4;phoron=2"
+	created_window = /obj/structure/window/phoronreinforced
+
+/obj/item/stack/sheet/glass/phoronrglass/attack_self(mob/user as mob)
+	construct_window(user)

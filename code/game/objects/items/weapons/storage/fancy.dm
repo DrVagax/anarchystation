@@ -26,6 +26,7 @@
 
 /obj/item/weapon/storage/fancy/examine()
 	set src in oview(1)
+
 	..()
 	if(contents.len <= 0)
 		usr << "There are no [src.icon_type]s left in the box."
@@ -88,6 +89,7 @@
 	item_state = "candlebox5"
 	storage_slots = 5
 	throwforce = 2
+	flags = TABLEPASS
 	slot_flags = SLOT_BELT
 
 
@@ -150,7 +152,8 @@
 	icon_state = "cigpacket"
 	item_state = "cigpacket"
 	w_class = 1
-	throwforce = 0
+	throwforce = 2
+	flags = TABLEPASS
 	slot_flags = SLOT_BELT
 	storage_slots = 6
 	can_hold = list("/obj/item/clothing/mask/cigarette")
@@ -170,7 +173,6 @@
 
 /obj/item/weapon/storage/fancy/cigarettes/update_icon()
 	icon_state = "[initial(icon_state)][contents.len]"
-	desc = "There are [contents.len] cig\s left!"
 	return
 
 /obj/item/weapon/storage/fancy/cigarettes/remove_from_storage(obj/item/W as obj, atom/new_location)
@@ -184,11 +186,13 @@
 		return
 
 	if(M == user && user.zone_sel.selecting == "mouth" && contents.len > 0 && !user.wear_mask)
-		var/obj/item/clothing/mask/cigarette/W = contents[1]
-		remove_from_storage(W, M)
-		M.equip_to_slot_if_possible(W, slot_wear_mask)
-		contents -= W
+		var/obj/item/clothing/mask/cigarette/W = new /obj/item/clothing/mask/cigarette(user)
+		reagents.trans_to(W, (reagents.total_volume/contents.len))
+		user.equip_to_slot_if_possible(W, slot_wear_mask)
+		reagents.maximum_volume = 15 * contents.len
+		contents.len--
 		user << "<span class='notice'>You take a cigarette out of the pack.</span>"
+		update_icon()
 	else
 		..()
 
@@ -197,3 +201,55 @@
 	desc = "A packet of six imported DromedaryCo cancer sticks. A label on the packaging reads, \"Wouldn't a slow death make a change?\""
 	icon_state = "Dpacket"
 	item_state = "Dpacket"
+
+
+/*
+ * Vial Box
+ */
+
+/obj/item/weapon/storage/fancy/vials
+	icon = 'icons/obj/vialbox.dmi'
+	icon_state = "vialbox6"
+	icon_type = "vial"
+	name = "vial storage box"
+	storage_slots = 6
+	can_hold = list("/obj/item/weapon/reagent_containers/glass/beaker/vial")
+
+
+/obj/item/weapon/storage/fancy/vials/New()
+	..()
+	for(var/i=1; i <= storage_slots; i++)
+		new /obj/item/weapon/reagent_containers/glass/beaker/vial(src)
+	return
+
+/obj/item/weapon/storage/lockbox/vials
+	name = "secure vial storage box"
+	desc = "A locked box for keeping things away from children."
+	icon = 'icons/obj/vialbox.dmi'
+	icon_state = "vialbox0"
+	item_state = "syringe_kit"
+	max_w_class = 3
+	can_hold = list("/obj/item/weapon/reagent_containers/glass/beaker/vial")
+	max_combined_w_class = 14 //The sum of the w_classes of all the items in this storage item.
+	storage_slots = 6
+	req_access = list(access_virology)
+
+/obj/item/weapon/storage/lockbox/vials/New()
+	..()
+	update_icon()
+
+/obj/item/weapon/storage/lockbox/vials/update_icon(var/itemremoved = 0)
+	var/total_contents = src.contents.len - itemremoved
+	src.icon_state = "vialbox[total_contents]"
+	src.overlays.Cut()
+	if (!broken)
+		overlays += image(icon, src, "led[locked]")
+		if(locked)
+			overlays += image(icon, src, "cover")
+	else
+		overlays += image(icon, src, "ledb")
+	return
+
+/obj/item/weapon/storage/lockbox/vials/attackby(obj/item/weapon/W as obj, mob/user as mob)
+	..()
+	update_icon()

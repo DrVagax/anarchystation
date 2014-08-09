@@ -1,10 +1,10 @@
 /mob/living/silicon/pai
 	name = "pAI"
-	icon = 'icons/obj/status_display.dmi' //invisibility!
-	mouse_opacity
-	density = 0
+	icon = 'icons/mob/mob.dmi'//
+	icon_state = "shadow"
 
 	robot_talk_understand = 0
+	emote_type = 2		// pAIs emotes are heard, not seen, so they can be seen through a container (eg. person)
 
 	var/network = "SS13"
 	var/obj/machinery/camera/current = null
@@ -52,16 +52,23 @@
 
 	var/obj/item/radio/integrated/signal/sradio // AI's signaller
 
+	var/translator_on = 0 // keeps track of the translator module
+
 
 /mob/living/silicon/pai/New(var/obj/item/device/paicard)
 	canmove = 0
-	src.loc = get_turf(paicard)
+	src.loc = paicard
 	card = paicard
 	sradio = new(src)
 	if(card)
 		if(!card.radio)
 			card.radio = new /obj/item/device/radio(src.card)
 		radio = card.radio
+
+	//Default languages without universal translator software
+	add_language("Sol Common", 1)
+	add_language("Tradeband", 1)
+	add_language("Gutter", 1)
 
 	//PDA
 	pda = new(src)
@@ -70,8 +77,6 @@
 		pda.owner = text("[]", src)
 		pda.name = pda.owner + " (" + pda.ownjob + ")"
 		pda.toff = 1
-
-		follow_pai()
 	..()
 
 /mob/living/silicon/pai/Login()
@@ -79,21 +84,22 @@
 	usr << browse_rsc('html/paigrid.png')			// Go ahead and cache the interface resources as early as possible
 
 
+// this function shows the information about being silenced as a pAI in the Status panel
+/mob/living/silicon/pai/proc/show_silenced()
+	if(src.silence_time)
+		var/timeleft = round((silence_time - world.timeofday)/10 ,1)
+		stat(null, "Communications system reboot in -[(timeleft / 60) % 60]:[add_zero(num2text(timeleft % 60), 2)]")
+
+
 /mob/living/silicon/pai/Stat()
 	..()
 	statpanel("Status")
 	if (src.client.statpanel == "Status")
-		if(emergency_shuttle.online && emergency_shuttle.location < 2)
-			var/timeleft = emergency_shuttle.timeleft()
-			if (timeleft)
-				stat(null, "ETA-[(timeleft / 60) % 60]:[add_zero(num2text(timeleft % 60), 2)]")
-		if(src.silence_time)
-			var/timeleft = round((silence_time - world.timeofday)/10 ,1)
-			stat(null, "Communications system reboot in -[(timeleft / 60) % 60]:[add_zero(num2text(timeleft % 60), 2)]")
-		if(!src.stat)
-			stat(null, text("System integrity: [(src.health+100)/2]%"))
-		else
-			stat(null, text("Systems nonfunctional"))
+		show_silenced()
+
+	if (proc_holder_list.len)//Generic list for proc_holder objects.
+		for(var/obj/effect/proc_holder/P in proc_holder_list)
+			statpanel("[P.panel]","",P)
 
 /mob/living/silicon/pai/check_eye(var/mob/user as mob)
 	if (!src.current)
@@ -121,7 +127,7 @@
 	src.silence_time = world.timeofday + 120 * 10		// Silence for 2 minutes
 	src << "<font color=green><b>Communication circuit overload. Shutting down and reloading communication circuits - speech and messaging functionality will be unavailable until the reboot is complete.</b></font>"
 	if(prob(20))
-		var/turf/T = get_turf(src.loc)
+		var/turf/T = get_turf_or_move(src.loc)
 		for (var/mob/M in viewers(T))
 			M.show_message("\red A shower of sparks spray from [src]'s inner workings.", 3, "\red You hear and smell the ozone hiss of electrical sparks being expelled violently.", 2)
 		return src.death(0)
@@ -143,7 +149,8 @@
 			src << "<font color=green>You feel an electric surge run through your circuitry and become acutely aware at how lucky you are that you can still feel at all.</font>"
 
 /mob/living/silicon/pai/ex_act(severity)
-	..()
+	if(!blinded)
+		flick("flash", src.flash)
 
 	switch(severity)
 		if(1.0)
@@ -158,10 +165,56 @@
 			if (src.stat != 2)
 				adjustBruteLoss(30)
 
-	return
+	src.updatehealth()
 
 
 // See software.dm for Topic()
+
+/mob/living/silicon/pai/meteorhit(obj/O as obj)
+	for(var/mob/M in viewers(src, null))
+		M.show_message(text("\red [] has been hit by []", src, O), 1)
+	if (src.health > 0)
+		src.adjustBruteLoss(30)
+		if ((O.icon_state == "flaming"))
+			src.adjustFireLoss(40)
+		src.updatehealth()
+	return
+
+//mob/living/silicon/pai/bullet_act(var/obj/item/projectile/Proj)
+
+/mob/living/silicon/pai/attack_alien(mob/living/carbon/alien/humanoid/M as mob)
+	if (!ticker)
+		M << "You cannot attack people before the game has started."
+		return
+
+	if (istype(src.loc, /turf) && istype(src.loc.loc, /area/start))
+		M << "You cannot attack someone in the spawn area."
+		return
+
+	switch(M.a_intent)
+
+		if ("help")
+			for(var/mob/O in viewers(src, null))
+				if ((O.client && !( O.blinded )))
+					O.show_message(text("\blue [M] caresses [src]'s casing with its scythe like arm."), 1)
+
+		else //harm
+			var/damage = rand(10, 20)
+			if (prob(90))
+				playsound(src.loc, 'sound/weapons/slash.ogg', 25, 1, -1)
+				for(var/mob/O in viewers(src, null))
+					if ((O.client && !( O.blinded )))
+						O.show_message(text("\red <B>[] has slashed at []!</B>", M, src), 1)
+				if(prob(8))
+					flick("noise", src.flash)
+				src.adjustBruteLoss(damage)
+				src.updatehealth()
+			else
+				playsound(src.loc, 'sound/weapons/slashmiss.ogg', 25, 1, -1)
+				for(var/mob/O in viewers(src, null))
+					if ((O.client && !( O.blinded )))
+						O.show_message(text("\red <B>[] took a swipe at []!</B>", M, src), 1)
+	return
 
 ///mob/living/silicon/pai/attack_hand(mob/living/carbon/M as mob)
 
@@ -188,9 +241,6 @@
 	src.unset_machine()
 	src:cameraFollow = null
 
-/mob/living/silicon/pai/UnarmedAttack(var/atom/A)//Stops runtimes due to attack_animal being the default
-	return
-
 //Addition by Mord_Sith to define AI's network change ability
 /*
 /mob/living/silicon/pai/proc/pai_network_change()
@@ -209,7 +259,7 @@
 		if(!C.status)
 			continue
 		else
-			if(C.network != "CREED" && C.network != "thunder" && C.network != "RD" && C.network != "toxins" && C.network != "Prison") COMPILE ERROR! This will have to be updated as camera.network is no longer a string, but a list instead
+			if(C.network != "CREED" && C.network != "thunder" && C.network != "RD" && C.network != "phoron" && C.network != "Prison") COMPILE ERROR! This will have to be updated as camera.network is no longer a string, but a list instead
 				cameralist[C.network] = C.network
 
 	src.network = input(usr, "Which network would you like to view?") as null|anything in cameralist

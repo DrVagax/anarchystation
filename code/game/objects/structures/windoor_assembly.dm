@@ -29,17 +29,12 @@ obj/structure/windoor_assembly
 obj/structure/windoor_assembly/New(dir=NORTH)
 	..()
 	src.ini_dir = src.dir
-	air_update_turf(1)
+	update_nearby_tiles(need_rebuild=1)
 
 obj/structure/windoor_assembly/Del()
 	density = 0
-	air_update_turf(1)
+	update_nearby_tiles()
 	..()
-
-/obj/structure/windoor_assembly/Move()
-	var/turf/T = loc
-	..()
-	move_update_air(T)
 
 /obj/structure/windoor_assembly/update_icon()
 	icon_state = "[facing]_[secure]windoor_assembly[state]"
@@ -49,12 +44,6 @@ obj/structure/windoor_assembly/Del()
 		return 1
 	if(get_dir(loc, target) == dir) //Make sure looking at appropriate border
 		if(air_group) return 0
-		return !density
-	else
-		return 1
-
-/obj/structure/windoor_assembly/CanAtmosPass(var/turf/T)
-	if(get_dir(loc, T) == dir)
 		return !density
 	else
 		return 1
@@ -70,26 +59,23 @@ obj/structure/windoor_assembly/Del()
 
 /obj/structure/windoor_assembly/attackby(obj/item/W as obj, mob/user as mob)
 	//I really should have spread this out across more states but thin little windoors are hard to sprite.
-	add_fingerprint(user)
 	switch(state)
 		if("01")
 			if(istype(W, /obj/item/weapon/weldingtool) && !anchored )
 				var/obj/item/weapon/weldingtool/WT = W
 				if (WT.remove_fuel(0,user))
-					user.visible_message("<span class='warning'>[user] dissassembles the windoor assembly.</span>", "<span class='notice'>You start to dissassemble the windoor assembly.</span>")
+					user.visible_message("[user] dissassembles the windoor assembly.", "You start to dissassemble the windoor assembly.")
 					playsound(src.loc, 'sound/items/Welder2.ogg', 50, 1)
 
 					if(do_after(user, 40))
 						if(!src || !WT.isOn()) return
-						user << "<span class='notice'>You dissasembled the windoor assembly!</span>"
-						var/obj/item/stack/sheet/rglass/RG = new (get_turf(src), 5)
-						RG.add_fingerprint(user)
+						user << "\blue You dissasembled the windoor assembly!"
+						new /obj/item/stack/sheet/rglass(get_turf(src), 5)
 						if(secure)
-							var/obj/item/stack/rods/R = new (get_turf(src), 4)
-							R.add_fingerprint(user)
+							new /obj/item/stack/rods(get_turf(src), 4)
 						del(src)
 				else
-					user << "<span class='notice'>You need more welding fuel to dissassemble the windoor assembly.</span>"
+					user << "\blue You need more welding fuel to dissassemble the windoor assembly."
 					return
 
 			//Wrenching an unsecure assembly anchors it in place. Step 4 complete
@@ -121,17 +107,17 @@ obj/structure/windoor_assembly/Del()
 						src.name = "Windoor Assembly"
 
 			//Adding plasteel makes the assembly a secure windoor assembly. Step 2 (optional) complete.
-			else if(istype(W, /obj/item/stack/sheet/plasteel) && !secure)
-				var/obj/item/stack/sheet/plasteel/P = W
-				if(P.amount < 2)
-					user << "\red You need more plasteel to do this."
+			else if(istype(W, /obj/item/stack/rods) && !secure)
+				var/obj/item/stack/rods/R = W
+				if(R.amount < 4)
+					user << "\red You need more rods to do this."
 					return
-				user << "\blue You start to reinforce the windoor with plasteel."
+				user << "\blue You start to reinforce the windoor with rods."
 
 				if(do_after(user,40))
 					if(!src) return
 
-					P.use(2)
+					R.use(4)
 					user << "\blue You reinforce the windoor."
 					src.secure = "secure_"
 					if(src.anchored)
@@ -140,12 +126,12 @@ obj/structure/windoor_assembly/Del()
 						src.name = "Secure Windoor Assembly"
 
 			//Adding cable to the assembly. Step 5 complete.
-			else if(istype(W, /obj/item/stack/cable_coil) && anchored)
+			else if(istype(W, /obj/item/weapon/cable_coil) && anchored)
 				user.visible_message("[user] wires the windoor assembly.", "You start to wire the windoor assembly.")
 
 				if(do_after(user, 40))
 					if(!src) return
-					var/obj/item/stack/cable_coil/CC = W
+					var/obj/item/weapon/cable_coil/CC = W
 					CC.use(1)
 					user << "\blue You wire the windoor!"
 					src.state = "02"
@@ -159,7 +145,7 @@ obj/structure/windoor_assembly/Del()
 		if("02")
 
 			//Removing wire from the assembly. Step 5 undone.
-			if(istype(W, /obj/item/weapon/wirecutters))
+			if(istype(W, /obj/item/weapon/wirecutters) && !src.electronics)
 				playsound(src.loc, 'sound/items/Wirecutter.ogg', 100, 1)
 				user.visible_message("[user] cuts the wires from the airlock assembly.", "You start to cut the wires from airlock assembly.")
 
@@ -167,15 +153,15 @@ obj/structure/windoor_assembly/Del()
 					if(!src) return
 
 					user << "\blue You cut the windoor wires.!"
-					new/obj/item/stack/cable_coil(get_turf(user), 1)
+					new/obj/item/weapon/cable_coil(get_turf(user), 1)
 					src.state = "01"
 					if(src.secure)
-						src.name = "Secure Wired Windoor Assembly"
+						src.name = "Secure Anchored Windoor Assembly"
 					else
-						src.name = "Wired Windoor Assembly"
+						src.name = "Anchored Windoor Assembly"
 
 			//Adding airlock electronics for access. Step 6 complete.
-			else if(istype(W, /obj/item/weapon/airlock_electronics))
+			else if(istype(W, /obj/item/weapon/airlock_electronics) && W:icon_state != "door_electronics_smoked")
 				playsound(src.loc, 'sound/items/Screwdriver.ogg', 100, 1)
 				user.visible_message("[user] installs the electronics into the airlock assembly.", "You start to install electronics into the airlock assembly.")
 
@@ -191,25 +177,20 @@ obj/structure/windoor_assembly/Del()
 					W.loc = src.loc
 
 			//Screwdriver to remove airlock electronics. Step 6 undone.
-			else if(istype(W, /obj/item/weapon/screwdriver))
-				if(!electronics)
-					return
-
+			else if(istype(W, /obj/item/weapon/screwdriver) && src.electronics)
 				playsound(src.loc, 'sound/items/Screwdriver.ogg', 100, 1)
 				user.visible_message("[user] removes the electronics from the airlock assembly.", "You start to uninstall electronics from the airlock assembly.")
 
 				if(do_after(user, 40))
-					if(!src) return
+					if(!src || !src.electronics) return
 					user << "\blue You've removed the airlock electronics!"
-					src.name = "Wired Windoor Assembly"
-					var/obj/item/weapon/airlock_electronics/ae
-					if (!electronics) //This shouldnt happen, but if it does, lets not crash and runtime.
-						ae = new/obj/item/weapon/airlock_electronics( src.loc )
+					if(src.secure)
+						src.name = "Secure Wired Windoor Assembly"
 					else
-						ae = electronics
-						electronics = null
-						ae.loc = src.loc
-
+						src.name = "Wired Windoor Assembly"
+					var/obj/item/weapon/airlock_electronics/ae = electronics
+					electronics = null
+					ae.loc = src.loc
 
 			//Crowbar to complete the assembly, Step 7 complete.
 			else if(istype(W, /obj/item/weapon/crowbar))
@@ -238,10 +219,13 @@ obj/structure/windoor_assembly/Del()
 						windoor.dir = src.dir
 						windoor.density = 0
 
-						windoor.req_access = src.electronics.conf_access
+						if(src.electronics.one_access)
+							windoor.req_access = null
+							windoor.req_one_access = src.electronics.conf_access
+						else
+							windoor.req_access = src.electronics.conf_access
 						windoor.electronics = src.electronics
 						src.electronics.loc = windoor
-						windoor.close()
 					else
 						var/obj/machinery/door/window/windoor = new /obj/machinery/door/window(src.loc)
 						if(src.facing == "l")
@@ -253,10 +237,14 @@ obj/structure/windoor_assembly/Del()
 						windoor.dir = src.dir
 						windoor.density = 0
 
-						windoor.req_access = src.electronics.conf_access
+						if(src.electronics.one_access)
+							windoor.req_access = null
+							windoor.req_one_access = src.electronics.conf_access
+						else
+							windoor.req_access = src.electronics.conf_access
 						windoor.electronics = src.electronics
 						src.electronics.loc = windoor
-						windoor.close()
+
 
 					del(src)
 
@@ -277,13 +265,13 @@ obj/structure/windoor_assembly/Del()
 	if (src.anchored)
 		usr << "It is fastened to the floor; therefore, you can't rotate it!"
 		return 0
-	//if(src.state != "01")
-		//update_nearby_tiles(need_rebuild=1) //Compel updates before
+	if(src.state != "01")
+		update_nearby_tiles(need_rebuild=1) //Compel updates before
 
 	src.dir = turn(src.dir, 270)
 
-	//if(src.state != "01")
-		//update_nearby_tiles(need_rebuild=1)
+	if(src.state != "01")
+		update_nearby_tiles(need_rebuild=1)
 
 	src.ini_dir = src.dir
 	update_icon()
@@ -304,3 +292,11 @@ obj/structure/windoor_assembly/Del()
 
 	update_icon()
 	return
+
+/obj/structure/windoor_assembly/proc/update_nearby_tiles(need_rebuild)
+	if(!air_master)
+		return 0
+
+	air_master.mark_for_update(loc)
+
+	return 1

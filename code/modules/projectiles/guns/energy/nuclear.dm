@@ -1,16 +1,41 @@
 /obj/item/weapon/gun/energy/gun
 	name = "energy gun"
 	desc = "A basic energy-based gun with two settings: Stun and kill."
-	icon_state = "energy"
+	icon_state = "energystun100"
 	item_state = null	//so the human update icon uses the icon_state instead.
-	ammo_type = list(/obj/item/ammo_casing/energy/electrode, /obj/item/ammo_casing/energy/laser)
+	fire_sound = 'sound/weapons/Taser.ogg'
+
+	charge_cost = 100 //How much energy is needed to fire.
+	projectile_type = "/obj/item/projectile/beam/stun"
 	origin_tech = "combat=3;magnets=2"
-	modifystate = 2
+	modifystate = "energystun"
+
+	var/mode = 0 //0 = stun, 1 = kill
 
 
 	attack_self(mob/living/user as mob)
-		select_fire(user)
+		switch(mode)
+			if(0)
+				mode = 1
+				charge_cost = 100
+				fire_sound = 'sound/weapons/Laser.ogg'
+				user << "\red [src.name] is now set to kill."
+				projectile_type = "/obj/item/projectile/beam"
+				modifystate = "energykill"
+			if(1)
+				mode = 0
+				charge_cost = 100
+				fire_sound = 'sound/weapons/Taser.ogg'
+				user << "\red [src.name] is now set to stun."
+				projectile_type = "/obj/item/projectile/beam/stun"
+				modifystate = "energystun"
 		update_icon()
+		if(user.l_hand == src)
+			user.update_inv_l_hand()
+		else
+			user.update_inv_r_hand()
+
+
 
 
 /obj/item/weapon/gun/energy/gun/nuclear
@@ -20,7 +45,6 @@
 	origin_tech = "combat=3;materials=5;powerstorage=3"
 	var/lightfail = 0
 	var/charge_tick = 0
-	modifystate = 0
 
 	New()
 		..()
@@ -73,7 +97,7 @@
 				overlays += "nucgun-whee"
 				return
 			var/ratio = power_supply.charge / power_supply.maxcharge
-			ratio = Ceiling(ratio*4) * 25
+			ratio = round(ratio, 0.25) * 100
 			overlays += "nucgun-[ratio]"
 
 
@@ -90,9 +114,9 @@
 
 
 		update_mode()
-			if (select == 1)
+			if (mode == 0)
 				overlays += "nucgun-stun"
-			else if (select == 2)
+			else if (mode == 1)
 				overlays += "nucgun-kill"
 
 

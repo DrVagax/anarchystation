@@ -5,16 +5,17 @@
 	icon = 'icons/obj/aibots.dmi'
 	icon_state = "bucket_proxy"
 	force = 3.0
-	throwforce = 5.0
+	throwforce = 10.0
 	throw_speed = 2
 	throw_range = 5
 	w_class = 3.0
+	flags = TABLEPASS
 	var/created_name = "Cleanbot"
 
 
 //Cleanbot
 /obj/machinery/bot/cleanbot
-	name = "\improper Cleanbot"
+	name = "Cleanbot"
 	desc = "A little cleaning robot, he looks so excited!"
 	icon = 'icons/obj/aibots.dmi'
 	icon_state = "cleanbot0"
@@ -53,6 +54,8 @@
 	src.botcard = new /obj/item/weapon/card/id(src)
 	var/datum/job/janitor/J = new/datum/job/janitor
 	src.botcard.access = J.get_access()
+	
+	src.locked = 0 // Start unlocked so roboticist can set them to patrol.	
 
 	if(radio_controller)
 		radio_controller.add_object(src, beacon_freq, filter = RADIO_NAVBEACONS)
@@ -65,6 +68,8 @@
 
 /obj/machinery/bot/cleanbot/turn_off()
 	..()
+	if(!isnull(src.target))
+		target.targeted_by = null
 	src.target = null
 	src.oldtarget = null
 	src.oldloc = null
@@ -85,7 +90,7 @@
 <TT><B>Automatic Station Cleaner v1.0</B></TT><BR><BR>
 Status: []<BR>
 Behaviour controls are [src.locked ? "locked" : "unlocked"]<BR>
-Maintenance panel panel is [src.open ? "opened" : "closed"]"},
+Maintenance panel is [src.open ? "opened" : "closed"]"},
 text("<A href='?src=\ref[src];operation=start'>[src.on ? "On" : "Off"]</A>"))
 	if(!src.locked || issilicon(user))
 		dat += text({"<BR>Cleans Blood: []<BR>"}, text("<A href='?src=\ref[src];operation=blood'>[src.blood ? "Yes" : "No"]</A>"))
@@ -158,13 +163,12 @@ text("<A href='?src=\ref[src];operation=oddbutton'>[src.oddbutton ? "Yes" : "No"
 		src.screwloose = 1
 
 /obj/machinery/bot/cleanbot/process()
-	set background = BACKGROUND_ENABLED
+	set background = 1
 
 	if(!src.on)
 		return
 	if(src.cleaning)
 		return
-	var/list/cleanbottargets = list()
 
 	if(!src.screwloose && !src.oddbutton && prob(5))
 		visible_message("[src] makes an excited beeping booping sound!")
@@ -172,8 +176,19 @@ text("<A href='?src=\ref[src];operation=oddbutton'>[src.oddbutton ? "Yes" : "No"
 	if(src.screwloose && prob(5))
 		if(istype(loc,/turf/simulated))
 			var/turf/simulated/T = src.loc
-			T.MakeSlippery()
-
+			if(T.wet < 1)
+				T.wet = 1
+				if(T.wet_overlay)
+					T.overlays -= T.wet_overlay
+					T.wet_overlay = null
+				T.wet_overlay = image('icons/effects/water.dmi',T,"wet_floor")
+				T.overlays += T.wet_overlay
+				spawn(800)
+					if (istype(T) && T.wet < 2)
+						T.wet = 0
+						if(T.wet_overlay)
+							T.overlays -= T.wet_overlay
+							T.wet_overlay = null
 	if(src.oddbutton && prob(5))
 		visible_message("Something flies out of [src]. He seems to be acting oddly.")
 		var/obj/effect/decal/cleanable/blood/gibs/gib = new /obj/effect/decal/cleanable/blood/gibs(src.loc)
@@ -182,9 +197,10 @@ text("<A href='?src=\ref[src];operation=oddbutton'>[src.oddbutton ? "Yes" : "No"
 	if(!src.target || src.target == null)
 		for (var/obj/effect/decal/cleanable/D in view(7,src))
 			for(var/T in src.target_types)
-				if(!(D in cleanbottargets) && (D.type == T || D.parent_type == T) && D != src.oldtarget)
-					src.oldtarget = D
-					src.target = D
+				if(isnull(D.targeted_by) && (D.type == T || D.parent_type == T) && D != src.oldtarget)   // If the mess isn't targeted
+					src.oldtarget = D								 // or if it is but the bot is gone.
+					src.target = D									 // and it's stuff we clean?  Clean it.
+					D.targeted_by = src	// Claim the mess we are targeting.
 					return
 
 	if(!src.target || src.target == null)
@@ -212,9 +228,7 @@ text("<A href='?src=\ref[src];operation=oddbutton'>[src.oddbutton ? "Yes" : "No"
 				if (!next_dest_loc)
 					next_dest_loc = closest_loc
 				if (next_dest_loc)
-					src.patrol_path = AStar(src.loc, next_dest_loc, /turf/proc/CardinalTurfsWithAccess, /turf/proc/Distance_cardinal, 0, 120, id=botcard, exclude=null)
-					if(!patrol_path)
-						patrol_path = list()
+					src.patrol_path = AStar(src.loc, next_dest_loc, /turf/proc/CardinalTurfsWithAccess, /turf/proc/Distance, 0, 120, id=botcard, exclude=null)
 		else
 			patrol_move()
 
@@ -223,11 +237,11 @@ text("<A href='?src=\ref[src];operation=oddbutton'>[src.oddbutton ? "Yes" : "No"
 	if(target && path.len == 0)
 		spawn(0)
 			if(!src || !target) return
-			src.path = AStar(src.loc, src.target.loc, /turf/proc/AdjacentTurfs, /turf/proc/Distance, 0, 30)
-			if(!src.path)
-				src.path = list()
+			src.path = AStar(src.loc, src.target.loc, /turf/proc/CardinalTurfsWithAccess, /turf/proc/Distance, 0, 30, id=botcard)
+			if (!path) path = list()
 			if(src.path.len == 0)
 				src.oldtarget = src.target
+				target.targeted_by = null
 				src.target = null
 		return
 	if(src.path.len > 0 && src.target && (src.target != null))
@@ -284,30 +298,33 @@ text("<A href='?src=\ref[src];operation=oddbutton'>[src.oddbutton ? "Yes" : "No"
 /obj/machinery/bot/cleanbot/proc/get_targets()
 	src.target_types = new/list()
 
-	target_types += /obj/effect/decal/cleanable/oil
+	target_types += /obj/effect/decal/cleanable/blood/oil
 	target_types += /obj/effect/decal/cleanable/vomit
-	target_types += /obj/effect/decal/cleanable/robot_debris
 	target_types += /obj/effect/decal/cleanable/crayon
+	target_types += /obj/effect/decal/cleanable/liquid_fuel
+	target_types += /obj/effect/decal/cleanable/mucus
+	target_types += /obj/effect/decal/cleanable/dirt
 
 	if(src.blood)
-		target_types += /obj/effect/decal/cleanable/xenoblood/
-		target_types += /obj/effect/decal/cleanable/xenoblood/xgibs
 		target_types += /obj/effect/decal/cleanable/blood/
-		target_types += /obj/effect/decal/cleanable/blood/gibs/
-		target_types += /obj/effect/decal/cleanable/dirt
-		target_types += /obj/effect/decal/cleanable/trail_holder
 
 /obj/machinery/bot/cleanbot/proc/clean(var/obj/effect/decal/cleanable/target)
-	src.anchored = 1
-	src.icon_state = "cleanbot-c"
+	anchored = 1
+	icon_state = "cleanbot-c"
 	visible_message("\red [src] begins to clean up the [target]")
-	src.cleaning = 1
-	spawn(50)
-		src.cleaning = 0
+	cleaning = 1
+	var/cleantime = 50
+	if(istype(target,/obj/effect/decal/cleanable/dirt))		// Clean Dirt much faster
+		cleantime = 10
+	spawn(cleantime)
+		if(istype(loc,/turf/simulated))
+			var/turf/simulated/f = loc
+			f.dirt = 0
+		cleaning = 0
 		del(target)
-		src.icon_state = "cleanbot[src.on]"
-		src.anchored = 0
-		src.target = null
+		icon_state = "cleanbot[on]"
+		anchored = 0
+		target = null
 
 /obj/machinery/bot/cleanbot/explode()
 	src.on = 0
@@ -336,8 +353,8 @@ text("<A href='?src=\ref[src];operation=oddbutton'>[src.oddbutton ? "Yes" : "No"
 		var/obj/machinery/bot/cleanbot/A = new /obj/machinery/bot/cleanbot(T)
 		A.name = src.created_name
 		user << "<span class='notice'>You add the robot arm to the bucket and sensor assembly. Beep boop!</span>"
-		user.unEquip(src, 1)
-		del src
+		user.drop_from_inventory(src)
+		del(src)
 
 	else if (istype(W, /obj/item/weapon/pen))
 		var/t = copytext(stripped_input(user, "Enter new robot name", src.name, src.created_name),1,MAX_NAME_LEN)

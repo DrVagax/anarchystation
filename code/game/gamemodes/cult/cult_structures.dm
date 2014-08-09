@@ -20,6 +20,7 @@
 	icon_state = "pylon"
 	luminosity = 5
 
+
 /obj/structure/cult/tome
 	name = "Desk"
 	desc = "A desk covered in arcane manuscripts and tomes in unknown languages. Looking at the text makes your skin crawl"
@@ -50,7 +51,7 @@
 		return
 	return
 
-/obj/effect/gateway/Crossed(AM as mob|obj)
+/obj/effect/gateway/HasEntered(AM as mob|obj)
 	spawn(0)
 		return
 	return

@@ -11,6 +11,18 @@
 		src << "You can't commit suicide before the game starts!"
 		return
 
+
+	//var/permitted = 0
+	var/list/allowed = list("Syndicate","traitor","Wizard","Head Revolutionary","Cultist","Changeling")
+	for(var/T in allowed)
+		if(mind.special_role == T)
+			break
+
+	//if(!permitted)
+	//	message_admins("[ckey] has tried to suicide, but they were not permitted due to not being antagonist as human.", 1)
+	//	src << "No. Adminhelp if there is a legitimate reason."
+	//	return
+
 	if (suiciding)
 		src << "You're already committing suicide! Be patient!"
 		return
@@ -65,10 +77,10 @@
 				return
 
 
-		viewers(src) << pick("\red <b>[src] is attempting to bite \his tongue off! It looks like \he's trying to commit suicide.</b>", \
-							"\red <b>[src] is jamming \his thumbs into \his eye sockets! It looks like \he's trying to commit suicide.</b>", \
-							"\red <b>[src] is twisting \his own neck! It looks like \he's trying to commit suicide.</b>", \
-							"\red <b>[src] is holding \his breath! It looks like \he's trying to commit suicide.</b>")
+		viewers(src) << pick("\red <b>[src] is attempting to bite \his tongue off! It looks like \he's trying to commit suicide, what a fucking retard!</b>", \
+							"\red <b>[src] is jamming \his thumbs into \his eye sockets! It looks like \he's trying to commit suicide, what a fucking retard!</b>", \
+							"\red <b>[src] is twisting \his own neck! It looks like \he's trying to commit suicide, what a fucking retard!</b>", \
+							"\red <b>[src] is holding \his breath! It looks like \he's trying to commit suicide, what a fucking retard!</b>")
 		adjustOxyLoss(max(175 - getToxLoss() - getFireLoss() - getBruteLoss() - getOxyLoss(), 0))
 		updatehealth()
 
@@ -80,7 +92,7 @@
 		return
 
 	if (!ticker)
-		src << "You can't commit suicide before the game starts!"
+		src << "You can't commit suicide before the game starts nerd!"
 		return
 
 	if (suiciding)
@@ -169,8 +181,10 @@
 	set name = "pAI Suicide"
 	var/answer = input("REALLY kill yourself? This action can't be undone.", "Suicide", "No") in list ("Yes", "No")
 	if(answer == "Yes")
+		var/obj/item/device/paicard/card = loc
 		card.removePersonality()
-		for (var/mob/M in viewers(loc))
+		var/turf/T = get_turf_or_move(card.loc)
+		for (var/mob/M in viewers(T))
 			M.show_message("\blue [src] flashes a message across its screen, \"Wiping core files. Please acquire a new personality to continue using pAI device functions.\"", 3, "\blue [src] bleeps electronically.", 2)
 		death(0)
 	else

@@ -1,13 +1,9 @@
 obj/machinery/atmospherics/trinary/mixer
 	icon = 'icons/obj/atmospherics/mixer.dmi'
 	icon_state = "intact_off"
-	density = 1
+	density = 0
 
-	name = "gas mixer"
-
-	req_access = list(access_atmospherics)
-
-	can_unwrench = 1
+	name = "Gas mixer"
 
 	var/on = 0
 
@@ -65,13 +61,8 @@ obj/machinery/atmospherics/trinary/mixer
 		var/air2_moles = air2.total_moles()
 
 		if((air1_moles < transfer_moles1) || (air2_moles < transfer_moles2))
-			var/ratio = 0
-			if (( transfer_moles1 > 0 ) && (transfer_moles2 >0 ))
-				ratio = min(air1_moles/transfer_moles1, air2_moles/transfer_moles2)
-			if (( transfer_moles2 == 0 ) && ( transfer_moles1 > 0 ))
-				ratio = air1_moles/transfer_moles1
-			if (( transfer_moles1 == 0 ) && ( transfer_moles2 > 0 ))
-				ratio = air2_moles/transfer_moles2
+			if(!transfer_moles1 || !transfer_moles2) return
+			var/ratio = min(air1_moles/transfer_moles1, air2_moles/transfer_moles2)
 
 			transfer_moles1 *= ratio
 			transfer_moles2 *= ratio
@@ -96,6 +87,29 @@ obj/machinery/atmospherics/trinary/mixer
 			network3.update = 1
 
 		return 1
+
+	attackby(var/obj/item/weapon/W as obj, var/mob/user as mob)
+		if (!istype(W, /obj/item/weapon/wrench))
+			return ..()
+		var/turf/T = src.loc
+		if (level==1 && isturf(T) && T.intact)
+			user << "\red You must remove the plating first."
+			return 1
+		var/datum/gas_mixture/int_air = return_air()
+		var/datum/gas_mixture/env_air = loc.return_air()
+		if ((int_air.return_pressure()-env_air.return_pressure()) > 2*ONE_ATMOSPHERE)
+			user << "\red You cannot unwrench this [src], it too exerted due to internal pressure."
+			add_fingerprint(user)
+			return 1
+		playsound(src.loc, 'sound/items/Ratchet.ogg', 50, 1)
+		user << "\blue You begin to unfasten \the [src]..."
+		if (do_after(user, 40))
+			user.visible_message( \
+				"[user] unfastens \the [src].", \
+				"\blue You have unfastened \the [src].", \
+				"You hear ratchet.")
+			new /obj/item/pipe(loc, make_from=src)
+			del(src)
 
 	attack_hand(user as mob)
 		if(..())
@@ -146,3 +160,93 @@ obj/machinery/atmospherics/trinary/mixer
 		src.update_icon()
 		src.updateUsrDialog()
 		return
+
+obj/machinery/atmospherics/trinary/mixer/t_mixer
+	icon = 'icons/obj/atmospherics/t_mixer.dmi'
+	icon_state = "intact_off"
+
+	dir = SOUTH
+	initialize_directions = SOUTH|EAST|WEST
+
+	//node 3 is the outlet, nodes 1 & 2 are intakes
+
+obj/machinery/atmospherics/trinary/mixer/t_mixer/New()
+	..()
+	switch(dir)
+		if(NORTH)
+			initialize_directions = EAST|NORTH|WEST
+		if(SOUTH)
+			initialize_directions = SOUTH|WEST|EAST
+		if(EAST)
+			initialize_directions = EAST|NORTH|SOUTH
+		if(WEST)
+			initialize_directions = WEST|NORTH|SOUTH
+
+obj/machinery/atmospherics/trinary/mixer/t_mixer/initialize()
+	if(node1 && node2 && node3) return
+
+	var/node1_connect = turn(dir, -90)
+	var/node2_connect = turn(dir, 90)
+	var/node3_connect = dir
+
+	for(var/obj/machinery/atmospherics/target in get_step(src,node1_connect))
+		if(target.initialize_directions & get_dir(target,src))
+			node1 = target
+			break
+
+	for(var/obj/machinery/atmospherics/target in get_step(src,node2_connect))
+		if(target.initialize_directions & get_dir(target,src))
+			node2 = target
+			break
+
+	for(var/obj/machinery/atmospherics/target in get_step(src,node3_connect))
+		if(target.initialize_directions & get_dir(target,src))
+			node3 = target
+			break
+
+	update_icon()
+
+obj/machinery/atmospherics/trinary/mixer/m_mixer
+	icon = 'icons/obj/atmospherics/m_mixer.dmi'
+	icon_state = "intact_off"
+
+	dir = SOUTH
+	initialize_directions = SOUTH|NORTH|EAST
+
+	//node 3 is the outlet, nodes 1 & 2 are intakes
+
+obj/machinery/atmospherics/trinary/mixer/m_mixer/New()
+	..()
+	switch(dir)
+		if(NORTH)
+			initialize_directions = WEST|NORTH|SOUTH
+		if(SOUTH)
+			initialize_directions = SOUTH|EAST|NORTH
+		if(EAST)
+			initialize_directions = EAST|WEST|NORTH
+		if(WEST)
+			initialize_directions = WEST|SOUTH|EAST
+
+obj/machinery/atmospherics/trinary/mixer/m_mixer/initialize()
+	if(node1 && node2 && node3) return
+
+	var/node1_connect = turn(dir, -180)
+	var/node2_connect = turn(dir, 90)
+	var/node3_connect = dir
+
+	for(var/obj/machinery/atmospherics/target in get_step(src,node1_connect))
+		if(target.initialize_directions & get_dir(target,src))
+			node1 = target
+			break
+
+	for(var/obj/machinery/atmospherics/target in get_step(src,node2_connect))
+		if(target.initialize_directions & get_dir(target,src))
+			node2 = target
+			break
+
+	for(var/obj/machinery/atmospherics/target in get_step(src,node3_connect))
+		if(target.initialize_directions & get_dir(target,src))
+			node3 = target
+			break
+
+	update_icon()

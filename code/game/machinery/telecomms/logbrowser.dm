@@ -1,7 +1,7 @@
 //This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:31
 
 /obj/machinery/computer/telecomms/server
-	name = "telecommunications server monitoring console"
+	name = "Telecommunications Server Monitor"
 	icon_state = "comm_logs"
 
 	var/screen = 0				// the screen number:
@@ -14,10 +14,9 @@
 	var/universal_translate = 0 // set to 1 if it can translate nonhuman speech
 
 	req_access = list(access_tcomsat)
-	circuit = "/obj/item/weapon/circuitboard/comm_server"
 
 	attack_hand(mob/user as mob)
-		if(..())
+		if(stat & (BROKEN|NOPOWER))
 			return
 		user.set_machine(src)
 		var/dat = "<TITLE>Telecommunication Server Monitor</TITLE><center><b>Telecommunications Server Monitor</b></center>"
@@ -71,28 +70,25 @@
 						var/race			   // The actual race of the mob
 						var/language = "Human" // MMIs, pAIs, Cyborgs and humans all speak Human
 						var/mobtype = C.parameters["mobtype"]
+						var/mob/M = new mobtype
 
-						var/list/humans = typesof(/mob/living/carbon/human, /mob/living/carbon/brain)
-						var/list/monkeys = typesof(/mob/living/carbon/monkey)
-						var/list/silicons = typesof(/mob/living/silicon)
-						var/list/slimes = typesof(/mob/living/carbon/slime)
-						var/list/animals = typesof(/mob/living/simple_animal)
+						if(ishuman(M) || isbrain(M))
+							var/mob/living/carbon/human/H = M
+							race = "[H.species.name]"
 
-						if(mobtype in humans)
-							race = "Human"
 
-						else if(mobtype in monkeys)
+						else if(ismonkey(M))
 							race = "Monkey"
 							language = race
 
-						else if(mobtype in silicons || C.parameters["job"] == "AI") // sometimes M gets deleted prematurely for AIs... just check the job
+						else if(issilicon(M) || C.parameters["job"] == "AI") // sometimes M gets deleted prematurely for AIs... just check the job
 							race = "Artificial Life"
 
-						else if(mobtype in slimes) // NT knows a lot about slimes, but not aliens. Can identify slimes
+						else if(isslime(M)) // NT knows a lot about slimes, but not aliens. Can identify slimes
 							race = "slime"
 							language = race
 
-						else if(mobtype in animals)
+						else if(isanimal(M))
 							race = "Domestic Animal"
 							language = race
 
@@ -100,6 +96,7 @@
 							race = "<i>Unidentifiable</i>"
 							language = race
 
+						del(M)
 
 						// -- If the orator is a human, or universal translate is active, OR mob has universal speech on --
 
@@ -216,11 +213,35 @@
 		return
 
 	attackby(var/obj/item/weapon/D as obj, var/mob/user as mob)
-		if(istype(D, /obj/item/weapon/card/emag) && !emagged)
+		if(istype(D, /obj/item/weapon/screwdriver))
+			playsound(src.loc, 'sound/items/Screwdriver.ogg', 50, 1)
+			if(do_after(user, 20))
+				if (src.stat & BROKEN)
+					user << "\blue The broken glass falls out."
+					var/obj/structure/computerframe/A = new /obj/structure/computerframe( src.loc )
+					new /obj/item/weapon/shard( src.loc )
+					var/obj/item/weapon/circuitboard/comm_server/M = new /obj/item/weapon/circuitboard/comm_server( A )
+					for (var/obj/C in src)
+						C.loc = src.loc
+					A.circuit = M
+					A.state = 3
+					A.icon_state = "3"
+					A.anchored = 1
+					del(src)
+				else
+					user << "\blue You disconnect the monitor."
+					var/obj/structure/computerframe/A = new /obj/structure/computerframe( src.loc )
+					var/obj/item/weapon/circuitboard/comm_server/M = new /obj/item/weapon/circuitboard/comm_server( A )
+					for (var/obj/C in src)
+						C.loc = src.loc
+					A.circuit = M
+					A.state = 4
+					A.icon_state = "4"
+					A.anchored = 1
+					del(src)
+		else if(istype(D, /obj/item/weapon/card/emag) && !emagged)
 			playsound(src.loc, 'sound/effects/sparks4.ogg', 75, 1)
 			emagged = 1
 			user << "\blue You you disable the security protocols"
-		else
-			..()
 		src.updateUsrDialog()
 		return

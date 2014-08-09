@@ -11,6 +11,22 @@
 	return
 
 
+/client/North()
+	..()
+
+
+/client/South()
+	..()
+
+
+/client/West()
+	..()
+
+
+/client/East()
+	..()
+
+
 /client/Northeast()
 	swap_hand()
 	return
@@ -86,10 +102,12 @@
 
 
 /client/Center()
+	/* No 3D movement in 2D spessman game. dir 16 is Z Up
 	if (isobj(mob.loc))
 		var/obj/O = mob.loc
 		if (mob.canmove)
 			return O.relaymove(mob, 16)
+	*/
 	return
 
 
@@ -141,51 +159,65 @@
 
 
 /client/Move(n, direct)
-	if(!mob)
-		return 0
-	if(mob.notransform)
-		return 0	//This is sota the goto stop mobs from moving var
-	if(mob.control_object)
-		return Move_object(direct)
-	if(world.time < move_delay)
-		return 0
+
+	if(mob.control_object)	Move_object(direct)
+
+	if(isobserver(mob))	return mob.Move(n,direct)
+
+	if(moving)	return 0
+
+	if(world.time < move_delay)	return
+
+	if(!mob)	return
+
+	if(locate(/obj/effect/stop/, mob.loc))
+		for(var/obj/effect/stop/S in mob.loc)
+			if(S.victim == mob)
+				return
+
+	if(mob.stat==2)	return
+
+	// handle possible AI movement
 	if(isAI(mob))
 		return AIMove(n,direct,mob)
-	if(!isliving(mob))
-		return mob.Move(n,direct)
-	if(moving)
-		return 0
-	if(mob.stat == DEAD)
-		return 0
+
+	if(mob.monkeyizing)	return//This is sota the goto stop mobs from moving var
+
 	if(isliving(mob))
 		var/mob/living/L = mob
-		if(L.incorporeal_move)	//Move though walls
+		if(L.incorporeal_move)//Move though walls
 			Process_Incorpmove(direct)
-			return 0
+			return
+		if(mob.client)
+			if(mob.client.view != world.view)
+				if(locate(/obj/item/weapon/gun/energy/sniperrifle, mob.contents))		// If mob moves while zoomed in with sniper rifle, unzoom them.
+					var/obj/item/weapon/gun/energy/sniperrifle/s = locate() in mob
+					if(s.zoom)
+						s.zoom()
 
 	if(Process_Grab())	return
 
-	if(mob.buckled)							//if we're buckled to something, tell it we moved.
-		return mob.buckled.relaymove(mob, direct)
 
 	if(!mob.canmove)
-		return 0
+		return
+
+	//if(istype(mob.loc, /turf/space) || (mob.flags & NOGRAV))
+	//	if(!mob.Process_Spacemove(0))	return 0
 
 	if(!mob.lastarea)
 		mob.lastarea = get_area(mob.loc)
 
 	if((istype(mob.loc, /turf/space)) || (mob.lastarea.has_gravity == 0))
-		if(!mob.Process_Spacemove(0))
-			return 0
+		if(!mob.Process_Spacemove(0))	return 0
 
 
-	if(isobj(mob.loc) || ismob(mob.loc))	//Inside an object, tell it we moved
+	if(isobj(mob.loc) || ismob(mob.loc))//Inside an object, tell it we moved
 		var/atom/O = mob.loc
 		return O.relaymove(mob, direct)
 
 	if(isturf(mob.loc))
 
-		if(mob.restrained())	//Why being pulled while cuffed prevents you from moving
+		if(mob.restrained())//Why being pulled while cuffed prevents you from moving
 			for(var/mob/M in range(mob, 1))
 				if(M.pulling == mob)
 					if(!M.restrained() && M.stat == 0 && M.canmove && mob.Adjacent(M))
@@ -194,21 +226,47 @@
 					else
 						M.stop_pulling()
 
-		move_delay = world.time//set move delay
+		if(mob.pinned.len)
+			src << "\blue You're pinned to a wall by [mob.pinned[1]]!"
+			return 0
 
+		move_delay = world.time//set move delay
+		mob.last_move_intent = world.time + 10
 		switch(mob.m_intent)
 			if("run")
 				if(mob.drowsyness > 0)
 					move_delay += 6
-				move_delay += config.run_speed
+				move_delay += 1+config.run_speed
 			if("walk")
-				move_delay += config.walk_speed
+				move_delay += 7+config.walk_speed
 		move_delay += mob.movement_delay()
 
 		if(config.Tickcomp)
 			move_delay -= 1.3
-			var/tickcomp = (1 / (world.tick_lag)) * 1.3
+			var/tickcomp = ((1/(world.tick_lag))*1.3)
 			move_delay = move_delay + tickcomp
+
+		if(istype(mob.buckled, /obj/vehicle))
+			return mob.buckled.relaymove(mob,direct)
+
+		if(istype(mob.machine, /obj/machinery))
+			if(mob.machine.relaymove(mob,direct))
+				return
+
+		if(mob.pulledby || mob.buckled) // Wheelchair driving!
+			if(istype(mob.loc, /turf/space))
+				return // No wheelchair driving in space
+			if(istype(mob.pulledby, /obj/structure/stool/bed/chair/wheelchair))
+				return mob.pulledby.relaymove(mob, direct)
+			else if(istype(mob.buckled, /obj/structure/stool/bed/chair/wheelchair))
+				if(ishuman(mob.buckled))
+					var/mob/living/carbon/human/driver = mob.buckled
+					var/datum/organ/external/l_hand = driver.get_organ("l_hand")
+					var/datum/organ/external/r_hand = driver.get_organ("r_hand")
+					if((!l_hand || (l_hand.status & ORGAN_DESTROYED)) && (!r_hand || (r_hand.status & ORGAN_DESTROYED)))
+						return // No hands to drive your chair? Tough luck!
+				move_delay += 2
+				return mob.buckled.relaymove(mob,direct)
 
 		//We are now going to move
 		moving = 1
@@ -245,7 +303,7 @@
 							M.animate_movement = 2
 							return
 
-		if(mob.confused && IsEven(world.time))
+		else if(mob.confused)
 			step(mob, pick(cardinal))
 		else
 			. = ..()
@@ -254,6 +312,8 @@
 
 		return .
 
+	return
+
 
 ///Process_Grab()
 ///Called by client/Move()
@@ -261,31 +321,23 @@
 /client/proc/Process_Grab()
 	if(locate(/obj/item/weapon/grab, locate(/obj/item/weapon/grab, mob.grabbed_by.len)))
 		var/list/grabbing = list()
-
 		if(istype(mob.l_hand, /obj/item/weapon/grab))
 			var/obj/item/weapon/grab/G = mob.l_hand
 			grabbing += G.affecting
-
 		if(istype(mob.r_hand, /obj/item/weapon/grab))
 			var/obj/item/weapon/grab/G = mob.r_hand
 			grabbing += G.affecting
-
 		for(var/obj/item/weapon/grab/G in mob.grabbed_by)
-			if(G.state == GRAB_PASSIVE && !grabbing.Find(G.assailant))
-				del(G)
-
-			if(G.state == GRAB_AGGRESSIVE)
+			if((G.state == 1)&&(!grabbing.Find(G.assailant)))	del(G)
+			if(G.state == 2)
 				move_delay = world.time + 10
-				if(!prob(25))
-					return 1
-				mob.visible_message("<span class='warning'>[mob] has broken free of [G.assailant]'s grip!</span>")
+				if(!prob(25))	return 1
+				mob.visible_message("\red [mob] has broken free of [G.assailant]'s grip!")
 				del(G)
-
-			if(G.state == GRAB_NECK)
+			if(G.state == 3)
 				move_delay = world.time + 10
-				if(!prob(5))
-					return 1
-				mob.visible_message("<span class='warning'>[mob] has broken free of [G.assailant]'s headlock!</span>")
+				if(!prob(5))	return 1
+				mob.visible_message("\red [mob] has broken free of [G.assailant]'s headlock!")
 				del(G)
 	return 0
 
@@ -353,9 +405,6 @@
 	//First check to see if we can do things
 	if(restrained())
 		return 0
-
-	if(!isturf(loc))	//if they're in a disposal unit, for example
-		return 1
 
 	/*
 	if(istype(src,/mob/living/carbon))
@@ -425,24 +474,3 @@
 
 	prob_slip = round(prob_slip)
 	return(prob_slip)
-
-/mob/proc/Move_Pulled(var/atom/A)
-	if (!canmove || restrained() || !pulling)
-		return
-	if (pulling.anchored)
-		return
-	if (!pulling.Adjacent(src))
-		return
-	if (ismob(pulling))
-		var/mob/M = pulling
-		var/atom/movable/t = M.pulling
-		M.stop_pulling()
-		step(pulling, get_dir(pulling.loc, A))
-		if(M)
-			M.start_pulling(t)
-	else
-		step(pulling, get_dir(pulling.loc, A))
-	return
-
-/mob/proc/slip(var/s_amount, var/w_amount, var/obj/O, var/lube)
-	return

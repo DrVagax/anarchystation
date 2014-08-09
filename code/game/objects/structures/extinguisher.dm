@@ -14,7 +14,7 @@
 		return
 	if(istype(O, /obj/item/weapon/extinguisher))
 		if(!has_extinguisher && opened)
-			user.drop_item()
+			user.drop_item(O)
 			contents += O
 			has_extinguisher = O
 			user << "<span class='notice'>You place [O] in [src].</span>"
@@ -28,6 +28,13 @@
 /obj/structure/extinguisher_cabinet/attack_hand(mob/user)
 	if(isrobot(user) || isalien(user))
 		return
+	if (hasorgans(user))
+		var/datum/organ/external/temp = user:organs_by_name["r_hand"]
+		if (user.hand)
+			temp = user:organs_by_name["l_hand"]
+		if(temp && !temp.is_usable())
+			user << "<span class='notice'>You try to move your [temp.display_name], but cannot!"
+			return
 	if(has_extinguisher)
 		user.put_in_hands(has_extinguisher)
 		user << "<span class='notice'>You take [has_extinguisher] from [src].</span>"
@@ -36,6 +43,7 @@
 	else
 		opened = !opened
 	update_icon()
+
 /obj/structure/extinguisher_cabinet/attack_tk(mob/user)
 	if(has_extinguisher)
 		has_extinguisher.loc = loc

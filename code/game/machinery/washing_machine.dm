@@ -1,5 +1,5 @@
 /obj/machinery/washing_machine
-	name = "washing machine"
+	name = "Washing Machine"
 	icon = 'icons/obj/machines/washing_machine.dmi'
 	icon_state = "wm_10"
 	density = 1
@@ -27,6 +27,9 @@
 	set category = "Object"
 	set src in oview(1)
 
+	if(!istype(usr, /mob/living)) //ew ew ew usr, but it's the only way to check.
+		return
+
 	if( state != 4 )
 		usr << "The washing machine cannot run in this state."
 		return
@@ -39,6 +42,9 @@
 	sleep(200)
 	for(var/atom/A in contents)
 		A.clean_blood()
+
+	for(var/obj/item/I in contents)
+		I.decontaminate()
 
 	//Tanning!
 	for(var/obj/item/stack/sheet/hairlesshide/HH in contents)
@@ -72,7 +78,7 @@
 			var/new_desc = "The colors are a bit dodgy."
 			for(var/T in typesof(/obj/item/clothing/under))
 				var/obj/item/clothing/under/J = new T
-				//world << "DEBUG: [wash_color] == [J.item_color]"
+				//world << "DEBUG: [color] == [J.color]"
 				if(wash_color == J.item_color)
 					new_jumpsuit_icon_state = J.icon_state
 					new_jumpsuit_item_state = J.item_state
@@ -83,7 +89,7 @@
 				del(J)
 			for(var/T in typesof(/obj/item/clothing/gloves))
 				var/obj/item/clothing/gloves/G = new T
-				//world << "DEBUG: [wash_color] == [J.item_color]"
+				//world << "DEBUG: [color] == [J.color]"
 				if(wash_color == G.item_color)
 					new_glove_icon_state = G.icon_state
 					new_glove_item_state = G.item_state
@@ -94,7 +100,7 @@
 				del(G)
 			for(var/T in typesof(/obj/item/clothing/shoes))
 				var/obj/item/clothing/shoes/S = new T
-				//world << "DEBUG: [wash_color] == [J.item_color]"
+				//world << "DEBUG: [color] == [J.color]"
 				if(wash_color == S.item_color)
 					new_shoe_icon_state = S.icon_state
 					new_shoe_name = S.name
@@ -104,7 +110,7 @@
 				del(S)
 			for(var/T in typesof(/obj/item/weapon/bedsheet))
 				var/obj/item/weapon/bedsheet/B = new T
-				//world << "DEBUG: [wash_color] == [J.item_color]"
+				//world << "DEBUG: [color] == [J.color]"
 				if(wash_color == B.item_color)
 					new_sheet_icon_state = B.icon_state
 					new_sheet_name = B.name
@@ -114,7 +120,7 @@
 				del(B)
 			for(var/T in typesof(/obj/item/clothing/head/soft))
 				var/obj/item/clothing/head/soft/H = new T
-				//world << "DEBUG: [wash_color] == [J.item_color]"
+				//world << "DEBUG: [color] == [J.color]"
 				if(wash_color == H.item_color)
 					new_softcap_icon_state = H.icon_state
 					new_softcap_name = H.name
@@ -141,10 +147,10 @@
 			if(new_shoe_icon_state && new_shoe_name)
 				for(var/obj/item/clothing/shoes/S in contents)
 					//world << "DEBUG: YUP! FOUND IT!"
-					if (S.chained == 1)
-						S.chained = 0
-						S.slowdown = SHOES_SLOWDOWN
-						new /obj/item/weapon/handcuffs( src )
+					if (istype(S,/obj/item/clothing/shoes/orange))
+						var/obj/item/clothing/shoes/orange/L = S
+						if (L.chained)
+							L.remove_cuffs()
 					S.icon_state = new_shoe_icon_state
 					S.item_color = wash_color
 					S.name = new_shoe_name

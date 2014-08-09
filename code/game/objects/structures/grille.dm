@@ -5,15 +5,13 @@
 	icon_state = "grille"
 	density = 1
 	anchored = 1
-	flags = CONDUCT
+	flags = FPRINT | CONDUCT
 	pressure_resistance = 5*ONE_ATMOSPHERE
 	layer = 2.9
 	explosion_resistance = 5
 	var/health = 10
 	var/destroyed = 0
 
-/obj/structure/grille/Del()
-	loc = null //garbage collect
 
 /obj/structure/grille/ex_act(severity)
 	del(src)
@@ -43,7 +41,7 @@
 	if(HULK in user.mutations)
 		health -= 5
 	else
-		health -= 3
+		health -= 1
 	healthcheck()
 
 /obj/structure/grille/attack_alien(mob/user as mob)
@@ -59,8 +57,8 @@
 		healthcheck()
 		return
 
-/obj/structure/grille/attack_slime(mob/living/carbon/slime/user as mob)
-	if(!user.is_adult)	return
+/obj/structure/grille/attack_slime(mob/user as mob)
+	if(!istype(user, /mob/living/carbon/slime/adult))	return
 
 	playsound(loc, 'sound/effects/grillehit.ogg', 80, 1)
 	user.visible_message("<span class='warning'>[user] smashes against [src].</span>", \
@@ -89,29 +87,30 @@
 	if(istype(mover) && mover.checkpass(PASSGRILLE))
 		return 1
 	else
-		if(istype(mover, /obj/item/projectile) && density)
+		if(istype(mover, /obj/item/projectile))
 			return prob(30)
 		else
 			return !density
 
 /obj/structure/grille/bullet_act(var/obj/item/projectile/Proj)
+
 	if(!Proj)	return
-	..()
+
+	//Tasers and the like should not damage grilles.
+	if(Proj.damage_type == HALLOSS)
+		return
+
 	src.health -= Proj.damage*0.2
 	healthcheck()
-	return
+	return 0
 
 /obj/structure/grille/attackby(obj/item/weapon/W as obj, mob/user as mob)
-	if(istype(W, /obj/item/weapon/wirecutters))
+	if(iswirecutter(W))
 		if(!shock(user, 100))
 			playsound(loc, 'sound/items/Wirecutter.ogg', 100, 1)
-			if(destroyed)
-				new /obj/item/stack/rods(loc)
-			else
-				new /obj/item/stack/rods(loc)
-				new /obj/item/stack/rods(loc)
+			new /obj/item/stack/rods(loc, 2)
 			del(src)
-	else if((istype(W, /obj/item/weapon/screwdriver)) && (istype(loc, /turf/simulated) || anchored))
+	else if((isscrewdriver(W)) && (istype(loc, /turf/simulated) || anchored))
 		if(!shock(user, 90))
 			playsound(loc, 'sound/items/Screwdriver.ogg', 100, 1)
 			anchored = !anchored
@@ -152,9 +151,9 @@
 					return
 			var/obj/structure/window/WD
 			if(istype(W,/obj/item/stack/sheet/rglass))
-				WD = new/obj/structure/window(loc,1) //reinforced window
+				WD = new/obj/structure/window/reinforced(loc) //reinforced window
 			else
-				WD = new/obj/structure/window(loc,0) //normal window
+				WD = new/obj/structure/window/basic(loc) //normal window
 			WD.dir = dir_to_set
 			WD.ini_dir = dir_to_set
 			WD.anchored = 0
@@ -162,11 +161,11 @@
 			var/obj/item/stack/ST = W
 			ST.use(1)
 			user << "<span class='notice'>You place the [WD] on [src].</span>"
+			WD.update_icon()
 		return
 //window placing end
 
 	else if(istype(W, /obj/item/weapon/shard))
-		playsound(loc, 'sound/effects/grillehit.ogg', 80, 1)
 		health -= W.force * 0.1
 	else if(!shock(user, 70))
 		playsound(loc, 'sound/effects/grillehit.ogg', 80, 1)
@@ -217,7 +216,7 @@
 			return 0
 	return 0
 
-/obj/structure/grille/temperature_expose(datum/gas_mixture/air, exposed_temperature, exposed_volume)
+/obj/structure/grille/fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume)
 	if(!destroyed)
 		if(exposed_temperature > T0C + 1500)
 			health -= 1

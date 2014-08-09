@@ -1,55 +1,59 @@
-/datum/round_event_control/radiation_storm
-	name = "Radiation Storm"
-	typepath = /datum/round_event/radiation_storm
-	max_occurrences = 1
-
-/datum/round_event/radiation_storm
-	var/list/protected_areas = list(/area/maintenance, /area/turret_protected/ai_upload, /area/turret_protected/ai_upload_foyer, /area/turret_protected/ai)
+/datum/event/radiation_storm
+	announceWhen	= 1
+	oneShot			= 1
 
 
-/datum/round_event/radiation_storm/setup()
-	startWhen = rand(10, 20)
-	endWhen = startWhen + 5
+/datum/event/radiation_storm/announce()
+	// Don't do anything, we want to pack the announcement with the actual event
 
-/datum/round_event/radiation_storm/announce()
-	command_alert("High levels of radiation detected near the station. Maintenance is best shielded from radiation.", "Anomaly Alert")
-	world << sound('sound/AI/radiation.ogg')	//sound not longer matches the text, but an audible warning is probably good
-
-
-/datum/round_event/radiation_storm/start()
-	for(var/mob/living/carbon/C in living_mob_list)
-		var/turf/T = get_turf(C)
-		if(!T)			continue
-		if(T.z != 1)	continue
-
-		var/skip = 0
-		for(var/a in protected_areas)
-			if(istype(T.loc, a))
-				skip = 1
-				continue
-
-		if(skip)	continue
-
-		if(locate(/obj/machinery/power/apc) in T)	//damn you maint APCs!!
-			continue
-
-		if(istype(C, /mob/living/carbon/human))
-			var/mob/living/carbon/human/H = C
-			H.apply_effect((rand(15, 75)), IRRADIATE, 0)
-			if(prob(5))
-				H.apply_effect((rand(90, 150)), IRRADIATE, 0)
-			if(prob(25))
-				if(prob(75))
-					randmutb(H)
-					domutcheck(H, null, 1)
-				else
-					randmutg(H)
-					domutcheck(H, null, 1)
-
-		else if(istype(C, /mob/living/carbon/monkey))
-			var/mob/living/carbon/monkey/M = C
-			M.apply_effect((rand(15, 75)), IRRADIATE, 0)
+/datum/event/radiation_storm/start()
+	spawn()
+		world << sound('sound/AI/radiation.ogg')
+		command_alert("High levels of radiation detected near the station. Please evacuate into one of the shielded maintenance tunnels.", "Anomaly Alert")
+		make_maint_all_access()
 
 
-/datum/round_event/radiation_storm/end()
-	command_alert("The radiation threat has passed. Please return to your workplaces.", "Anomaly Alert")
+		sleep(600)
+
+
+		command_alert("The station has entered the radiation belt. Please remain in a sheltered area until we have passed the radiation belt.", "Anomaly Alert")
+
+		for(var/i = 0, i < 10, i++)
+			for(var/mob/living/carbon/human/H in living_mob_list)
+				var/turf/T = get_turf(H)
+				if(!T)
+					continue
+				if(T.z != 1)
+					continue
+				if(istype(T.loc, /area/maintenance) || istype(T.loc, /area/crew_quarters))
+					continue
+
+				if(istype(H,/mob/living/carbon/human))
+					H.apply_effect((rand(15,35)),IRRADIATE,0)
+					if(prob(5))
+						H.apply_effect((rand(40,70)),IRRADIATE,0)
+						if (prob(75))
+							randmutb(H) // Applies bad mutation
+							domutcheck(H,null,MUTCHK_FORCED)
+						else
+							randmutg(H) // Applies good mutation
+							domutcheck(H,null,MUTCHK_FORCED)
+
+
+			for(var/mob/living/carbon/monkey/M in living_mob_list)
+				var/turf/T = get_turf(M)
+				if(!T)
+					continue
+				if(T.z != 1)
+					continue
+				M.apply_effect((rand(5,25)),IRRADIATE,0)
+			sleep(100)
+
+
+		command_alert("The station has passed the radiation belt. Please report to medbay if you experience any unusual symptoms. Maintenance will lose all access again shortly.", "Anomaly Alert")
+
+
+		sleep(600) // Want to give them time to get out of maintenance.
+
+
+		revoke_maint_all_access()

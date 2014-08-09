@@ -9,7 +9,7 @@
  *		Mining Satchel
  *		Plant Bag
  *		Sheet Snatcher
- *		Book Bag
+ *		Cash Bag
  *
  *	-Sayu
  */
@@ -18,9 +18,10 @@
 /obj/item/weapon/storage/bag
 	allow_quick_gather = 1
 	allow_quick_empty = 1
-	display_contents_with_number = 1 // should work fine now
+	display_contents_with_number = 0 // UNStABLE AS FuCK, turn on when it stops crashing clients
 	use_to_pickup = 1
 	slot_flags = SLOT_BELT
+	flags = FPRINT | TABLEPASS
 
 // -----------------------------
 //          Trash bag
@@ -38,7 +39,6 @@
 	can_hold = list() // any
 	cant_hold = list("/obj/item/weapon/disk/nuclear")
 
-
 /obj/item/weapon/storage/bag/trash/update_icon()
 	if(contents.len == 0)
 		icon_state = "trashbag0"
@@ -48,22 +48,30 @@
 		icon_state = "trashbag2"
 	else icon_state = "trashbag3"
 
-/obj/item/weapon/storage/bag/trash/cyborg
 
-/obj/item/weapon/storage/bag/trash/proc/janicart_insert(mob/user, obj/structure/janitorialcart/J)
-	J.put_in_cart(src, user)
-	J.mybag=src
-	J.update_icon()
+// -----------------------------
+//        Plastic Bag
+// -----------------------------
 
-/obj/item/weapon/storage/bag/trash/cyborg/janicart_insert(mob/user, obj/structure/janitorialcart/J)
-	return
+/obj/item/weapon/storage/bag/plasticbag
+	name = "plastic bag"
+	desc = "It's a very flimsy, very noisy alternative to a bag."
+	icon = 'icons/obj/trash.dmi'
+	icon_state = "plasticbag"
+	item_state = "plasticbag"
+
+	w_class = 4
+	max_w_class = 2
+	storage_slots = 21
+	can_hold = list() // any
+	cant_hold = list("/obj/item/weapon/disk/nuclear")
 
 // -----------------------------
 //        Mining Satchel
 // -----------------------------
 
 /obj/item/weapon/storage/bag/ore
-	name = "mining satchel"
+	name = "Mining Satchel"
 	desc = "This little bugger can be used to store and transport ores."
 	icon = 'icons/obj/mining.dmi'
 	icon_state = "satchel"
@@ -80,29 +88,14 @@
 // -----------------------------
 
 /obj/item/weapon/storage/bag/plants
-	name = "plant bag"
 	icon = 'icons/obj/hydroponics.dmi'
 	icon_state = "plantbag"
+	name = "Plant Bag"
 	storage_slots = 50; //the number of plant pieces it can carry.
 	max_combined_w_class = 200 //Doesn't matter what this is, so long as it's more or equal to storage_slots * plants.w_class
 	max_w_class = 3
-	w_class = 1
+	w_class = 2
 	can_hold = list("/obj/item/weapon/reagent_containers/food/snacks/grown","/obj/item/seeds","/obj/item/weapon/grown")
-
-////////
-
-/obj/item/weapon/storage/bag/plants/portaseeder
-	name = "portable seed extractor"
-	desc = "For the enterprising botanist on the go. Less efficient than the stationary model, it creates one seed per plant."
-	icon_state = "portaseeder"
-
-	verb/dissolve_contents()
-		set name = "Activate Seed Extraction"
-		set category = "Object"
-		set desc = "Activate to convert your plants into plantable seeds."
-		for(var/obj/item/O in contents)
-			seedify(O, 1)
-		close_all()
 
 
 // -----------------------------
@@ -112,10 +105,10 @@
 // However, making it a storage/bag allows us to reuse existing code in some places. -Sayu
 
 /obj/item/weapon/storage/bag/sheetsnatcher
-	name = "sheet snatcher"
-	desc = "A patented Nanotrasen storage system designed for any kind of mineral sheet."
 	icon = 'icons/obj/mining.dmi'
 	icon_state = "sheetsnatcher"
+	name = "Sheet Snatcher"
+	desc = "A patented Nanotrasen storage system designed for any kind of mineral sheet."
 
 	var/capacity = 300; //the number of sheets it can carry.
 	w_class = 3
@@ -164,7 +157,8 @@
 				break
 
 		if(!inserted || !S.amount)
-			usr.unEquip(S)
+			usr.u_equip(S)
+			usr.update_icons()	//update our overlays
 			if (usr.client && usr.s_active != src)
 				usr.client.screen -= S
 			S.dropped(usr)
@@ -242,23 +236,21 @@
 // -----------------------------
 
 /obj/item/weapon/storage/bag/sheetsnatcher/borg
-	name = "sheet snatcher 9000"
+	name = "Sheet Snatcher 9000"
 	desc = ""
 	capacity = 500//Borgs get more because >specialization
 
-
 // -----------------------------
-//           Book bag
+//           Cash Bag
 // -----------------------------
 
-/obj/item/weapon/storage/bag/books
-	name = "book bag"
-	desc = "A bag for books."
-	icon = 'icons/obj/library.dmi'
-	icon_state = "bookbag"
-	display_contents_with_number = 0 //This would look really stupid otherwise
-	storage_slots = 7
-	max_combined_w_class = 21
+/obj/item/weapon/storage/bag/cash
+	icon = 'icons/obj/storage.dmi'
+	icon_state = "cashbag"
+	name = "Cash bag"
+	desc = "A bag for carrying lots of cash. It's got a big dollar sign printed on the front."
+	storage_slots = 50; //the number of cash pieces it can carry.
+	max_combined_w_class = 200 //Doesn't matter what this is, so long as it's more or equal to storage_slots * cash.w_class
 	max_w_class = 3
-	w_class = 4 //Bigger than a book because physics
-	can_hold = list("/obj/item/weapon/book", "/obj/item/weapon/spellbook") //No bibles, consistent with bookcase
+	w_class = 2
+	can_hold = list("/obj/item/weapon/coin","/obj/item/weapon/spacecash")

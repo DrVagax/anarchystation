@@ -15,34 +15,20 @@
 	desc = "Used to keep bodies in untill someone fetches them."
 	icon = 'icons/obj/stationobjs.dmi'
 	icon_state = "morgue1"
+	dir = EAST
 	density = 1
 	var/obj/structure/m_tray/connected = null
 	anchored = 1.0
-
-/obj/structure/morgue/on_log()
-	update()
 
 /obj/structure/morgue/proc/update()
 	if (src.connected)
 		src.icon_state = "morgue0"
 	else
-		if(!src.contents.len)
-			src.icon_state = "morgue1"
+		if (src.contents.len)
+			src.icon_state = "morgue2"
 		else
-
-			src.icon_state = "morgue2"//default dead no-client mob
-
-			var/list/compiled = recursive_mob_check(src,0,0)//run through contents
-
-			if(!length(compiled))//no mobs at all, but objects inside
-				src.icon_state = "morgue3"
-				return
-
-			for(var/mob/living/M in compiled)
-				if(M.client)
-					src.icon_state = "morgue4"//clone that mofo
-					break
-
+			src.icon_state = "morgue1"
+	return
 
 /obj/structure/morgue/ex_act(severity)
 	switch(severity)
@@ -85,15 +71,16 @@
 	else
 		playsound(src.loc, 'sound/items/Deconstruct.ogg', 50, 1)
 		src.connected = new /obj/structure/m_tray( src.loc )
-		step(src.connected, EAST)
+		step(src.connected, src.dir)
 		src.connected.layer = OBJ_LAYER
-		var/turf/T = get_step(src, EAST)
+		var/turf/T = get_step(src, src.dir)
 		if (T.contents.Find(src.connected))
 			src.connected.connected = src
 			src.icon_state = "morgue0"
 			for(var/atom/movable/A as mob|obj in src)
 				A.loc = src.connected.loc
 			src.connected.icon_state = "morguet"
+			src.connected.dir = src.dir
 		else
 			//src.connected = null
 			del(src.connected)
@@ -116,7 +103,9 @@
 	src.add_fingerprint(user)
 	return
 
-/obj/structure/morgue/container_resist()
+/obj/structure/morgue/relaymove(mob/user as mob)
+	if (user.stat)
+		return
 	src.connected = new /obj/structure/m_tray( src.loc )
 	step(src.connected, EAST)
 	src.connected.layer = OBJ_LAYER
@@ -145,7 +134,7 @@
 	density = 1
 	layer = 2.0
 	var/obj/structure/morgue/connected = null
-	anchored = 1.0
+	anchored = 1
 	throwpass = 1
 
 /obj/structure/m_tray/attack_paw(mob/user as mob)
@@ -200,18 +189,11 @@
 	if (src.connected)
 		src.icon_state = "crema0"
 	else
-
-		if(src.contents.len)
+		if (src.contents.len)
 			src.icon_state = "crema2"
 		else
 			src.icon_state = "crema1"
-
-		if(cremating)
-			src.icon_state = "crema_active"
-
 	return
-
-
 
 /obj/structure/crematorium/ex_act(severity)
 	switch(severity)
@@ -293,7 +275,9 @@
 	src.add_fingerprint(user)
 	return
 
-/obj/structure/crematorium/container_resist()
+/obj/structure/crematorium/relaymove(mob/user as mob)
+	if (user.stat || locked)
+		return
 	src.connected = new /obj/structure/c_tray( src.loc )
 	step(src.connected, SOUTH)
 	src.connected.layer = OBJ_LAYER
@@ -332,7 +316,6 @@
 
 		cremating = 1
 		locked = 1
-		update()
 
 		for(var/mob/living/M in contents)
 			if (M.stat!=2)
@@ -352,7 +335,6 @@
 		sleep(30)
 		cremating = 0
 		locked = 0
-		update()
 		playsound(src.loc, 'sound/machines/ding.ogg', 50, 1)
 	return
 
@@ -368,7 +350,7 @@
 	density = 1
 	layer = 2.0
 	var/obj/structure/crematorium/connected = null
-	anchored = 1.0
+	anchored = 1
 	throwpass = 1
 
 /obj/structure/c_tray/attack_paw(mob/user as mob)

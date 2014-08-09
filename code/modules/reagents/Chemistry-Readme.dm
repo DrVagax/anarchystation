@@ -47,6 +47,7 @@ About the Holder:
 			This proc check all recipes and, on a match, uses them.
 			It will also call the recipe's on_reaction proc (for explosions or w/e).
 			Currently, this proc is automatically called by trans_to.
+			- Modified from the original to preserve reagent data across reactions (originally for xenoarchaeology)
 
 		isolate_reagent(var/reagent)
 			Pass it a reagent id and it will remove all reagents but that one.
@@ -85,6 +86,7 @@ About the Holder:
 
 		remove_reagent(var/reagent, var/amount)
 			The exact opposite of the add_reagent proc.
+			- Modified from original to return the reagent's data, in order to preserve reagent data across reactions (originally for xenoarchaeology)
 
 		has_reagent(var/reagent, var/amount)
 			Returns 1 if the holder contains this reagent.
@@ -132,7 +134,7 @@ About Reagents:
 			object melting in here ... or something. i dunno.
 
 		reaction_turf(var/turf/T)
-			This is called by the holder's reation proc.
+			This is called by the holder's reaction proc.
 			This version is called when the reagents reacts
 			with a turf. You'll want to put stuff like extra
 			slippery floors for lube or something in here.
@@ -142,7 +144,7 @@ About Reagents:
 			This is the place where you put damage for toxins ,
 			drowsyness for sleep toxins etc etc.
 			You'll want to call the parents proc by using ..() .
-			If you dont, the chemical will stay in the mob forever -
+			If you don't, the chemical will stay in the mob forever -
 			unless you write your own piece of code to slowly remove it.
 			(Should be pretty easy, 1 line of code)
 

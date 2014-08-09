@@ -32,63 +32,26 @@
 	//the type of the ID the player will have
 	var/idtype = /obj/item/weapon/card/id
 
+	//List of alternate titles, if any
+	var/list/alt_titles
+
 	//If this is set to 1, a text is printed to the player when jobs are assigned, telling him that he should let admins know that he has to disconnect.
 	var/req_admin_notify
 
-	//If you have the use_age_restriction_for_jobs config option enabled and the database set up, this option will add a requirement for players to be at least minimal_player_age days old. (meaning they first signed in at least that many days before.)
+	//If you have use_age_restriction_for_jobs config option enabled and the database set up, this option will add a requirement for players to be at least minimal_player_age days old. (meaning they first signed in at least that many days before.)
 	var/minimal_player_age = 0
 
 /datum/job/proc/equip(var/mob/living/carbon/human/H)
-	return 1
-
-/datum/job/proc/apply_fingerprints(var/mob/living/carbon/human/H)
-	if(H.back)
-		H.back.add_fingerprint(H,1)	//The 1 sets a flag to ignore gloves
-		for(var/obj/item/I in H.back.contents)
-			I.add_fingerprint(H,1)
-	if(H.wear_id)
-		H.wear_id.add_fingerprint(H,1)
-	if(H.w_uniform)
-		H.w_uniform.add_fingerprint(H,1)
-	if(H.wear_suit)
-		H.wear_suit.add_fingerprint(H,1)
-	if(H.wear_mask)
-		H.wear_mask.add_fingerprint(H,1)
-	if(H.head)
-		H.head.add_fingerprint(H,1)
-	if(H.shoes)
-		H.shoes.add_fingerprint(H,1)
-	if(H.gloves)
-		H.gloves.add_fingerprint(H,1)
-	if(H.ears)
-		H.ears.add_fingerprint(H,1)
-	if(H.glasses)
-		H.glasses.add_fingerprint(H,1)
-	if(H.belt)
-		H.belt.add_fingerprint(H,1)
-		for(var/obj/item/I in H.belt.contents)
-			I.add_fingerprint(H,1)
-	if(H.s_store)
-		H.s_store.add_fingerprint(H,1)
-	if(H.l_store)
-		H.l_store.add_fingerprint(H,1)
-	if(H.r_store)
-		H.r_store.add_fingerprint(H,1)
 	return 1
 
 /datum/job/proc/get_access()
 	if(!config)	//Needed for robots.
 		return src.minimal_access.Copy()
 
-	. = list()
-
 	if(config.jobs_have_minimal_access)
-		. = src.minimal_access.Copy()
+		return src.minimal_access.Copy()
 	else
-		. = src.access.Copy()
-
-	if(config.jobs_have_maint_access & EVERYONE_HAS_MAINT_ACCESS) //Config has global maint access set
-		. |= list(access_maint_tunnels)
+		return src.access.Copy()
 
 //If the configuration option is set to require players to be logged as old enough to play certain jobs, then this proc checks that they are, otherwise it just returns 1
 /datum/job/proc/player_old_enough(client/C)
@@ -108,6 +71,3 @@
 		return 0
 
 	return max(0, minimal_player_age - C.player_age)
-
-/datum/job/proc/config_check()
-	return 1

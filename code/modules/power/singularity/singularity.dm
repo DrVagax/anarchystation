@@ -5,7 +5,7 @@ var/global/list/uneatable = list(
 	/obj/effect/overlay
 	)
 
-/obj/machinery/singularity
+/obj/machinery/singularity/
 	name = "Gravitational Singularity"
 	desc = "A Gravitational Singularity."
 	icon = 'icons/obj/singularity.dmi'
@@ -42,7 +42,7 @@ var/global/list/uneatable = list(
 		spawn(temp)
 			del(src)
 	..()
-	for(var/obj/machinery/singularity_beacon/singubeacon in world)
+	for(var/obj/machinery/singularity_beacon/singubeacon in machines)
 		if(singubeacon.active)
 			target = singubeacon
 			break
@@ -62,7 +62,6 @@ var/global/list/uneatable = list(
 	switch(severity)
 		if(1.0)
 			if(prob(25))
-				investigate_log("has been destroyed by an explosion.","singulo")
 				del(src)
 				return
 			else
@@ -71,9 +70,6 @@ var/global/list/uneatable = list(
 			energy += round((rand(20,60)/2),1)
 			return
 	return
-
-/obj/machinery/singularity/bullet_act(obj/item/projectile/P)
-	return 0 //Will there be an impact? Who knows.  Will we see it? No.
 
 
 /obj/machinery/singularity/Bump(atom/A)
@@ -105,7 +101,7 @@ var/global/list/uneatable = list(
 
 /obj/machinery/singularity/proc/admin_investigate_setup()
 	last_warning = world.time
-	var/count = locate(/obj/machinery/field/containment) in orange(30, src)
+	var/count = locate(/obj/machinery/containment_field) in orange(30, src)
 	if(!count)	message_admins("A singulo has been created without containment fields active ([x],[y],[z])",1)
 	investigate_log("was created. [count?"":"<font color='red'>No containment fields were active</font>"]","singulo")
 
@@ -190,7 +186,6 @@ var/global/list/uneatable = list(
 
 /obj/machinery/singularity/proc/check_energy()
 	if(energy <= 0)
-		investigate_log("collapsed.","singulo")
 		del(src)
 		return 0
 	switch(energy)//Some of these numbers might need to be changed up later -Mport
@@ -210,7 +205,7 @@ var/global/list/uneatable = list(
 
 
 /obj/machinery/singularity/proc/eat()
-	set background = BACKGROUND_ENABLED
+	set background = 1
 	if(defer_powernet_rebuild != 2)
 		defer_powernet_rebuild = 1
 	// Let's just make this one loop.
@@ -242,10 +237,9 @@ var/global/list/uneatable = list(
 	if(is_type_in_list(A, uneatable))
 		return 0
 	if (istype(A,/mob/living))//Mobs get gibbed
-		var/mob/living/M = A
 		gain = 20
-		if(istype(M,/mob/living/carbon/human))
-			var/mob/living/carbon/human/H = M
+		if(istype(A,/mob/living/carbon/human))
+			var/mob/living/carbon/human/H = A
 			if(H.mind)
 
 				if((H.mind.assigned_role == "Station Engineer") || (H.mind.assigned_role == "Chief Engineer") )
@@ -254,8 +248,8 @@ var/global/list/uneatable = list(
 				if(H.mind.assigned_role == "Clown")
 					gain = rand(-300, 300) // HONK
 
-		investigate_log(" has consumed [key_name(M)].","singulo") //Oh that's where the clown ended up!
-		M.gib()
+		spawn()
+			A:gib()
 		sleep(1)
 	else if(istype(A,/obj/))
 
@@ -379,10 +373,10 @@ var/global/list/uneatable = list(
 /obj/machinery/singularity/proc/can_move(var/turf/T)
 	if(!T)
 		return 0
-	if((locate(/obj/machinery/field/containment) in T)||(locate(/obj/machinery/shieldwall) in T))
+	if((locate(/obj/machinery/containment_field) in T)||(locate(/obj/machinery/shieldwall) in T))
 		return 0
-	else if(locate(/obj/machinery/field/generator) in T)
-		var/obj/machinery/field/generator/G = locate(/obj/machinery/field/generator) in T
+	else if(locate(/obj/machinery/field_generator) in T)
+		var/obj/machinery/field_generator/G = locate(/obj/machinery/field_generator) in T
 		if(G && G.active)
 			return 0
 	else if(locate(/obj/machinery/shieldwallgen) in T)
@@ -455,7 +449,7 @@ var/global/list/uneatable = list(
 
 
 /obj/machinery/singularity/narsie //Moving narsie to a child object of the singularity so it can be made to function differently. --NEO
-	name = "Nar-sie's Avatar"
+	name = "Nar-Sie"
 	desc = "Your mind begins to bubble and ooze as it tries to comprehend what it sees."
 	icon = 'icons/obj/magic_terror.dmi'
 	pixel_x = -89
@@ -464,8 +458,9 @@ var/global/list/uneatable = list(
 	contained = 0 //Are we going to move around?
 	dissipate = 0 //Do we lose energy over time?
 	move_self = 1 //Do we move on our own?
-	grav_pull = 5 //How many tiles out do we pull?
-	consume_range = 6 //How many tiles out do we eat
+	grav_pull = 10 //How many tiles out do we pull?
+	consume_range = 3 //How many tiles out do we eat
+	var/last_boom = 0
 
 /obj/machinery/singularity/narsie/large
 	name = "Nar-Sie"
@@ -475,14 +470,14 @@ var/global/list/uneatable = list(
 	pixel_y = -256
 	current_size = 12
 	move_self = 1 //Do we move on our own?
-	grav_pull = 10
 	consume_range = 12 //How many tiles out do we eat
 
 /obj/machinery/singularity/narsie/large/New()
 	..()
-	world << "<font size='15' color='red'><b>NAR-SIE HAS RISEN</b></font>"
-	if(emergency_shuttle)
-		emergency_shuttle.incall(0.3) // Cannot recall
+	world << "<font size='28' color='red'><b>NAR-SIE HAS RISEN</b></font>"
+	if(emergency_shuttle && emergency_shuttle.can_call())
+		emergency_shuttle.call_evac()
+		emergency_shuttle.launch_time = 0	// Cannot recall
 
 /obj/machinery/singularity/narsie/process()
 	eat()
@@ -492,49 +487,28 @@ var/global/list/uneatable = list(
 	if(prob(25))
 		mezzer()
 
-
-/obj/machinery/singularity/narsie/Bump(atom/A)//you dare stand before a god?!
-	godsmack(A)
-	return
-
-/obj/machinery/singularity/narsie/Bumped(atom/A)
-	godsmack(A)
-	return
-
-/obj/machinery/singularity/narsie/proc/godsmack(var/atom/A)
-	if(istype(A,/obj/))
-		var/obj/O = A
-		O.ex_act(1.0)
-		if(O) del(O)
-
-	else if(isturf(A))
-		var/turf/T = A
-		T.ChangeTurf(/turf/simulated/floor/engine/cult)
-
-
-/obj/machinery/singularity/narsie/mezzer()
-	for(var/mob/living/carbon/M in oviewers(8, src))
-		if(M.stat == CONSCIOUS)
-			if(!iscultist(M))
-				M << "\red You feel your sanity crumble away in an instant as you gaze upon [src.name]..."
-				M.apply_effect(3, STUN)
-
-
-/obj/machinery/singularity/narsie/consume(var/atom/A)
+/obj/machinery/singularity/narsie/consume(var/atom/A) //Has its own consume proc because it doesn't need energy and I don't want BoHs to explode it. --NEO
 	if(is_type_in_list(A, uneatable))
 		return 0
-
-	if(istype(A,/mob/living/))
-		var/mob/living/C = A
-		C.dust()
-
-	if(isturf(A))
+	if (istype(A,/mob/living))//Mobs get gibbed
+		A:gib()
+	else if(istype(A,/obj))
+		var/obj/O = A
+		machines -= O
+		processing_objects -= O
+		O.loc = null
+	else if(isturf(A))
 		var/turf/T = A
-		if(istype(T, /turf/simulated/floor) && !istype(T, /turf/simulated/floor/engine/cult))
-			if(prob(20)) T.ChangeTurf(/turf/simulated/floor/engine/cult)
-
-		else if(istype(T,/turf/simulated/wall) && !istype(T, /turf/simulated/wall/cult))
-			if(prob(20)) T.ChangeTurf(/turf/simulated/wall/cult)
+		if(T.intact)
+			for(var/obj/O in T.contents)
+				if(O.level != 1)
+					continue
+				if(O.invisibility == 101)
+					src.consume(O)
+		A:ChangeTurf(/turf/space)
+	if(last_boom + 100 < world.time && prob(5))
+		explosion(loc, -1, -1, -1, 1, 0) //Since we're not exploding everything in consume() toss out an explosion effect every now and again
+		last_boom = world.time
 	return
 
 /obj/machinery/singularity/narsie/ex_act() //No throwing bombs at it either. --NEO
@@ -592,7 +566,7 @@ var/global/list/uneatable = list(
 	grav_pull = 0
 
 /obj/machinery/singularity/narsie/wizard/eat()
-	set background = BACKGROUND_ENABLED
+	set background = 1
 	if(defer_powernet_rebuild != 2)
 		defer_powernet_rebuild = 1
 	for(var/atom/X in orange(consume_range,src))

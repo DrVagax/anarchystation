@@ -1,0 +1,426 @@
+
+
+Starting up. 13:32.13
+---------------------
+[13:32:13]MISC: Adding game mode AutoTraitor (extend-a-traitormongous) to configuration.
+[13:32:13]MISC: Adding game mode traitor+changeling (traitorchan) to configuration.
+[13:32:13]MISC: Adding game mode traitor (traitor) to configuration.
+[13:32:13]MISC: Adding game mode changeling (changeling) to configuration.
+[13:32:13]MISC: Adding game mode cult (cult) to configuration.
+[13:32:13]MISC: Adding game mode extended (extended) to configuration.
+[13:32:13]MISC: Adding game mode heist (heist) to configuration.
+[13:32:13]MISC: Adding game mode AI malfunction (malfunction) to configuration.
+[13:32:13]MISC: Adding game mode meteor (meteor) to configuration.
+[13:32:13]MISC: Adding game mode mutiny (mutiny) to configuration.
+[13:32:13]MISC: Adding game mode ninja (ninja) to configuration.
+[13:32:13]MISC: Adding game mode nuclear emergency (nuclear) to configuration.
+[13:32:13]MISC: Adding game mode rp-revolution (rp-revolution) to configuration.
+[13:32:13]MISC: Adding game mode revolution (revolution) to configuration.
+[13:32:13]MISC: Adding game mode wizard (wizard) to configuration.
+[13:32:13]MISC: Unknown setting in configuration: 'metroid_delay'
+[13:32:17]ADMIN: Loading jobban_rank
+[13:32:17]ADMIN: jobban_keylist was empty
+[13:32:17]ADMIN: Loading Banlist
+[13:32:17]DEBUG: Rebuilding Master Controller
+
+
+Starting up. 13:42.20
+---------------------
+[13:42:20]MISC: Adding game mode AutoTraitor (extend-a-traitormongous) to configuration.
+[13:42:20]MISC: Adding game mode traitor+changeling (traitorchan) to configuration.
+[13:42:20]MISC: Adding game mode traitor (traitor) to configuration.
+[13:42:20]MISC: Adding game mode changeling (changeling) to configuration.
+[13:42:20]MISC: Adding game mode cult (cult) to configuration.
+[13:42:20]MISC: Adding game mode extended (extended) to configuration.
+[13:42:20]MISC: Adding game mode heist (heist) to configuration.
+[13:42:20]MISC: Adding game mode AI malfunction (malfunction) to configuration.
+[13:42:20]MISC: Adding game mode meteor (meteor) to configuration.
+[13:42:20]MISC: Adding game mode mutiny (mutiny) to configuration.
+[13:42:20]MISC: Adding game mode ninja (ninja) to configuration.
+[13:42:20]MISC: Adding game mode nuclear emergency (nuclear) to configuration.
+[13:42:20]MISC: Adding game mode rp-revolution (rp-revolution) to configuration.
+[13:42:20]MISC: Adding game mode revolution (revolution) to configuration.
+[13:42:20]MISC: Adding game mode wizard (wizard) to configuration.
+[13:42:20]MISC: Unknown setting in configuration: 'metroid_delay'
+[13:42:22]ADMIN: Loading jobban_rank
+[13:42:22]ADMIN: jobban_keylist was empty
+[13:42:22]ADMIN: Loading Banlist
+[13:42:22]DEBUG: Rebuilding Master Controller
+[13:43:14]ACCESS: Login: DrVagax/(DrVagax) from 127.0.0.1-1872704441 || BYOND v506
+[13:43:36]ACCESS: Logout: DrVagax/(DrVagax)
+[13:43:44]ACCESS: Login: DrVagax/(DrVagax) from 127.0.0.1-1872704441 || BYOND v506
+[13:43:59]ADMIN: DrVagax has started the game.
+[13:43:59]ACCESS: Logout: *no key*/(DrVagax)
+[13:43:59]ACCESS: Login: DrVagax/(Sean Ironmonger) from 127.0.0.1-1872704441 || BYOND v506
+[13:44:12]ADMIN: DrVagax/(Sean Ironmonger) : fgh
+[13:44:18]DEBUG: Next event in 42.502 minutes.
+[13:44:24]ACCESS: Logout: *no key*/(Sean Ironmonger)
+[13:44:24]ACCESS: Login: DrVagax/(Sean Ironmonger) from 127.0.0.1-1872704441 || BYOND v506
+[13:46:48]ACCESS: Logout: *no key*/(Sean Ironmonger)
+[13:46:48]ACCESS: Login: drvagax/(Sean Ironmonger) from 127.0.0.1-1872704441 || BYOND v506
+[13:46:48]ADMIN: DrVagax/(Sean Ironmonger) modified Sean Ironmonger's ckey to drvagax
+[13:51:13]ADMIN: DrVagax/(Sean Ironmonger) modified cargo train tug's active_engines to 1
+[13:51:32]ADMIN: drvagax/(Sean Ironmonger) has entered build mode.
+[13:51:42]ADMIN: drvagax/(Sean Ironmonger) has left build mode.
+[13:52:50]SAY: mouse (123)/ : SQUEEK!
+[13:53:04]ADMIN: DrVagax/(Sean Ironmonger) modified cargo train tug's move_speed to 8
+[13:53:14]ADMIN: DrVagax/(Sean Ironmonger) modified cargo train tug's move_speed to 80
+[13:53:16]ADMIN: DrVagax/(Sean Ironmonger) modified cargo train tug's throw_speed to 80
+[13:53:23]GAME: Explosion with size (1, 2, 3) in area Cargo Bay 
+[13:53:24]ACCESS: Logout: *no key*/(Sean Ironmonger)
+[13:53:24]ACCESS: Login: drvagax/(Sean Ironmonger) from 127.0.0.1-1872704441 || BYOND v506
+[13:53:35]ACCESS: Logout: drvagax/(Sean Ironmonger)
+
+
+Starting up. 17:27.21
+---------------------
+[17:27:21]MISC: Adding game mode AutoTraitor (extend-a-traitormongous) to configuration.
+[17:27:21]MISC: Adding game mode traitor+changeling (traitorchan) to configuration.
+[17:27:21]MISC: Adding game mode traitor (traitor) to configuration.
+[17:27:21]MISC: Adding game mode changeling (changeling) to configuration.
+[17:27:21]MISC: Adding game mode cult (cult) to configuration.
+[17:27:21]MISC: Adding game mode extended (extended) to configuration.
+[17:27:21]MISC: Adding game mode heist (heist) to configuration.
+[17:27:21]MISC: Adding game mode AI malfunction (malfunction) to configuration.
+[17:27:21]MISC: Adding game mode meteor (meteor) to configuration.
+[17:27:21]MISC: Adding game mode mutiny (mutiny) to configuration.
+[17:27:21]MISC: Adding game mode ninja (ninja) to configuration.
+[17:27:21]MISC: Adding game mode nuclear emergency (nuclear) to configuration.
+[17:27:21]MISC: Adding game mode rp-revolution (rp-revolution) to configuration.
+[17:27:21]MISC: Adding game mode revolution (revolution) to configuration.
+[17:27:21]MISC: Adding game mode wizard (wizard) to configuration.
+[17:27:21]MISC: Unknown setting in configuration: 'metroid_delay'
+[17:27:27]ADMIN: Loading jobban_rank
+[17:27:27]ADMIN: jobban_keylist was empty
+[17:27:27]ADMIN: Loading Banlist
+[17:27:28]DEBUG: Rebuilding Master Controller
+[17:44:22]ACCESS: Login: DrVagax/(DrVagax) from 127.0.0.1-1872704441 || BYOND v506
+[17:45:47]ADMIN: Announce: DrVagax/(DrVagax) : nbnjkbhg
+[17:45:52]VOTE: Gamemode vote started by the server.
+[17:45:52]DEBUG: The server has called a gamemode vote
+[17:46:04]DEBUG: The server has called a gamemode vote
+[17:46:05]DEBUG: The server has called a gamemode vote
+[17:46:06]DEBUG: The server has called a gamemode vote
+[17:46:07]DEBUG: The server has called a gamemode vote
+[17:46:08]DEBUG: The server has called a gamemode vote
+[17:46:09]DEBUG: The server has called a gamemode vote
+[17:46:10]DEBUG: The server has called a gamemode vote
+[17:46:11]DEBUG: The server has called a gamemode vote
+[17:46:12]DEBUG: The server has called a gamemode vote
+[17:46:12]DEBUG: The server has called a gamemode vote
+[17:46:13]DEBUG: The server has called a gamemode vote
+[17:46:14]DEBUG: The server has called a gamemode vote
+[17:46:15]DEBUG: The server has called a gamemode vote
+[17:46:16]DEBUG: The server has called a gamemode vote
+[17:46:17]DEBUG: The server has called a gamemode vote
+[17:46:18]DEBUG: The server has called a gamemode vote
+[17:46:19]DEBUG: The server has called a gamemode vote
+[17:46:20]DEBUG: The server has called a gamemode vote
+[17:46:21]DEBUG: The server has called a gamemode vote
+[17:46:21]DEBUG: The server has called a gamemode vote
+[17:46:22]DEBUG: The server has called a gamemode vote
+[17:46:23]DEBUG: The server has called a gamemode vote
+[17:46:24]DEBUG: The server has called a gamemode vote
+[17:46:25]DEBUG: The server has called a gamemode vote
+[17:46:26]DEBUG: The server has called a gamemode vote
+[17:46:27]DEBUG: The server has called a gamemode vote
+[17:46:28]DEBUG: The server has called a gamemode vote
+[17:46:29]ADMIN: DrVagax has started the game.
+[17:46:29]DEBUG: The server has called a gamemode vote
+[17:46:29]ACCESS: Logout: *no key*/(DrVagax)
+[17:46:29]ACCESS: Login: DrVagax/(Nicholas Weeter) from 127.0.0.1-1872704441 || BYOND v506
+[17:46:49]DEBUG: Next event in 27.328 minutes.
+[17:47:42]ADMIN: DrVagax/(Nicholas Weeter) has modified world.tick_lag to 0.5
+[17:48:13]ADMIN: DrVagax/(Nicholas Weeter) setup the supermatter engine 
+[17:48:48]ADMIN: HELP: DrVagax/(Nicholas Weeter): DSFASd - heard by 1 non-AFK admins.
+[17:49:23]ADMIN: DrVagax/(Nicholas Weeter) has granted DrVagax full access.
+[17:49:42]ADMIN: DrVagax/(Nicholas Weeter) modified cargo train tug's active_engines to 1
+[17:51:48]EMOTE: Nicholas Weeter/DrVagax : <B>Nicholas Weeter</B> gasps!
+[17:51:56]ADMIN: DrVagax/(Nicholas Weeter) told DrVagax/(Nicholas Weeter) to man up and deal with it.
+[17:52:07]ADMIN: DrVagax/(Nicholas Weeter) healed / revived DrVagax/(Nicholas Weeter)
+[17:52:25]ADMIN: DrVagax/(Nicholas Weeter) has toggled DrVagax/(Nicholas Weeter)'s nodamage to On
+[17:52:59]ADMIN: DrVagax/(Nicholas Weeter) healed / revived DrVagax/(Nicholas Weeter)
+[17:54:42]SAY: Ian/ : Bark!
+[17:54:52]ADMIN: DrVagax/(Nicholas Weeter) created a /obj/item/weapon/reagent_containers/pill/adminordrazine
+[17:55:19]ADMIN: DrVagax/(Nicholas Weeter) modified Airtight Hatch's locked to 0
+[17:55:25]ACCESS: Logout: *no key*/(Nicholas Weeter)
+[17:55:25]ACCESS: Login: DrVagax/(Nicholas Weeter) from 127.0.0.1-1872704441 || BYOND v506
+[17:55:36]ADMIN: DrVagax/(Nicholas Weeter) has possessed Supermatter (/obj/machinery/power/supermatter) at (114, 61, 1)
+[17:56:15]ADMIN: DrVagax/(Nicholas Weeter) created a /mob/living/carbon/human/vox
+[17:56:22]ADMIN: DrVagax/(Nicholas Weeter) deleted the unknown at (114,67,1)
+[17:56:29]ADMIN: DrVagax/(Nicholas Weeter) created a /mob/living/carbon/human
+[17:56:34]ADMIN: DrVagax/(Nicholas Weeter) assumed direct control of the unknown.
+[17:56:34]ACCESS: Logout: *no key*/(Nicholas Weeter)
+[17:56:34]ACCESS: Login: drvagax/(unknown) from 127.0.0.1-1872704441 || BYOND v506
+[17:57:11]SAY: mouse (943)/ : Squeek?
+[17:57:18]ADMIN: drvagax/(unknown) healed / revived drvagax/(unknown)
+[17:57:26]ADMIN: drvagax/(unknown) has toggled drvagax/(unknown)'s nodamage to On
+[17:57:29]SAY: Runtime/ : Esp!
+[17:57:33]ADMIN: drvagax/(unknown) gave drvagax/(unknown) the spell targeted/explosion/fireball.
+[17:57:50]ADMIN: drvagax/(unknown) created a /obj/item/weapon/reagent_containers/pill/adminordrazine
+[17:58:06]ADMIN: drvagax/(unknown) healed / revived drvagax/(unknown)
+[17:58:22]ADMIN: drvagax/(unknown) changed the equipment of drvagax/(unknown) to nanotrasen captain.
+[17:59:00]ADMIN: drvagax/(unknown) created a /obj/item/weapon/plastique
+[17:59:25]GAME: Explosion with size (-1, -1, 2) in area Engine Room 
+[17:59:44]ADMIN: drvagax/(unknown) created a /obj/item/weapon/plastique
+[18:00:04]GAME: Explosion with size (-1, -1, 2) in area Engine Monitoring Room 
+[18:00:22]ADMIN: drvagax/(unknown) created a /obj/item/weapon/plastique
+[18:00:54]GAME: Explosion with size (-1, -1, 2) in area Engine Room 
+[18:01:05]ADMIN: drvagax/(unknown) created a /obj/item/weapon/plastique
+[18:01:05]ADMIN: drvagax/(unknown) created a /obj/item/weapon/plastique
+[18:01:30]GAME: Explosion with size (-1, -1, 2) in area Engine Room 
+[18:01:44]GAME: Explosion with size (-1, -1, 2) in area Engine Room 
+[18:01:52]GAME: Emitter turned on by drvagax(the unknown) in (113,65,1)
+[18:02:01]GAME: Emitter turned off by drvagax(the unknown) in (113,65,1)
+[18:02:14]GAME: Emitter turned on by drvagax(the unknown) in (113,65,1)
+[18:04:29]ADMIN: drvagax/(unknown) changed the equipment of drvagax/(unknown) to nanotrasen representative.
+[18:04:39]ADMIN: drvagax/(unknown) changed the equipment of drvagax/(unknown) to nanotrasen officer.
+[18:04:47]ADMIN: drvagax/(unknown) changed the equipment of drvagax/(unknown) to nanotrasen captain.
+[18:05:01]ADMIN: drvagax/(unknown) changed the equipment of drvagax/(unknown) to death commando.
+[18:06:57]SAY: drvagax/(unknown) has made a captain announcement: aw shiy
+[18:07:10]SAY: drvagax/(unknown) has made an IA Centcomm announcement: fghjghjghjghjghjghhhhhhjhjhjhj
+[18:07:25]ADMIN: drvagax/(unknown) has been hit by Bluespace Artillery fired by DrVagax
+[18:07:59]ADMIN: drvagax/(unknown) healed / revived drvagax/(unknown)
+[18:10:22]ADMIN: drvagax/(unknown) used secret schoolgirl
+[18:10:40]ADMIN: DrVagax/(unknown) has toggled drvagax's FAKE block off!
+[18:10:42]ADMIN: DrVagax/(unknown) has toggled drvagax's FAKE block on!
+[18:10:45]ADMIN: DrVagax/(unknown) has toggled drvagax's XRAY block off!
+[18:10:46]ADMIN: DrVagax/(unknown) has toggled drvagax's XRAY block on!
+[18:10:47]ADMIN: DrVagax/(unknown) has toggled drvagax's FIRE block off!
+[18:10:48]ADMIN: DrVagax/(unknown) has toggled drvagax's FIRE block off!
+[18:10:49]ADMIN: DrVagax/(unknown) has toggled drvagax's HULK block on!
+[18:10:49]ADMIN: DrVagax/(unknown) has toggled drvagax's HULK block off!
+[18:10:50]ADMIN: DrVagax/(unknown) has toggled drvagax's HULK block on!
+[18:10:51]ADMIN: DrVagax/(unknown) has toggled drvagax's DEAF block off!
+[18:10:53]ADMIN: DrVagax/(unknown) has toggled drvagax's DEAF block off!
+[18:10:59]ADMIN: DrVagax/(unknown) has toggled drvagax's TELE block on!
+[18:11:03]ADMIN: drvagax/(unknown) healed / Rrvived drvagax/(unknown)
+[18:11:07]SAY: unknown/drvagax : HNNNNNNNNNGGGGGGH!!!!
+[18:11:11]SAY: unknown/drvagax : RAAAAAAAARGH!!!!
+[18:11:13]SAY: unknown/drvagax : HNNNNNNNNNGGGGGGH!!!!
+[18:11:39]SAY: unknown/drvagax : NNNNNNNNGGGGGGGGHH!!!!
+[18:11:48]ACCESS: Logout: *no key*/(unknown)
+[18:11:48]ACCESS: Login: drvagax/(unknown) from 127.0.0.1-1872704441 || BYOND v506
+[18:12:18]GAME: Emitter deleted at (113,62,1)
+[18:12:19]GAME: Explosion with size (8, 16, 24) in area Engine Room 
+[18:13:13]GAME: Explosion with size (1, 2, 4) in area Engine Maintenance 
+[18:14:13]DEBUG: Firing random event. #Engineer:0 #Medical:0 #Security:0 #Scientist:0 #AI:0 #Cyborg:0 #Janitor:0 #Gardener:0 ||| /datum/event/economic_event:300/datum/event/trivial_news:400/datum/event/mundane_news:300/datum/event/pda_spam:200/datum/event/money_lotto:50/datum/event/carp_migration:20/datum/event/brand_intelligence:20/datum/event/rogue_drone:5/datum/event/infestation:100/datum/event/communications_blackout:50/datum/event/ionstorm:1/datum/event/grid_check:25/datum/event/electrical_storm:1/datum/event/wallrot:1/datum/event/spacevine:10/datum/event/prison_break:1|||Picked:/datum/event/pda_spam
+[18:14:13]DEBUG: Next event in 47.296 minutes.
+[18:15:50]SAY: Runtime/ : Esp!
+[18:23:12]SAY: Experiment 97d/ : Eh?
+[18:26:09]SAY: Experiment 97d/ : Eh?
+[18:28:13]SAY: Experiment 97d/ : Eh?
+[18:33:13]SAY: Ian/ : Bark!
+[18:34:15]SAY: Runtime/ : Meow!
+[18:46:12]SAY: Experiment 97d/ : Eh?
+[18:57:42]ACCESS: Logout: drvagax/(unknown)
+
+
+Starting up. 21:24.38
+---------------------
+[21:24:38]MISC: Adding game mode AutoTraitor (extend-a-traitormongous) to configuration.
+[21:24:38]MISC: Adding game mode traitor+changeling (traitorchan) to configuration.
+[21:24:38]MISC: Adding game mode traitor (traitor) to configuration.
+[21:24:38]MISC: Adding game mode changeling (changeling) to configuration.
+[21:24:38]MISC: Adding game mode cult (cult) to configuration.
+[21:24:38]MISC: Adding game mode extended (extended) to configuration.
+[21:24:38]MISC: Adding game mode heist (heist) to configuration.
+[21:24:38]MISC: Adding game mode AI malfunction (malfunction) to configuration.
+[21:24:38]MISC: Adding game mode meteor (meteor) to configuration.
+[21:24:38]MISC: Adding game mode mutiny (mutiny) to configuration.
+[21:24:38]MISC: Adding game mode ninja (ninja) to configuration.
+[21:24:38]MISC: Adding game mode nuclear emergency (nuclear) to configuration.
+[21:24:38]MISC: Adding game mode rp-revolution (rp-revolution) to configuration.
+[21:24:38]MISC: Adding game mode revolution (revolution) to configuration.
+[21:24:38]MISC: Adding game mode wizard (wizard) to configuration.
+[21:24:38]MISC: Unknown setting in configuration: 'metroid_delay'
+[21:24:43]ADMIN: Loading jobban_rank
+[21:24:43]ADMIN: jobban_keylist was empty
+[21:24:43]ADMIN: Loading Banlist
+[21:24:43]DEBUG: Rebuilding Master Controller
+[21:28:07]ACCESS: Login: DrVagax/(DrVagax) from 192.168.0.1-1872704441 || BYOND v506
+[21:28:59]VOTE: Gamemode vote started by the server.
+[21:28:59]DEBUG: The server has called a gamemode vote
+[21:29:59]VOTE: <b>Vote Result: Inconclusive - No Votes!</b>
+[21:30:44]ADMIN: DrVagax has started the game.
+[21:30:44]ACCESS: Logout: *no key*/(DrVagax)
+[21:30:44]ACCESS: Login: DrVagax/(Carter Paynter) from 192.168.0.1-1872704441 || BYOND v506
+[21:31:05]DEBUG: Next event in 42.976 minutes.
+[21:33:15]ATTACK: Pun Pun () was hit by a Banana Cream Pie, thrown by Carter Paynter (drvagax) (<A HREF='?_src_=holder;adminplayerobservecoodjump=1;X=133;Y=139;Z=1'>JMP</a>)
+[21:33:45]ATTACK: DrVagax/(Carter Paynter) attacked *no key*/(Pun Pun) with fork (INTENT: GRAB) (DAMTYE: BRUTE)
+[21:33:46]ATTACK: DrVagax/(Carter Paynter) attacked *no key*/(Pun Pun) with fork (INTENT: GRAB) (DAMTYE: BRUTE)
+[21:33:52]ATTACK: DrVagax/(Carter Paynter) attacked *no key*/(Pun Pun) with fork (INTENT: GRAB) (DAMTYE: BRUTE)
+[21:33:53]ATTACK: DrVagax/(Carter Paynter) attacked *no key*/(Pun Pun) with fork (INTENT: GRAB) (DAMTYE: BRUTE)
+[21:33:57]ATTACK: DrVagax/(Carter Paynter) attacked *no key*/(Pun Pun) with fork (INTENT: GRAB) (DAMTYE: BRUTE)
+[21:33:58]ATTACK: DrVagax/(Carter Paynter) attacked *no key*/(Pun Pun) with fork (INTENT: GRAB) (DAMTYE: BRUTE)
+[21:33:59]ATTACK: DrVagax/(Carter Paynter) attacked *no key*/(Pun Pun) with fork (INTENT: GRAB) (DAMTYE: BRUTE)
+[21:34:00]ATTACK: DrVagax/(Carter Paynter) attacked *no key*/(Pun Pun) with fork (INTENT: GRAB) (DAMTYE: BRUTE)
+[21:34:01]ATTACK: DrVagax/(Carter Paynter) attacked *no key*/(Pun Pun) with fork (INTENT: GRAB) (DAMTYE: BRUTE)
+[21:34:03]ATTACK: DrVagax/(Carter Paynter) attacked *no key*/(Pun Pun) with fork (INTENT: GRAB) (DAMTYE: BRUTE)
+[21:34:04]ATTACK: DrVagax/(Carter Paynter) attacked *no key*/(Pun Pun) with fork (INTENT: GRAB) (DAMTYE: BRUTE)
+[21:34:05]ATTACK: DrVagax/(Carter Paynter) attacked *no key*/(Pun Pun) with fork (INTENT: GRAB) (DAMTYE: BRUTE)
+[21:34:06]ATTACK: DrVagax/(Carter Paynter) attacked *no key*/(Pun Pun) with fork (INTENT: GRAB) (DAMTYE: BRUTE)
+[21:34:18]ATTACK: Carter Paynter (drvagax) used the rolling pin to attack Pun Pun () (<A HREF='?_src_=holder;adminplayerobservecoodjump=1;X=143;Y=133;Z=1'>JMP</a>)
+[21:34:18]ATTACK: DrVagax/(Carter Paynter) attacked *no key*/(Pun Pun) with rolling pin (INTENT: GRAB) (DAMTYE: BRUTE)
+[21:34:19]ATTACK: Carter Paynter (drvagax) used the rolling pin to attack Pun Pun () (<A HREF='?_src_=holder;adminplayerobservecoodjump=1;X=143;Y=133;Z=1'>JMP</a>)
+[21:34:19]ATTACK: DrVagax/(Carter Paynter) attacked *no key*/(Pun Pun) with rolling pin (INTENT: GRAB) (DAMTYE: BRUTE)
+[21:34:26]SAY: Runtime/ : HSSSSS
+[21:34:27]ATTACK: Carter Paynter (drvagax) used the rolling pin to attack Pun Pun () (<A HREF='?_src_=holder;adminplayerobservecoodjump=1;X=141;Y=128;Z=1'>JMP</a>)
+[21:34:27]ATTACK: DrVagax/(Carter Paynter) attacked *no key*/(Pun Pun) with rolling pin (INTENT: GRAB) (DAMTYE: BRUTE)
+[21:36:12]SAY: Ian/ : Woof!
+[21:36:20]SAY: mouse (289)/ : SQUEEK!
+[21:40:10]ACCESS: Logout: DrVagax/(Carter Paynter)
+
+
+Starting up. 21:50.30
+---------------------
+[21:50:30]MISC: Adding game mode AutoTraitor (extend-a-traitormongous) to configuration.
+[21:50:30]MISC: Adding game mode traitor+changeling (traitorchan) to configuration.
+[21:50:30]MISC: Adding game mode traitor (traitor) to configuration.
+[21:50:30]MISC: Adding game mode changeling (changeling) to configuration.
+[21:50:30]MISC: Adding game mode cult (cult) to configuration.
+[21:50:30]MISC: Adding game mode extended (extended) to configuration.
+[21:50:30]MISC: Adding game mode heist (heist) to configuration.
+[21:50:30]MISC: Adding game mode AI malfunction (malfunction) to configuration.
+[21:50:30]MISC: Adding game mode meteor (meteor) to configuration.
+[21:50:30]MISC: Adding game mode mutiny (mutiny) to configuration.
+[21:50:30]MISC: Adding game mode ninja (ninja) to configuration.
+[21:50:30]MISC: Adding game mode nuclear emergency (nuclear) to configuration.
+[21:50:30]MISC: Adding game mode rp-revolution (rp-revolution) to configuration.
+[21:50:30]MISC: Adding game mode revolution (revolution) to configuration.
+[21:50:30]MISC: Adding game mode wizard (wizard) to configuration.
+[21:50:30]MISC: Unknown setting in configuration: 'metroid_delay'
+[21:50:34]ADMIN: Loading jobban_rank
+[21:50:34]ADMIN: jobban_keylist was empty
+[21:50:34]ADMIN: Loading Banlist
+[21:50:35]DEBUG: Rebuilding Master Controller
+[21:52:11]ACCESS: Login: DrVagax/(DrVagax) from 192.168.0.1-1872704441 || BYOND v506
+[21:52:29]ADMIN: DrVagax has started the game.
+[21:52:30]ACCESS: Logout: *no key*/(DrVagax)
+[21:52:30]ACCESS: Login: DrVagax/(Tyler Leach) from 192.168.0.1-1872704441 || BYOND v506
+[21:52:50]DEBUG: Next event in 28.17 minutes.
+[21:53:20]ADMIN: DrVagax/(Tyler Leach) has granted DrVagax full access.
+[21:54:08]ADMIN: DrVagax/(Tyler Leach) created a /mob/living/carbon/human
+[21:54:27]ATTACK: DrVagax/(Tyler Leach) disarmed unknown ()
+[21:54:28]ATTACK: DrVagax/(Tyler Leach) disarmed unknown ()
+[21:54:29]ATTACK: DrVagax/(Tyler Leach) disarmed unknown ()
+[21:54:33]ATTACK: DrVagax/(Tyler Leach) disarmed unknown ()
+[21:54:34]ATTACK: DrVagax/(Tyler Leach) disarmed unknown ()
+[21:54:35]ATTACK: DrVagax/(Tyler Leach) disarmed unknown ()
+[21:54:36]ATTACK: DrVagax/(Tyler Leach) disarmed unknown ()
+[21:54:37]ATTACK: DrVagax/(Tyler Leach) disarmed unknown ()
+[21:54:44]ATTACK: DrVagax/(Tyler Leach) punched *no key*/(unknown)
+[21:54:46]ATTACK: DrVagax/(Tyler Leach) punched *no key*/(unknown)
+[21:54:47]ATTACK: DrVagax/(Tyler Leach) punched *no key*/(unknown)
+[21:54:48]ATTACK: DrVagax/(Tyler Leach) punched *no key*/(unknown)
+[21:54:51]ATTACK: Tyler Leach (drvagax) Used the flash to flash unknown () (<A HREF='?_src_=holder;adminplayerobservecoodjump=1;X=87;Y=120;Z=1'>JMP</a>)
+[21:55:01]ATTACK: DrVagax/(Tyler Leach) grabbed the neck of *no key*/(unknown)
+[21:55:25]SAY: Ian/ : Bark!
+[21:56:33]ATTACK: DrVagax/(Tyler Leach) punched *no key*/(unknown)
+[21:56:34]ATTACK: DrVagax/(Tyler Leach) punched *no key*/(unknown)
+[21:56:35]ATTACK: DrVagax/(Tyler Leach) punched *no key*/(unknown)
+[21:56:36]ATTACK: DrVagax/(Tyler Leach) punched *no key*/(unknown)
+[21:56:42]ATTACK: DrVagax/(Tyler Leach) punched *no key*/(unknown)
+[21:56:43]ATTACK: DrVagax/(Tyler Leach) punched *no key*/(unknown)
+[21:56:44]ATTACK: DrVagax/(Tyler Leach) punched *no key*/(unknown)
+[21:56:45]ATTACK: DrVagax/(Tyler Leach) punched *no key*/(unknown)
+[21:56:46]ATTACK: DrVagax/(Tyler Leach) punched *no key*/(unknown)
+[21:56:50]ATTACK: DrVagax/(Tyler Leach) attacked *no key*/(unknown) with glass (INTENT: HURT) (DAMTYE: BRUTE)
+[21:56:51]ATTACK: DrVagax/(Tyler Leach) attacked *no key*/(unknown) with glass (INTENT: HURT) (DAMTYE: BRUTE)
+[21:56:52]ATTACK: DrVagax/(Tyler Leach) attacked *no key*/(unknown) with glass (INTENT: HURT) (DAMTYE: BRUTE)
+[21:56:53]ATTACK: DrVagax/(Tyler Leach) attacked *no key*/(unknown) with glass (INTENT: HURT) (DAMTYE: BRUTE)
+[21:56:54]ATTACK: DrVagax/(Tyler Leach) attacked *no key*/(unknown) with glass (INTENT: HURT) (DAMTYE: BRUTE)
+[21:56:55]EMOTE: unknown/ : <B>The unknown</B> screams!
+[21:56:55]ATTACK: DrVagax/(Tyler Leach) attacked *no key*/(unknown) with glass (INTENT: HURT) (DAMTYE: BRUTE)
+[21:56:55]EMOTE: Unknown/ : <B>Unknown</B> screams!
+[21:56:56]ATTACK: DrVagax/(Tyler Leach) attacked *no key*/(unknown) with glass (INTENT: HURT) (DAMTYE: BRUTE)
+[21:56:58]ATTACK: DrVagax/(Tyler Leach) attacked *no key*/(unknown) with glass (INTENT: HURT) (DAMTYE: BRUTE)
+[21:56:59]ATTACK: DrVagax/(Tyler Leach) attacked *no key*/(unknown) with glass (INTENT: HURT) (DAMTYE: BRUTE)
+[21:57:00]ATTACK: DrVagax/(Tyler Leach) attacked *no key*/(unknown) with glass (INTENT: HURT) (DAMTYE: BRUTE)
+[21:57:00]EMOTE: Unknown/ : <B>Unknown</B> screams!
+[21:57:01]ATTACK: DrVagax/(Tyler Leach) attacked *no key*/(unknown) with glass (INTENT: HURT) (DAMTYE: BRUTE)
+[21:57:01]EMOTE: Unknown/ : <B>Unknown</B> screams!
+[21:57:02]ATTACK: DrVagax/(Tyler Leach) attacked *no key*/(unknown) with glass (INTENT: HURT) (DAMTYE: BRUTE)
+[21:57:02]EMOTE: Unknown/ : <B>Unknown</B> screams!
+[21:57:03]ATTACK: DrVagax/(Tyler Leach) attacked *no key*/(unknown) with glass (INTENT: HURT) (DAMTYE: BRUTE)
+[21:57:03]EMOTE: Unknown/ : <B>Unknown</B> screams!
+[21:57:04]ATTACK: DrVagax/(Tyler Leach) attacked *no key*/(unknown) with glass (INTENT: HURT) (DAMTYE: BRUTE)
+[21:57:05]ATTACK: DrVagax/(Tyler Leach) attacked *no key*/(unknown) with glass (INTENT: HURT) (DAMTYE: BRUTE)
+[21:57:07]ATTACK: DrVagax/(Tyler Leach) attacked *no key*/(unknown) with glass (INTENT: HURT) (DAMTYE: BRUTE)
+[21:57:08]ATTACK: DrVagax/(Tyler Leach) attacked *no key*/(unknown) with glass (INTENT: HURT) (DAMTYE: BRUTE)
+[21:57:16]ATTACK: Unknown () was hit by a the glass, thrown by Tyler Leach (drvagax) (<A HREF='?_src_=holder;adminplayerobservecoodjump=1;X=87;Y=120;Z=1'>JMP</a>)
+[21:57:21]ATTACK: Unknown () was hit by a the glass, thrown by Tyler Leach (drvagax) (<A HREF='?_src_=holder;adminplayerobservecoodjump=1;X=87;Y=120;Z=1'>JMP</a>)
+[21:57:29]EMOTE: Unknown/ : <B>Unknown</B> screams!
+[21:57:29]ATTACK: Unknown () was hit by a the glass, thrown by Tyler Leach (drvagax) (<A HREF='?_src_=holder;adminplayerobservecoodjump=1;X=87;Y=120;Z=1'>JMP</a>)
+[21:57:36]ATTACK: Unknown () was hit by a the glass, thrown by Tyler Leach (drvagax) (<A HREF='?_src_=holder;adminplayerobservecoodjump=1;X=87;Y=120;Z=1'>JMP</a>)
+[21:57:38]ATTACK: Unknown () was hit by a the metal, thrown by Tyler Leach (drvagax) (<A HREF='?_src_=holder;adminplayerobservecoodjump=1;X=87;Y=120;Z=1'>JMP</a>)
+[21:57:43]ATTACK: DrVagax/(Tyler Leach) punched *no key*/(unknown)
+[21:57:43]EMOTE: Unknown/ : <B>Unknown</B> screams!
+[21:57:44]SAY: Ian/ : Bark!
+[21:57:44]ATTACK: DrVagax/(Tyler Leach) punched *no key*/(unknown)
+[21:57:45]ATTACK: DrVagax/(Tyler Leach) punched *no key*/(unknown)
+[21:57:46]EMOTE: Unknown/ : <B>Unknown</B> screams!
+[21:57:47]ATTACK: DrVagax/(Tyler Leach) punched *no key*/(unknown)
+[21:57:47]EMOTE: Unknown/ : <B>Unknown</B> screams!
+[21:57:48]ATTACK: DrVagax/(Tyler Leach) punched *no key*/(unknown)
+[21:57:48]EMOTE: Unknown/ : <B>Unknown</B> screams!
+[21:57:50]ATTACK: DrVagax/(Tyler Leach) punched *no key*/(unknown)
+[21:57:50]EMOTE: Unknown/ : <B>Unknown</B> screams!
+[21:57:51]ATTACK: DrVagax/(Tyler Leach) punched *no key*/(unknown)
+[21:58:03]ATTACK: DrVagax/(Tyler Leach) attacked *no key*/(unknown) with first-aid kit (INTENT: HURT) (DAMTYE: BRUTE)
+[21:58:05]ATTACK: DrVagax/(Tyler Leach) attacked *no key*/(unknown) with first-aid kit (INTENT: HURT) (DAMTYE: BRUTE)
+[21:58:39]EMOTE: Unknown/ : <B>Unknown</B> screams!
+[21:58:50]EMOTE: Unknown/ : <B>Unknown</B> screams!
+[21:59:01]EMOTE: Unknown/ : <B>Unknown</B> screams!
+[21:59:14]ADMIN: DrVagax/(Tyler Leach) has toggled DrVagax/(Tyler Leach)'s nodamage to On
+[21:59:19]EMOTE: Unknown/ : <B>Unknown</B> screams!
+[21:59:19]EMOTE: Unknown/ : <B>Unknown</B> screams!
+[21:59:39]ADMIN: DrVagax/(Tyler Leach) modified Airtight Hatch's locked to 0
+[21:59:42]EMOTE: Unknown/ : <B>Unknown</B> screams!
+[22:00:04]EMOTE: Unknown/ : <B>Unknown</B> can no longer stand, collapsing!
+[22:00:08]ADMIN: DrVagax/(Tyler Leach) healed / revived DrVagax/(Tyler Leach)
+[22:00:25]ADMIN: DrVagax/(Tyler Leach) healed / revived DrVagax/(Tyler Leach)
+[22:00:31]ATTACK: Tyler Leach (drvagax) has thrown Unknown () from <font color='#6b5d00'>tile at 114, 60, 1 in area the Engine Room</font> with the target <font color='#6b4400'>tile at 113, 61, 1 in area the Engine Room</font> (<A HREF='?_src_=holder;adminplayerobservecoodjump=1;X=114;Y=60;Z=1'>JMP</a>)
+[22:00:46]SAY: Ian/ : AUUUUUU
+[22:00:49]ADMIN: DrVagax/(Tyler Leach) healed / revived DrVagax/(Tyler Leach)
+[22:00:57]ADMIN: DrVagax/(Tyler Leach) healed / revived DrVagax/(Tyler Leach)
+[22:01:05]ADMIN: DrVagax/(Tyler Leach) healed / revived DrVagax/(Tyler Leach)
+[22:01:12]GAME: Emitter turned on by drvagax(Tyler Leach) in (113,65,1)
+[22:01:20]ADMIN: DrVagax/(Tyler Leach) healed / revived DrVagax/(Tyler Leach)
+[22:02:17]EMOTE: Tyler Leach/DrVagax : <B>Tyler Leach</B> gasps!
+[22:03:01]SAY: Tyler Leach/DrVagax : YES
+[22:03:07]SAY: Tyler Leach/DrVagax : All
+[22:03:07]SAY: Tyler Leach/DrVagax : DIE
+[22:03:22]ADMIN: DrVagax/(Tyler Leach) jumped to 113,69,1 in the Engine Room
+[22:03:26]ADMIN: DrVagax/(Tyler Leach) jumped to 113,72,1 in the Engine Monitoring Room
+[22:03:30]ADMIN: DrVagax/(Tyler Leach) healed / revived DrVagax/(Tyler Leach)
+[22:04:40]GAME: Explosion with size (11) in area Aft Primary Hallway 
+[22:04:40]ACCESS: Logout: *no key*/(Tyler Leach)
+[22:04:40]ACCESS: Login: DrVagax/(Tyler Leach) from 192.168.0.1-1872704441 || BYOND v506
+[22:04:50]ACCESS: Logout: *no key*/(Tyler Leach)
+[22:04:50]ACCESS: Login: DrVagax/(Tyler Leach) from 192.168.0.1-1872704441 || BYOND v506
+[22:05:58]ADMIN: DrVagax/(Tyler Leach) modified Supermatter's damage to 1000
+[22:06:09]ADMIN: DrVagax/(Tyler Leach) modified Supermatter's damage to 1500
+[22:06:18]GAME: Explosion with size (56) in area Engine Room 
+[22:06:19]GAME: Emitter deleted at (113,63,1)
+[22:08:35]ADMIN: DrVagax/(Tyler Leach) told everyone to man up and deal with it.
+[22:08:46]ADMIN: DrVagax has changed the custom event text.
+[22:08:55]ADMIN: DrVagax has changed the custom event text.
+[22:08:57]ADMIN: DrVagax has changed the custom event text.
+[22:08:58]ADMIN: DrVagax has changed the custom event text.
+[22:09:00]ADMIN: DrVagax has changed the custom event text.
+[22:09:37]ADMIN: DrVagax has changed the custom event text.
+[22:09:57]ADMIN: DrVagax has changed the custom event text.
+[22:10:14]ADMIN: DrVagax has changed the custom event text.
+[22:10:48]ACCESS: Logout: *no key*/(Tyler Leach)
+[22:10:48]ACCESS: Login: drvagax/(mouse) from 192.168.0.1-1872704441 || BYOND v506
+[22:10:55]SAY: mouse (73)/drvagax : Dfgdsfgdf
+[22:10:58]SAY: mouse (73)/drvagax : Sup
+[22:11:28]SAY: mouse (73)/drvagax : ; Allah Ackbar
+[22:11:29]GAME: Explosion with size (7) in area Bar 
+[22:11:34]GAME: Explosion with size (11) in area Bar 
+[22:11:36]ACCESS: Logout: *no key*/(mouse)
+[22:11:36]ACCESS: Login: drvagax/(mouse) from 192.168.0.1-1872704441 || BYOND v506
+[22:11:37]GAME: Explosion with size (18) in area Bar 
+[22:11:49]GAME: Explosion with size (50) in area Dormitory Toilets 
+[22:12:08]ACCESS: Logout: drvagax/(mouse)

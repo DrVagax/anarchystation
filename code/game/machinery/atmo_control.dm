@@ -1,7 +1,7 @@
 obj/machinery/air_sensor
 	icon = 'icons/obj/stationobjs.dmi'
 	icon_state = "gsensor1"
-	name = "gas sensor"
+	name = "Gas Sensor"
 
 	anchored = 1
 	var/state = 0
@@ -16,7 +16,7 @@ obj/machinery/air_sensor
 	// 2 for temperature
 	// Output >= 4 includes gas composition
 	// 4 for oxygen concentration
-	// 8 for toxins concentration
+	// 8 for phoron concentration
 	// 16 for nitrogen concentration
 	// 32 for carbon dioxide concentration
 
@@ -35,7 +35,7 @@ obj/machinery/air_sensor
 			var/datum/gas_mixture/air_sample = return_air()
 
 			if(output&1)
-				signal.data["pressure"] = num2text(round(air_sample.return_pressure(),0.1))
+				signal.data["pressure"] = num2text(round(air_sample.return_pressure(),0.1),)
 			if(output&2)
 				signal.data["temperature"] = round(air_sample.temperature,0.1)
 
@@ -45,14 +45,14 @@ obj/machinery/air_sensor
 					if(output&4)
 						signal.data["oxygen"] = round(100*air_sample.oxygen/total_moles,0.1)
 					if(output&8)
-						signal.data["toxins"] = round(100*air_sample.toxins/total_moles,0.1)
+						signal.data["phoron"] = round(100*air_sample.phoron/total_moles,0.1)
 					if(output&16)
 						signal.data["nitrogen"] = round(100*air_sample.nitrogen/total_moles,0.1)
 					if(output&32)
 						signal.data["carbon_dioxide"] = round(100*air_sample.carbon_dioxide/total_moles,0.1)
 				else
 					signal.data["oxygen"] = 0
-					signal.data["toxins"] = 0
+					signal.data["phoron"] = 0
 					signal.data["nitrogen"] = 0
 					signal.data["carbon_dioxide"] = 0
 			signal.data["sigtype"]="status"
@@ -78,8 +78,7 @@ obj/machinery/computer/general_air_control
 	icon = 'icons/obj/computer.dmi'
 	icon_state = "tank"
 
-	circuit = /obj/item/weapon/circuitboard/air_management
-	name = "computer"
+	name = "Computer"
 
 	var/frequency = 1439
 	var/list/sensors = list()
@@ -90,21 +89,46 @@ obj/machinery/computer/general_air_control
 	attack_hand(mob/user)
 		if(..(user))
 			return
-		//user << browse(return_text(),"window=computer")
+		user << browse(return_text(),"window=computer")
 		user.set_machine(src)
-		//onclose(user, "computer")
-
-		var/datum/browser/popup = new(user, "computer", name, 465, 390)
-		popup.set_content(return_text())
-		popup.set_title_image(user.browse_rsc_icon(src.icon, src.icon_state))
-		popup.open()
-
-	interact(mob/user)
-		attack_hand(user)
+		onclose(user, "computer")
 
 	process()
 		..()
-		src.updateDialog()
+		src.updateUsrDialog()
+
+	attackby(I as obj, user as mob)
+		if(istype(I, /obj/item/weapon/screwdriver))
+			playsound(src.loc, 'sound/items/Screwdriver.ogg', 50, 1)
+			if(do_after(user, 20))
+				if (src.stat & BROKEN)
+					user << "\blue The broken glass falls out."
+					var/obj/structure/computerframe/A = new /obj/structure/computerframe( src.loc )
+					new /obj/item/weapon/shard( src.loc )
+					var/obj/item/weapon/circuitboard/air_management/M = new /obj/item/weapon/circuitboard/air_management( A )
+					for (var/obj/C in src)
+						C.loc = src.loc
+					M.frequency = src.frequency
+					A.circuit = M
+					A.state = 3
+					A.icon_state = "3"
+					A.anchored = 1
+					del(src)
+				else
+					user << "\blue You disconnect the monitor."
+					var/obj/structure/computerframe/A = new /obj/structure/computerframe( src.loc )
+					var/obj/item/weapon/circuitboard/air_management/M = new /obj/item/weapon/circuitboard/air_management( A )
+					for (var/obj/C in src)
+						C.loc = src.loc
+					M.frequency = src.frequency
+					A.circuit = M
+					A.state = 4
+					A.icon_state = "4"
+					A.anchored = 1
+					del(src)
+		else
+			src.attack_hand(user)
+		return
 
 	receive_signal(datum/signal/signal)
 		if(!signal || signal.encryption) return
@@ -120,16 +144,14 @@ obj/machinery/computer/general_air_control
 			for(var/id_tag in sensors)
 				var/long_name = sensors[id_tag]
 				var/list/data = sensor_information[id_tag]
-				var/sensor_part = "<h2>[long_name]</h2>"
+				var/sensor_part = "<B>[long_name]</B>:<BR>"
 
 				if(data)
 					if(data["pressure"])
 						sensor_part += "   <B>Pressure:</B> [data["pressure"]] kPa<BR>"
-					else
-						sensor_part += "   <B>Pressure:</B> No pressure detected<BR>"
 					if(data["temperature"])
 						sensor_part += "   <B>Temperature:</B> [data["temperature"]] K<BR>"
-					if(data["oxygen"]||data["toxins"]||data["nitrogen"]||data["carbon_dioxide"])
+					if(data["oxygen"]||data["phoron"]||data["nitrogen"]||data["carbon_dioxide"])
 						sensor_part += "   <B>Gas Composition :</B>"
 						if(data["oxygen"])
 							sensor_part += "[data["oxygen"]]% O2; "
@@ -137,19 +159,20 @@ obj/machinery/computer/general_air_control
 							sensor_part += "[data["nitrogen"]]% N; "
 						if(data["carbon_dioxide"])
 							sensor_part += "[data["carbon_dioxide"]]% CO2; "
-						if(data["toxins"])
-							sensor_part += "[data["toxins"]]% TX; "
+						if(data["phoron"])
+							sensor_part += "[data["phoron"]]% TX; "
+					sensor_part += "<HR>"
 
 				else
-					sensor_part = "<FONT class='bad'>[long_name] can not be found!</FONT><BR>"
+					sensor_part = "<FONT color='red'>[long_name] can not be found!</FONT><BR>"
 
 				sensor_data += sensor_part
 
 		else
 			sensor_data = "No sensors connected."
 
-		var/output = {"
-<h1>Sensor Data</h1>[sensor_data]"}
+		var/output = {"<B>[name]</B><HR>
+<B>Sensor Data:</B><HR><HR>[sensor_data]"}
 
 		return output
 
@@ -180,13 +203,13 @@ obj/machinery/computer/general_air_control
 			//if(signal.data)
 			//	input_info = signal.data // Attempting to fix intake control -- TLE
 
-			output += "<h1>Tank Control System</h1>"
+			output += "<B>Tank Control System</B><BR>"
 			if(input_info)
 				var/power = (input_info["power"])
 				var/volume_rate = input_info["volume_rate"]
 				output += {"<B>Input</B>: [power?("Injecting"):("On Hold")] <A href='?src=\ref[src];in_refresh_status=1'>Refresh</A><BR>
 Rate: [volume_rate] L/sec<BR>"}
-				output += "<B>Command:</B> <A href='?src=\ref[src];in_toggle_injector=1'>Toggle Power</A><BR>"
+				output += "Command: <A href='?src=\ref[src];in_toggle_injector=1'>Toggle Power</A><BR>"
 
 			else
 				output += "<FONT color='red'>ERROR: Can not find input port</FONT> <A href='?src=\ref[src];in_refresh_status=1'>Search</A><BR>"
@@ -197,13 +220,13 @@ Rate: [volume_rate] L/sec<BR>"}
 				var/power = (output_info["power"])
 				var/output_pressure = output_info["internal"]
 				output += {"<B>Output</B>: [power?("Open"):("On Hold")] <A href='?src=\ref[src];out_refresh_status=1'>Refresh</A><BR>
-<B>Max Output Pressure:</B> [output_pressure] kPa<BR>"}
-				output += "<B>Command:</B> <A href='?src=\ref[src];out_toggle_power=1'>Toggle Power</A> <A href='?src=\ref[src];out_set_pressure=1'>Set Pressure</A><BR>"
+Max Output Pressure: [output_pressure] kPa<BR>"}
+				output += "Command: <A href='?src=\ref[src];out_toggle_power=1'>Toggle Power</A> <A href='?src=\ref[src];out_set_pressure=1'>Set Pressure</A><BR>"
 
 			else
 				output += "<FONT color='red'>ERROR: Can not find output port</FONT> <A href='?src=\ref[src];out_refresh_status=1'>Search</A><BR>"
 
-			output += "<B>Max Output Pressure Set:</B> <A href='?src=\ref[src];adj_pressure=-1000'>-</A> <A href='?src=\ref[src];adj_pressure=-100'>-</A> <A href='?src=\ref[src];adj_pressure=-10'>-</A> <A href='?src=\ref[src];adj_pressure=-1'>-</A> [pressure_setting] kPa <A href='?src=\ref[src];adj_pressure=1'>+</A> <A href='?src=\ref[src];adj_pressure=10'>+</A> <A href='?src=\ref[src];adj_pressure=100'>+</A> <A href='?src=\ref[src];adj_pressure=1000'>+</A><BR>"
+			output += "Max Output Pressure Set: <A href='?src=\ref[src];adj_pressure=-1000'>-</A> <A href='?src=\ref[src];adj_pressure=-100'>-</A> <A href='?src=\ref[src];adj_pressure=-10'>-</A> <A href='?src=\ref[src];adj_pressure=-1'>-</A> [pressure_setting] kPa <A href='?src=\ref[src];adj_pressure=1'>+</A> <A href='?src=\ref[src];adj_pressure=10'>+</A> <A href='?src=\ref[src];adj_pressure=100'>+</A> <A href='?src=\ref[src];adj_pressure=1000'>+</A><BR>"
 
 			return output
 
@@ -225,9 +248,9 @@ Rate: [volume_rate] L/sec<BR>"}
 
 			if(href_list["adj_pressure"])
 				var/change = text2num(href_list["adj_pressure"])
-				pressure_setting = Clamp(pressure_setting + change, 0, 50*ONE_ATMOSPHERE)
+				pressure_setting = between(0, pressure_setting + change, 50*ONE_ATMOSPHERE)
 				spawn(1)
-					src.updateDialog()
+					src.updateUsrDialog()
 				return
 
 			if(!radio_connection)
@@ -259,7 +282,7 @@ Rate: [volume_rate] L/sec<BR>"}
 			radio_connection.post_signal(src, signal, filter = RADIO_ATMOSIA)
 
 			spawn(5)
-				src.updateDialog()
+				src.updateUsrDialog()
 
 	fuel_injection
 		icon = 'icons/obj/computer.dmi'
@@ -272,6 +295,39 @@ Rate: [volume_rate] L/sec<BR>"}
 
 		var/cutoff_temperature = 2000
 		var/on_temperature = 1200
+
+		attackby(I as obj, user as mob)
+			if(istype(I, /obj/item/weapon/screwdriver))
+				playsound(src.loc, 'sound/items/Screwdriver.ogg', 50, 1)
+				if(do_after(user, 20))
+					if (src.stat & BROKEN)
+						user << "\blue The broken glass falls out."
+						var/obj/structure/computerframe/A = new /obj/structure/computerframe( src.loc )
+						new /obj/item/weapon/shard( src.loc )
+						var/obj/item/weapon/circuitboard/injector_control/M = new /obj/item/weapon/circuitboard/injector_control( A )
+						for (var/obj/C in src)
+							C.loc = src.loc
+						M.frequency = src.frequency
+						A.circuit = M
+						A.state = 3
+						A.icon_state = "3"
+						A.anchored = 1
+						del(src)
+					else
+						user << "\blue You disconnect the monitor."
+						var/obj/structure/computerframe/A = new /obj/structure/computerframe( src.loc )
+						var/obj/item/weapon/circuitboard/injector_control/M = new /obj/item/weapon/circuitboard/injector_control( A )
+						for (var/obj/C in src)
+							C.loc = src.loc
+						M.frequency = src.frequency
+						A.circuit = M
+						A.state = 4
+						A.icon_state = "4"
+						A.anchored = 1
+						del(src)
+			else
+				src.attack_hand(user)
+			return
 
 		process()
 			if(automation)

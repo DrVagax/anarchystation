@@ -16,7 +16,7 @@
 		var/obj/structure/stool/bed/chair/C = new /obj/structure/stool/bed/chair(loc)
 		playsound(loc, 'sound/items/Ratchet.ogg', 50, 1)
 		C.dir = dir
-		part.loc = src.loc
+		part.loc = loc
 		part.master = null
 		part = null
 		del(src)
@@ -69,6 +69,7 @@
 		buckled_mob << "<span class='danger'>You feel a deep shock course through your body!</span>"
 		sleep(1)
 		buckled_mob.burn_skin(85)
+		buckled_mob.Stun(600)
 	visible_message("<span class='danger'>The electric chair went off!</span>", "<span class='danger'>You hear a deep sharp shock!</span>")
 
 	A.power_light = light

@@ -3,7 +3,7 @@
  *		Oxygen
  *		Anesthetic
  *		Air
- *		Plasma
+ *		Phoron
  *		Emergency Oxygen
  */
 
@@ -19,7 +19,8 @@
 
 	New()
 		..()
-		src.air_contents.oxygen = (6*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C)
+		//src.air_contents.oxygen = (6*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C)
+		air_contents.adjust((6*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
 		return
 
 
@@ -28,7 +29,7 @@
 		..()
 		if(air_contents.oxygen < 10)
 			usr << text("\red <B>The meter on the [src.name] indicates you are almost out of air!</B>")
-			playsound(usr, 'sound/effects/alert.ogg', 50, 1)
+			//playsound(usr, 'sound/effects/alert.ogg', 50, 1)
 
 
 /obj/item/weapon/tank/oxygen/yellow
@@ -52,12 +53,15 @@
 /obj/item/weapon/tank/anesthetic/New()
 	..()
 
-	src.air_contents.oxygen = (3*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C) * O2STANDARD
+	src.air_contents.oxygen = (3*ONE_ATMOSPHERE)*70/(R_IDEAL_GAS_EQUATION*T20C) * O2STANDARD
 
 	var/datum/gas/sleeping_agent/trace_gas = new()
-	trace_gas.moles = (3*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C) * N2STANDARD
+	trace_gas.moles = (3*ONE_ATMOSPHERE)*70/(R_IDEAL_GAS_EQUATION*T20C) * N2STANDARD
 
 	src.air_contents.trace_gases += trace_gas
+	//
+	air_contents.update_values()
+
 	return
 
 /*
@@ -81,27 +85,32 @@
 
 	src.air_contents.oxygen = (6*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C) * O2STANDARD
 	src.air_contents.nitrogen = (6*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C) * N2STANDARD
+	//
+	src.air_contents.update_values()
+
 	return
 
 
 /*
- * Plasma
+ * Phoron
  */
-/obj/item/weapon/tank/plasma
-	name = "plasma tank"
-	desc = "Contains dangerous plasma. Do not inhale. Warning: extremely flammable."
-	icon_state = "plasma"
-	flags = CONDUCT
+/obj/item/weapon/tank/phoron
+	name = "phoron tank"
+	desc = "Contains dangerous phoron. Do not inhale. Warning: extremely flammable."
+	icon_state = "phoron"
+	flags = FPRINT | TABLEPASS | CONDUCT
 	slot_flags = null	//they have no straps!
 
 
-/obj/item/weapon/tank/plasma/New()
+/obj/item/weapon/tank/phoron/New()
 	..()
 
-	src.air_contents.toxins = (3*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C)
+	src.air_contents.phoron = (3*ONE_ATMOSPHERE)*70/(R_IDEAL_GAS_EQUATION*T20C)
+	//
+	src.air_contents.update_values()
 	return
 
-/obj/item/weapon/tank/plasma/attackby(obj/item/weapon/W as obj, mob/user as mob)
+/obj/item/weapon/tank/phoron/attackby(obj/item/weapon/W as obj, mob/user as mob)
 	..()
 
 	if (istype(W, /obj/item/weapon/flamethrower))
@@ -109,13 +118,8 @@
 		if ((!F.status)||(F.ptank))	return
 		src.master = F
 		F.ptank = src
-		user.unEquip(src)
+		user.before_take_item(src)
 		src.loc = F
-	return
-
-/obj/item/weapon/tank/plasma/full/New()
-	..()
-	src.air_contents.toxins = (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C)
 	return
 
 /*
@@ -125,17 +129,20 @@
 	name = "emergency oxygen tank"
 	desc = "Used for emergencies. Contains very little oxygen, so try to conserve it until you actually need it."
 	icon_state = "emergency"
-	flags = CONDUCT
+	flags = FPRINT | TABLEPASS | CONDUCT
 	slot_flags = SLOT_BELT
 	w_class = 2.0
 	force = 4.0
 	distribute_pressure = ONE_ATMOSPHERE*O2STANDARD
-	volume = 3 //Tiny. Real life equivalents only have 21 breaths of oxygen in them. They're EMERGENCY tanks anyway -errorage (dangercon 2011)
+	volume = 2 //Tiny. Real life equivalents only have 21 breaths of oxygen in them. They're EMERGENCY tanks anyway -errorage (dangercon 2011)
 
 
 	New()
 		..()
 		src.air_contents.oxygen = (3*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C)
+		//
+		src.air_contents.update_values()
+
 		return
 
 
@@ -153,5 +160,30 @@
 
 /obj/item/weapon/tank/emergency_oxygen/double
 	name = "double emergency oxygen tank"
-	icon_state = "emergency_engi"
+	icon_state = "emergency_double"
 	volume = 10
+
+/*
+ * Nitrogen
+ */
+/obj/item/weapon/tank/nitrogen
+	name = "nitrogen tank"
+	desc = "A tank of nitrogen."
+	icon_state = "oxygen_fr"
+	distribute_pressure = ONE_ATMOSPHERE*O2STANDARD
+
+
+/obj/item/weapon/tank/nitrogen/New()
+	..()
+
+	src.air_contents.nitrogen = (3*ONE_ATMOSPHERE)*70/(R_IDEAL_GAS_EQUATION*T20C)
+	//
+	src.air_contents.update_values()
+	return
+
+/obj/item/weapon/tank/nitrogen/examine()
+	set src in usr
+	..()
+	if(air_contents.nitrogen < 10)
+		usr << text("\red <B>The meter on the [src.name] indicates you are almost out of air!</B>")
+		//playsound(usr, 'sound/effects/alert.ogg', 50, 1)

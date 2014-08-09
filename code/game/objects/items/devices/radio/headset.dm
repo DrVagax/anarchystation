@@ -3,8 +3,7 @@
 	desc = "An updated, modular intercom that fits over the head. Takes encryption keys"
 	icon_state = "headset"
 	item_state = "headset"
-	g_amt = 0
-	m_amt = 75
+	matter = list("metal" = 75)
 	subspace_transmission = 1
 	canhear_range = 0 // can't hear headsets from very far away
 
@@ -20,15 +19,10 @@
 	keyslot1 = new /obj/item/device/encryptionkey/
 	recalculateChannels()
 
-/obj/item/device/radio/headset/talk_into(mob/living/M as mob, message, channel)
-	if (!listening)
-		return
-	..()
-
 /obj/item/device/radio/headset/receive_range(freq, level)
 	if(ishuman(src.loc))
 		var/mob/living/carbon/human/H = src.loc
-		if(H.ears == src)
+		if(H.l_ear == src || H.r_ear == src)
 			return ..(freq, level)
 	return -1
 
@@ -65,7 +59,7 @@
 
 /obj/item/device/radio/headset/headset_rob
 	name = "robotics radio headset"
-	desc = "Made specifically for the roboticists, who cannot decide between departments. To access the engineering channel, use :e. For research, use :n."
+	desc = "Made specifically for the roboticists who cannot decide between departments. To access the engineering channel, use :e. For research, use :n."
 	icon_state = "rob_headset"
 	item_state = "headset"
 	keyslot2 = new /obj/item/device/encryptionkey/headset_rob
@@ -80,14 +74,14 @@
 /obj/item/device/radio/headset/headset_sci
 	name = "science radio headset"
 	desc = "A sciency headset. Like usual. To access the science channel, use :n."
-	icon_state = "sci_headset"
+	icon_state = "com_headset"
 	item_state = "headset"
 	keyslot2 = new /obj/item/device/encryptionkey/headset_sci
 
 /obj/item/device/radio/headset/headset_medsci
 	name = "medical research radio headset"
 	desc = "A headset that is a result of the mating between medical and science. To access the medical channel, use :m. For science, use :n."
-	icon_state = "medsci_headset"
+	icon_state = "med_headset"
 	item_state = "headset"
 	keyslot2 = new /obj/item/device/encryptionkey/headset_medsci
 
@@ -99,47 +93,61 @@
 	keyslot2 = new /obj/item/device/encryptionkey/headset_com
 
 /obj/item/device/radio/headset/heads/captain
-	name = "\proper the captain's headset"
-	desc = "The headset of the boss. Channels are as follows: :c - command, :s - security, :e - engineering, :u - supply, :v - service, :m - medical, :n - science."
+	name = "captain's headset"
+	desc = "The headset of the boss. Channels are as follows: :c - command, :s - security, :e - engineering, :u - supply, :m - medical, :n - science."
 	icon_state = "com_headset"
 	item_state = "headset"
 	keyslot2 = new /obj/item/device/encryptionkey/heads/captain
 
 /obj/item/device/radio/headset/heads/rd
-	name = "\proper the research director's headset"
-	desc = "Headset of the fellow who keeps society marching towards technological singularity. To access the science channel, use :n. For command, use :c."
+	name = "Research Director's headset"
+	desc = "Headset of the researching God. To access the science channel, use :n. For command, use :c."
 	icon_state = "com_headset"
 	item_state = "headset"
 	keyslot2 = new /obj/item/device/encryptionkey/heads/rd
 
 /obj/item/device/radio/headset/heads/hos
-	name = "\proper the head of security's headset"
-	desc = "The headset of the man in charge of keeping order and protecting the station. To access the security channel, use :s. For command, use :c."
+	name = "head of security's headset"
+	desc = "The headset of the man who protects your worthless lifes. To access the security channel, use :s. For command, use :c."
 	icon_state = "com_headset"
 	item_state = "headset"
 	keyslot2 = new /obj/item/device/encryptionkey/heads/hos
 
 /obj/item/device/radio/headset/heads/ce
-	name = "\proper the chief engineer's headset"
-	desc = "The headset of the guy in charge of keeping the station powered and undamaged. To access the engineering channel, use :e. For command, use :c."
+	name = "chief engineer's headset"
+	desc = "The headset of the guy who is in charge of morons. To access the engineering channel, use :e. For command, use :c."
 	icon_state = "com_headset"
 	item_state = "headset"
 	keyslot2 = new /obj/item/device/encryptionkey/heads/ce
 
 /obj/item/device/radio/headset/heads/cmo
-	name = "\proper the chief medical officer's headset"
+	name = "chief medical officer's headset"
 	desc = "The headset of the highly trained medical chief. To access the medical channel, use :m. For command, use :c."
 	icon_state = "com_headset"
 	item_state = "headset"
 	keyslot2 = new /obj/item/device/encryptionkey/heads/cmo
 
 /obj/item/device/radio/headset/heads/hop
-	name = "\proper the head of personnel's headset"
-	desc = "The headset of the guy who will one day be captain. Channels are as follows: :u - supply, :v - service, :c - command."
+	name = "head of personnel's headset"
+	desc = "The headset of the guy who will one day be captain. Channels are as follows: :u - supply, :c - command, :s - security"
 	icon_state = "com_headset"
 	item_state = "headset"
 	keyslot2 = new /obj/item/device/encryptionkey/heads/hop
+/*
+/obj/item/device/radio/headset/headset_mine
+	name = "mining radio headset"
+	desc = "Headset used by miners. How useless. To access the mining channel, use :d."
+	icon_state = "mine_headset"
+	item_state = "headset"
+	keyslot2 = new /obj/item/device/encryptionkey/headset_mine
 
+/obj/item/device/radio/headset/heads/qm
+	name = "quartermaster's headset"
+	desc = "The headset of the man who control your toiletpaper supply. To access the cargo channel, use :q. For mining, use :d."
+	icon_state = "cargo_headset"
+	item_state = "headset"
+	keyslot2 = new /obj/item/device/encryptionkey/heads/qm
+*/
 /obj/item/device/radio/headset/headset_cargo
 	name = "supply radio headset"
 	desc = "A headset used by the QM and his slaves. To access the supply channel, use :u."
@@ -147,19 +155,13 @@
 	item_state = "headset"
 	keyslot2 = new /obj/item/device/encryptionkey/headset_cargo
 
-/obj/item/device/radio/headset/headset_srv
-	name = "service radio headset"
-	desc = "Headset used by the service staff, tasked with keeping the station full, happy and clean. To access the service channel, use :v."
-	icon_state = "srv_headset"
+/obj/item/device/radio/headset/ert
+	name = "CentCom Response Team headset"
+	desc = "The headset of the boss's boss. Channels are as follows: :h - Response Team :c - command, :s - security, :e - engineering, :d - mining, :q - cargo, :m - medical, :n - science."
+	icon_state = "com_headset"
 	item_state = "headset"
-	keyslot2 = new /obj/item/device/encryptionkey/headset_service
-
-/obj/item/device/radio/headset/headset_cent
-	name = "centcom headset"
-	desc = "A headset used by the upper echelons of Nanotrasen. Channels are as follows: :c - command, :s - security, :e - engineering, :u - supply, :v - service, :m - medical, :n - science."
-	icon_state = "cent_headset"
-	item_state = "headset"
-	keyslot2 = new /obj/item/device/encryptionkey/heads/captain
+	freerange = 1
+	keyslot2 = new /obj/item/device/encryptionkey/ert
 
 /obj/item/device/radio/headset/attackby(obj/item/weapon/W as obj, mob/user as mob)
 //	..()

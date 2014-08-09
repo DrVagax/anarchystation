@@ -93,13 +93,12 @@ PriorityQueue
 			if(ind)
 				Remove(ind)
 PathNode
-	var/turf/source
+	var/datum/source
 	var/PathNode/prevNode
 	var/f
 	var/g
 	var/h
 	var/nt		// Nodes traversed
-	var/bestF
 	New(s,p,pg,ph,pnt)
 		source = s
 		prevNode = p
@@ -109,7 +108,7 @@ PathNode
 		source.bestF = f
 		nt = pnt
 
-turf
+datum
 	var/bestF
 proc
 	PathWeightCompare(PathNode/a, PathNode/b)
@@ -151,7 +150,7 @@ proc
 				if(cur.nt >= maxnodedepth)
 					continue
 
-			for(var/turf/d in L)
+			for(var/datum/d in L)
 				if(d == exclude)
 					continue
 				var/ng = cur.g + call(cur.source,dist)(d)

@@ -17,6 +17,7 @@
 	var/hack_wire
 	var/disable_wire
 	var/shock_wire
+	var/opened = 0
 	var/obj/machinery/computer/rdconsole/linked_console
 
 /obj/machinery/r_n_d/New()
@@ -35,24 +36,10 @@
 	src.disable_wire = pick(w)
 	w -= src.disable_wire
 
-/obj/machinery/r_n_d/proc/
-	shock(mob/user, prb)
-		if(stat & (BROKEN|NOPOWER))		// unpowered, no shock
-			return 0
-		if(!prob(prb))
-			return 0
-		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-		s.set_up(5, 1, src)
-		s.start()
-		if (electrocute_mob(user, get_area(src), src, 0.7))
-			return 1
-		else
-			return 0
-
 /obj/machinery/r_n_d/attack_hand(mob/user as mob)
 	if (shocked)
 		shock(user,50)
-	if(panel_open)
+	if(opened)
 		var/dat as text
 		dat += "[src.name] Wires:<BR>"
 		for(var/wire in src.wires)

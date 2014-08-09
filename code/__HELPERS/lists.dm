@@ -31,28 +31,29 @@
 		return "[output][and_text][input[index]]"
 
 //Returns list element or null. Should prevent "index out of bounds" error.
-proc/listgetindex(list/L, index)
-	if(istype(L))
+proc/listgetindex(var/list/list,index)
+	if(istype(list) && list.len)
 		if(isnum(index))
-			if(IsInRange(index,1,L.len))
-				return L[index]
-		else if(index in L)
-			return L[index]
+			if(InRange(index,1,list.len))
+				return list[index]
+		else if(index in list)
+			return list[index]
 	return
 
-proc/islist(list/L)
-	if(istype(L))
+proc/islist(list/list)
+	if(istype(list))
 		return 1
 	return 0
 
 //Return either pick(list) or null if list is not of type /list or is empty
-proc/safepick(list/L)
-	if(istype(L) && L.len)
-		return pick(L)
+proc/safepick(list/list)
+	if(!islist(list) || !list.len)
+		return
+	return pick(list)
 
 //Checks if the list is empty
-proc/isemptylist(list/L)
-	if(!L.len)
+proc/isemptylist(list/list)
+	if(!list.len)
 		return 1
 	return 0
 
@@ -126,33 +127,38 @@ proc/listclearnulls(list/list)
 	return null
 
 //Pick a random element from the list and remove it from the list.
-/proc/pick_n_take(list/L)
-	if(L.len)
-		var/picked = rand(1,L.len)
-		. = L[picked]
-		L.Cut(picked,picked+1)			//Cut is far more efficient that Remove()
+/proc/pick_n_take(list/listfrom)
+	if (listfrom.len > 0)
+		var/picked = pick(listfrom)
+		listfrom -= picked
+		return picked
+	return null
 
 //Returns the top(last) element from the list and removes it from the list (typical stack function)
-/proc/pop(list/L)
-	if(L.len)
-		. = L[L.len]
-		L.len--
+/proc/pop(list/listfrom)
+	if (listfrom.len > 0)
+		var/picked = listfrom[listfrom.len]
+		listfrom.len--
+		return picked
+	return null
 
-/proc/sorted_insert(list/L, thing, comparator)
-	var/pos = L.len
-	while(pos > 0 && call(comparator)(thing, L[pos]) > 0)
-		pos--
-	L.Insert(pos+1, thing)
+//Returns the next element in parameter list after first appearance of parameter element. If it is the last element of the list or not present in list, returns first element.
+/proc/next_in_list(element, list/L)
+	for(var/i=1, i<L.len, i++)
+		if(L[i] == element)
+			return L[i+1]
+	return L[1]
 
 /*
  * Sorting
  */
 
 //Reverses the order of items in the list
-/proc/reverselist(var/list/input)
+/proc/reverselist(list/L)
 	var/list/output = list()
-	for(var/i = input.len; i >= 1; i--)
-		output += input[i]
+	if(L)
+		for(var/i = L.len; i >= 1; i--)
+			output += L[i]
 	return output
 
 //Randomize: Return the list in a random order
@@ -290,6 +296,32 @@ proc/listclearnulls(list/list)
 		return (result + L.Copy(Li, 0))
 	return (result + R.Copy(Ri, 0))
 
+
+// List of lists, sorts by element[key] - for things like crew monitoring computer sorting records by name.
+/proc/sortByKey(var/list/L, var/key)
+	if(L.len < 2)
+		return L
+	var/middle = L.len / 2 + 1
+	return mergeKeyedLists(sortByKey(L.Copy(0, middle), key), sortByKey(L.Copy(middle), key), key)
+
+/proc/mergeKeyedLists(var/list/L, var/list/R, var/key)
+	var/Li=1
+	var/Ri=1
+	var/list/result = new()
+	while(Li <= L.len && Ri <= R.len)
+		if(sorttext(L[Li][key], R[Ri][key]) < 1)
+			// Works around list += list2 merging lists; it's not pretty but it works
+			result += "temp item"
+			result[result.len] = R[Ri++]
+		else
+			result += "temp item"
+			result[result.len] = L[Li++]
+
+	if(Li <= L.len)
+		return (result + L.Copy(Li, 0))
+	return (result + R.Copy(Ri, 0))
+
+
 //Mergesort: any value in a list, preserves key=value structure
 /proc/sortAssoc(var/list/L)
 	if(L.len < 2)
@@ -310,7 +342,6 @@ proc/listclearnulls(list/list)
 	if(Li <= L.len)
 		return (result + L.Copy(Li, 0))
 	return (result + R.Copy(Ri, 0))
-
 
 //Converts a bitfield to a list of numbers (or words if a wordlist is provided)
 /proc/bitfield2list(bitfield = 0, list/wordlist)
@@ -345,7 +376,26 @@ proc/listclearnulls(list/list)
 			i++
 	return i
 
-/proc/find_record(field, value, list/L)
-	for(var/datum/data/record/R in L)
-		if(R.fields[field] == value)
-			return R
+//Don't use this on lists larger than half a dozen or so
+/proc/insertion_sort_numeric_list_ascending(var/list/L)
+	//world.log << "ascending len input: [L.len]"
+	var/list/out = list(pop(L))
+	for(var/entry in L)
+		if(isnum(entry))
+			var/success = 0
+			for(var/i=1, i<=out.len, i++)
+				if(entry <= out[i])
+					success = 1
+					out.Insert(i, entry)
+					break
+			if(!success)
+				out.Add(entry)
+
+	//world.log << "	output: [out.len]"
+	return out
+
+/proc/insertion_sort_numeric_list_descending(var/list/L)
+	//world.log << "descending len input: [L.len]"
+	var/list/out = insertion_sort_numeric_list_ascending(L)
+	//world.log << "	output: [out.len]"
+	return reverselist(out)

@@ -1,13 +1,7 @@
-#Files and folders specified here will never be tracked.
-
-*.ban
-*.bdb
+#ignore misc BYOND files
 *.log
-*.sav
-
-#Compiled files and other files generated during compilation.
-*.dmb
-*.rsc
-*.lk
 *.int
-/data/mode.txt
+*.rsc
+*.dmb
+*.lk
+data/

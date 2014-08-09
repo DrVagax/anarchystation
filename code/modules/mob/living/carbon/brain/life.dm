@@ -1,6 +1,6 @@
 /mob/living/carbon/brain/Life()
 	set invisibility = 0
-	set background = BACKGROUND_ENABLED
+	set background = 1
 	..()
 
 	if(stat != DEAD)
@@ -186,7 +186,6 @@
 						emp_damage -= 1
 
 			//Other
-			/* commented out because none of these should happen
 			if(stunned)
 				AdjustStunned(-1)
 
@@ -201,7 +200,6 @@
 
 			if(druggy)
 				druggy = max(druggy-1, 0)
-			*/
 		return 1
 
 
@@ -219,8 +217,6 @@
 			sight &= ~SEE_OBJS
 			see_in_dark = 2
 			see_invisible = SEE_INVISIBLE_LIVING
-			if(see_override)
-				see_invisible = see_override
 
 		if (healths)
 			if (stat != 2)
@@ -243,8 +239,8 @@
 				healths.icon_state = "health7"
 
 		if(pullin)	pullin.icon_state = "pull[pulling ? 1 : 0]"
-
-		client.screen.Remove(global_hud.blurry,global_hud.druggy,global_hud.vimpaired)
+		if (client)
+			client.screen.Remove(global_hud.blurry,global_hud.druggy,global_hud.vimpaired)
 
 		if ((blind && stat != 2))
 			if ((blinded))
@@ -266,7 +262,7 @@
 				if (!( machine.check_eye(src) ))
 					reset_view(null)
 			else
-				if(!client.adminobs)
+				if(client && !client.adminobs)
 					reset_view(null)
 
 		return 1

@@ -76,14 +76,14 @@
 		user << "\blue Suit interlocks engaged."
 		if(helmrequired)
 			helm = user.head
-			helm.flags |= NODROP
+			helm.canremove = 0
 		if(glovesrequired)
 			gloves = user.gloves
-			gloves.flags |= NODROP
+			gloves.canremove = 0
 		if(shoesrequired)
 			shoes = user.shoes
-			shoes.flags |= NODROP
-		flags |= NODROP
+			shoes.canremove = 0
+		canremove = 0
 		sleep(20)
 
 		if(atmoseal)
@@ -145,15 +145,15 @@
 		if(!sudden)
 			usr << "\blue Suit interlocks disengaged."
 			if(helm)
-				helm.flags &= ~NODROP
+				helm.canremove = 1
 				helm = null
 			if(gloves)
-				gloves.flags &= ~NODROP
+				gloves.canremove = 1
 				gloves = null
 			if(shoes)
-				shoes.flags &= ~NODROP
+				shoes.canremove = 1
 				gloves = null
-			flags &= ~NODROP
+			canremove = 1
 			//Not a tabbing error, the thing only unlocks if you intentionally power-down the armor. --NEO
 		sleep(delay)
 
@@ -268,7 +268,7 @@ obj/item/clothing/suit/powered/spawnable/regular
 	New()
 		servos = new /obj/item/powerarmor/servos(src)
 		servos.parent = src
-		reactive = new /obj/item/powerarmor/reactive/centcom(src)
+		reactive = new /obj/item/powerarmor/reactive/centcomm(src)
 		reactive.parent = src
 		atmoseal = new /obj/item/powerarmor/atmoseal/optional/adminbus(src)
 		atmoseal.parent = src

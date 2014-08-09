@@ -8,7 +8,7 @@
 
 	icon = 'icons/obj/objects.dmi'
 	icon_state = "floor_magnet-f"
-	name = "electromagnetic generator"
+	name = "Electromagnetic Generator"
 	desc = "A device that uses station power to create points of magnetic energy."
 	level = 1		// underfloor
 	layer = 2.5
@@ -194,7 +194,7 @@
 
 
 /obj/machinery/magnetic_controller
-	name = "magnetic control console"
+	name = "Magnetic Control Console"
 	icon = 'icons/obj/airlock_machines.dmi' // uses an airlock machine icon, THINK GREEN HELP THE ENVIRONMENT - RECYCLING!
 	icon_state = "airlock_control_standby"
 	density = 1
@@ -275,9 +275,10 @@
 		onclose(user, "magnet")
 
 	Topic(href, href_list)
-		if(..())
+		if(stat & (BROKEN|NOPOWER))
 			return
 		usr.set_machine(src)
+		src.add_fingerprint(usr)
 
 		if(href_list["radio-op"])
 

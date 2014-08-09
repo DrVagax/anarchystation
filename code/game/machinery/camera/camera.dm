@@ -8,15 +8,22 @@
 	active_power_usage = 10
 	layer = 5
 
-	var/datum/wires/camera/wires = null // Wires datum
 	var/list/network = list("SS13")
 	var/c_tag = null
 	var/c_tag_order = 999
 	var/status = 1.0
 	anchored = 1.0
+	var/panel_open = 0 // 0 = Closed / 1 = Open
 	var/invuln = null
-	var/obj/item/device/camera_bug/bug = null
+	var/bugged = 0
 	var/obj/item/weapon/camera_assembly/assembly = null
+
+	// WIRES
+	var/wires = 63 // 0b111111
+	var/list/IndexToFlag = list()
+	var/list/IndexToWireColor = list()
+	var/list/WireColorToIndex = list()
+	var/list/WireColorToFlag = list()
 
 	//OTHER
 
@@ -26,31 +33,24 @@
 	var/light_disabled = 0
 	var/alarm_on = 0
 	var/busy = 0
-	var/emped = 0  //Number of consecutive EMP's on this camera
 
 /obj/machinery/camera/New()
-	wires = new(src)
-
+	WireColorToFlag = randomCameraWires()
 	assembly = new(src)
 	assembly.state = 4
-	assembly.anchored = 1
-	assembly.update_icon()
-
 	/* // Use this to look for cameras that have the same c_tag.
 	for(var/obj/machinery/camera/C in cameranet.cameras)
 		var/list/tempnetwork = C.network&src.network
 		if(C != src && C.c_tag == src.c_tag && tempnetwork.len)
 			world.log << "[src.c_tag] [src.x] [src.y] [src.z] conflicts with [C.c_tag] [C.x] [C.y] [C.z]"
 	*/
-	..()
-
-/obj/machinery/camera/initialize()
-	if(z == 1 && prob(3))
-		deactivate()
-
-/obj/machinery/camera/Del()
-	if(istype(bug))
-		bug.bugged_cameras -= src.c_tag
+	if(!src.network || src.network.len < 1)
+		if(loc)
+			error("[src.name] in [get_area(src)] (x:[src.x] y:[src.y] z:[src.z] has errored. [src.network?"Empty network list":"Null network list"]")
+		else
+			error("[src.name] in [get_area(src)]has errored. [src.network?"Empty network list":"Null network list"]")
+		ASSERT(src.network)
+		ASSERT(src.network.len > 0)
 	..()
 
 /obj/machinery/camera/emp_act(severity)
@@ -63,22 +63,20 @@
 			stat |= EMPED
 			SetLuminosity(0)
 			triggerCameraAlarm()
-			emped = emped+1  //Increase the number of consecutive EMP's
-			var/thisemp = emped //Take note of which EMP this proc is for
 			spawn(900)
-				if(emped == thisemp) //Only fix it if the camera hasn't been EMP'd again
-					network = previous_network
-					icon_state = initial(icon_state)
-					stat &= ~EMPED
-					cancelCameraAlarm()
-					if(can_use())
-						cameranet.addCamera(src)
-					emped = 0 //Resets the consecutive EMP count
+				network = previous_network
+				icon_state = initial(icon_state)
+				stat &= ~EMPED
+				cancelCameraAlarm()
+				if(can_use())
+					cameranet.addCamera(src)
 			for(var/mob/O in mob_list)
-				if (O.client && O.client.eye == src)
-					O.unset_machine()
-					O.reset_view(null)
-					O << "The screen bursts into static."
+				if (istype(O.machine, /obj/machinery/computer/security))
+					var/obj/machinery/computer/security/S = O.machine
+					if (S.current == src)
+						O.unset_machine()
+						O.reset_view(null)
+						O << "The screen bursts into static."
 			..()
 
 
@@ -90,17 +88,11 @@
 	return
 
 /obj/machinery/camera/blob_act()
-	del(src)
 	return
 
 /obj/machinery/camera/proc/setViewRange(var/num = 7)
 	src.view_range = num
 	cameranet.updateVisibility(src, 0)
-
-/obj/machinery/camera/proc/shock(var/mob/living/user)
-	if(!istype(user))
-		return
-	user.electrocute_act(10, src)
 
 /obj/machinery/camera/attack_paw(mob/living/carbon/alien/humanoid/user as mob)
 	if(!istype(user))
@@ -115,7 +107,7 @@
 /obj/machinery/camera/attackby(W as obj, mob/living/user as mob)
 
 	// DECONSTRUCTION
-	if(istype(W, /obj/item/weapon/screwdriver))
+	if(isscrewdriver(W))
 		//user << "<span class='notice'>You start to [panel_open ? "close" : "open"] the camera's panel.</span>"
 		//if(toggle_panel(user)) // No delay because no one likes screwdrivers trying to be hip and have a duration cooldown
 		panel_open = !panel_open
@@ -123,10 +115,10 @@
 		"<span class='notice'>You screw the camera's panel [panel_open ? "open" : "closed"].</span>")
 		playsound(src.loc, 'sound/items/Screwdriver.ogg', 50, 1)
 
-	else if((istype(W, /obj/item/weapon/wirecutters) || istype(W, /obj/item/device/multitool)) && panel_open)
-		wires.Interact(user)
+	else if((iswirecutter(W) || ismultitool(W)) && panel_open)
+		interact(user)
 
-	else if(istype(W, /obj/item/weapon/weldingtool) && wires.CanDeconstruct())
+	else if(iswelder(W) && canDeconstruct())
 		if(weld(W, user))
 			if(assembly)
 				assembly.loc = src.loc
@@ -150,28 +142,28 @@
 			P = W
 			itemname = P.name
 			info = P.notehtml
-		U << "You hold \the [itemname] up to the camera ..."
+		U << "You hold \a [itemname] up to the camera ..."
+		for(var/mob/living/silicon/ai/O in living_mob_list)
+			if(!O.client) continue
+			if(U.name == "Unknown") O << "<b>[U]</b> holds \a [itemname] up to one of your cameras ..."
+			else O << "<b><a href='byond://?src=\ref[O];track2=\ref[O];track=\ref[U]'>[U]</a></b> holds \a [itemname] up to one of your cameras ..."
+			O << browse(text("<HTML><HEAD><TITLE>[]</TITLE></HEAD><BODY><TT>[]</TT></BODY></HTML>", itemname, info), text("window=[]", itemname))
 		for(var/mob/O in player_list)
-			if(istype(O, /mob/living/silicon/ai))
-				var/mob/living/silicon/ai/AI = O
-				if(U.name == "Unknown") AI << "<b>[U]</b> holds <a href='?_src_=usr;show_paper=1;'>\a [itemname]</a> up to one of your cameras ..."
-				else AI << "<b><a href='byond://?src=\ref[O];track2=\ref[O];track=\ref[U]'>[U]</a></b> holds <a href='?_src_=usr;show_paper=1;'>\a [itemname]</a> up to one of your cameras ..."
-				AI.last_paper_seen = "<HTML><HEAD><TITLE>[itemname]</TITLE></HEAD><BODY><TT>[info]</TT></BODY></HTML>"
-			else if (O.client && O.client.eye == src)
-				O << "[U] holds \a [itemname] up to one of the cameras ..."
-				O << browse(text("<HTML><HEAD><TITLE>[]</TITLE></HEAD><BODY><TT>[]</TT></BODY></HTML>", itemname, info), text("window=[]", itemname))
-	else if (istype(W, /obj/item/device/camera_bug))
+			if (istype(O.machine, /obj/machinery/computer/security))
+				var/obj/machinery/computer/security/S = O.machine
+				if (S.current == src)
+					O << "[U] holds \a [itemname] up to one of the cameras ..."
+					O << browse(text("<HTML><HEAD><TITLE>[]</TITLE></HEAD><BODY><TT>[]</TT></BODY></HTML>", itemname, info), text("window=[]", itemname))
+	else if (istype(W, /obj/item/weapon/camera_bug))
 		if (!src.can_use())
 			user << "\blue Camera non-functional"
 			return
-		if(istype(src.bug))
+		if (src.bugged)
 			user << "\blue Camera bug removed."
-			src.bug.bugged_cameras -= src.c_tag
-			src.bug = null
+			src.bugged = 0
 		else
 			user << "\blue Camera bugged."
-			src.bug = W
-			src.bug.bugged_cameras[src.c_tag] = src
+			src.bugged = 1
 	else if(istype(W, /obj/item/weapon/melee/energy/blade))//Putting it here last since it's a special case. I wonder if there is a better way to do these than type casting.
 		deactivate(user,2)//Here so that you can disconnect anyone viewing the camera, regardless if it's on or off.
 		var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread()
@@ -181,9 +173,6 @@
 		playsound(loc, "sparks", 50, 1)
 		visible_message("\blue The camera has been sliced apart by [] with an energy blade!")
 		del(src)
-	else if(istype(W, /obj/item/device/laser_pointer))
-		var/obj/item/device/laser_pointer/L = W
-		L.laser_act(src, user)
 	else
 		..()
 	return
@@ -192,31 +181,25 @@
 	if(choice==1)
 		status = !( src.status )
 		if (!(src.status))
-			if(user)
-				visible_message("\red [user] has deactivated [src]!")
-				add_hiddenprint(user)
-			else
-				visible_message("\red \The [src] deactivates!")
+			visible_message("\red [user] has deactivated [src]!")
 			playsound(src.loc, 'sound/items/Wirecutter.ogg', 100, 1)
 			icon_state = "[initial(icon_state)]1"
-
+			add_hiddenprint(user)
 		else
-			if(user)
-				visible_message("\red [user] has reactivated [src]!")
-				add_hiddenprint(user)
-			else
-				visible_message("\red \the [src] reactivates!")
+			visible_message("\red [user] has reactivated [src]!")
 			playsound(src.loc, 'sound/items/Wirecutter.ogg', 100, 1)
 			icon_state = initial(icon_state)
-
+			add_hiddenprint(user)
 	// now disconnect anyone using the camera
 	//Apparently, this will disconnect anyone even if the camera was re-activated.
 	//I guess that doesn't matter since they can't use it anyway?
 	for(var/mob/O in player_list)
-		if (O.client && O.client.eye == src)
-			O.unset_machine()
-			O.reset_view(null)
-			O << "The screen bursts into static."
+		if (istype(O.machine, /obj/machinery/computer/security))
+			var/obj/machinery/computer/security/S = O.machine
+			if (S.current == src)
+				O.unset_machine()
+				O.reset_view(null)
+				O << "The screen bursts into static."
 
 /obj/machinery/camera/proc/triggerCameraAlarm()
 	alarm_on = 1
@@ -227,7 +210,7 @@
 /obj/machinery/camera/proc/cancelCameraAlarm()
 	alarm_on = 0
 	for(var/mob/living/silicon/S in mob_list)
-		S.cancelAlarm("Camera", get_area(src), list(src), src)
+		S.cancelAlarm("Camera", get_area(src), src)
 
 /obj/machinery/camera/proc/can_use()
 	if(!status)

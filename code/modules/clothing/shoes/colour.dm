@@ -5,9 +5,9 @@
 	desc = "A pair of black shoes."
 
 	cold_protection = FEET
-	min_cold_protection_temperature = SHOES_MIN_TEMP_PROTECT
+	min_cold_protection_temperature = SHOE_MIN_COLD_PROTECTION_TEMPERATURE
 	heat_protection = FEET
-	max_heat_protection_temperature = SHOES_MAX_TEMP_PROTECT
+	max_heat_protection_temperature = SHOE_MAX_HEAT_PROTECTION_TEMPERATURE
 
 	redcoat
 		item_color = "redcoat"	//Exists for washing machines. Is not different from black shoes in any way.
@@ -68,6 +68,12 @@
 	permeability_coefficient = 0.01
 	item_color = "white"
 
+/obj/item/clothing/shoes/leather
+	name = "leather shoes"
+	desc = "A sturdy pair of leather shoes."
+	icon_state = "leather"
+	item_color = "leather"
+
 /obj/item/clothing/shoes/rainbow
 	name = "rainbow shoes"
 	desc = "Very gay shoes."
@@ -78,30 +84,31 @@
 	name = "orange shoes"
 	icon_state = "orange"
 	item_color = "orange"
+	var/obj/item/weapon/handcuffs/chained = null
+
+/obj/item/clothing/shoes/orange/proc/attach_cuffs(var/obj/item/weapon/handcuffs/cuffs)
+	if (src.chained) return
+
+	cuffs.loc = src
+	src.chained = cuffs
+	src.slowdown = 15
+	src.icon_state = "orange1"
+
+/obj/item/clothing/shoes/orange/proc/remove_cuffs()
+	if (!src.chained) return
+
+	src.chained.loc = get_turf(src)
+	src.slowdown = initial(slowdown)
+	src.icon_state = "orange"
+	src.chained = null
 
 /obj/item/clothing/shoes/orange/attack_self(mob/user as mob)
-	if (src.chained)
-		src.chained = null
-		src.slowdown = SHOES_SLOWDOWN
-		new /obj/item/weapon/handcuffs( user.loc )
-		src.icon_state = "orange"
-	return
-
-/obj/item/clothing/shoes/orange/attackby(H as obj, loc)
 	..()
-	if ((istype(H, /obj/item/weapon/handcuffs) && !( src.chained )))
-		//H = null
-		if (src.icon_state != "orange") return
-		del(H)
-		src.chained = 1
-		src.slowdown = 15
-		src.icon_state = "orange1"
-	return
+	remove_cuffs()
 
-/obj/item/clothing/shoes/orange/attack_hand(mob/user)
-	if(ishuman(user))
-		var/mob/living/carbon/human/C = user
-		if(C.shoes == src && src.chained == 1)
-			user << "<span class='notice'>You need help taking these off!</span>"
-			return
+/obj/item/clothing/shoes/orange/attackby(H as obj, mob/user as mob)
 	..()
+	if (istype(H, /obj/item/weapon/handcuffs))
+		attach_cuffs(H)
+
+

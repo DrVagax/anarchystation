@@ -69,7 +69,11 @@
 	if(screen == 1)
 		dat += "Select an event to trigger:<ul>"
 		dat += "<li><A href='?src=\ref[src];triggerevent=Red alert'>Red alert</A></li>"
-		dat += "<li><A href='?src=\ref[src];triggerevent=Emergency Maintenance Access'>Emergency Maintenance Access</A></li>"
+		if(!config.ert_admin_call_only)
+			dat += "<li><A href='?src=\ref[src];triggerevent=Emergency Response Team'>Emergency Response Team</A></li>"
+
+		dat += "<li><A href='?src=\ref[src];triggerevent=Grant Emergency Maintenance Access'>Grant Emergency Maintenance Access</A></li>"
+		dat += "<li><A href='?src=\ref[src];triggerevent=Revoke Emergency Maintenance Access'>Revoke Emergency Maintenance Access</A></li>"
 		dat += "</ul>"
 		user << browse(dat, "window=keycard_auth;size=500x250")
 	if(screen == 2)
@@ -80,10 +84,12 @@
 
 
 /obj/machinery/keycard_auth/Topic(href, href_list)
-	if(..())
-		return
+	..()
 	if(busy)
 		usr << "This device is busy."
+		return
+	if(usr.stat || stat & (BROKEN|NOPOWER))
+		usr << "This device is without power."
 		return
 	if(href_list["triggerevent"])
 		event = href_list["triggerevent"]
@@ -92,6 +98,7 @@
 		reset()
 
 	updateUsrDialog()
+	add_fingerprint(usr)
 	return
 
 /obj/machinery/keycard_auth/proc/reset()
@@ -140,29 +147,37 @@
 		if("Red alert")
 			set_security_level(SEC_LEVEL_RED)
 			feedback_inc("alert_keycard_auth_red",1)
-		if("Emergency Maintenance Access")
+		if("Grant Emergency Maintenance Access")
 			make_maint_all_access()
-			feedback_inc("alert_keycard_auth_maint",1)
+			feedback_inc("alert_keycard_auth_maintGrant",1)
+		if("Revoke Emergency Maintenance Access")
+			revoke_maint_all_access()
+			feedback_inc("alert_keycard_auth_maintRevoke",1)
+		if("Emergency Response Team")
+			if(is_ert_blocked())
+				usr << "\red All emergency response teams are dispatched and can not be called at this time."
+				return
 
-/var/emergency_access = 0
+			trigger_armed_response_team(1)
+			feedback_inc("alert_keycard_auth_ert",1)
+
+/obj/machinery/keycard_auth/proc/is_ert_blocked()
+	if(config.ert_admin_call_only) return 1
+	return ticker.mode && ticker.mode.ert_disabled
+
+var/global/maint_all_access = 0
+
 /proc/make_maint_all_access()
-	for(var/area/maintenance/A in world)
-		for(var/obj/machinery/door/airlock/D in A)
-			if(D.doortype == 5)
-				D.req_access.Remove(access_maint_tunnels)
-			if(D.doortype == 6)
-				D.req_access.Remove(access_external_airlocks)
-	world << "<font size=4 color='red'>Attention! Station-wide emergency declared</font>"
-	world << "<font color='red'>Access restrictions on maintenance and external airlocks have been lifted.</font>"
-	emergency_access = 1
+	maint_all_access = 1
+	world << "<font size=4 color='red'>Attention!</font>"
+	world << "<font color='red'>The maintenance access requirement has been revoked on all airlocks.</font>"
 
 /proc/revoke_maint_all_access()
-	for(var/area/maintenance/A in world)
-		for(var/obj/machinery/door/airlock/D in A)
-			if(D.doortype == 5)
-				D.req_access.Add(access_maint_tunnels)
-			if(D.doortype == 6)
-				D.req_access.Add(access_external_airlocks)
-	world << "<font size=4 color='red'>Attention! Emergency maintenance access disabled</font>"
-	world << "<font color='red'>Access restrictions in maintenance areas have been restored.</font>"
-	emergency_access = 0
+	maint_all_access = 0
+	world << "<font size=4 color='red'>Attention!</font>"
+	world << "<font color='red'>The maintenance access requirement has been readded on all maintenance airlocks.</font>"
+
+/obj/machinery/door/airlock/allowed(mob/M)
+	if(maint_all_access && src.check_access_list(list(access_maint_tunnels)))
+		return 1
+	return ..(M)

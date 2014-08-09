@@ -47,13 +47,13 @@ var/list/diseases = typesof(/datum/disease) - /datum/disease
 	var/longevity = 150//time in "ticks" the virus stays in inanimate object (blood stains, corpses, etc). In syringes, bottles and beakers it stays infinitely.
 	var/list/hidden = list(0, 0)
 	var/can_carry = 1 // If the disease allows "carriers".
+	var/age = 0 // age of the disease in the current mob
+	var/stage_minimum_age = 0 // how old the disease must be to advance per stage
 	// if hidden[1] is true, then virus is hidden from medical scanners
 	// if hidden[2] is true, then virus is hidden from PANDEMIC machine
-	var/requires = 0
-	var/list/required_limb = list()
-
 
 /datum/disease/proc/stage_act()
+	age++
 	var/cure_present = has_cure()
 	//world << "[cure_present]"
 
@@ -62,12 +62,12 @@ var/list/diseases = typesof(/datum/disease) - /datum/disease
 		return
 
 	spread = (cure_present?"Remissive":initial_spread)
-
 	if(stage > max_stages)
 		stage = max_stages
 
-	if(!cure_present && prob(stage_prob)) //now the disease shouldn't get back up to stage 4 in no time
+	if(!cure_present && prob(stage_prob) && age > stage_minimum_age) //now the disease shouldn't get back up to stage 4 in no time
 		stage = min(stage + 1, max_stages)
+		age = 0
 
 	else if(cure_present && prob(cure_chance))
 		stage = max(stage - 1, 1)
@@ -91,10 +91,13 @@ var/list/diseases = typesof(/datum/disease) - /datum/disease
 		for(var/C_list in cure_list)
 			if(istype(C_list, /list))
 				for(var/C_id in cure_id)
-					if(!affected_mob.reagents.has_reagent(C_id))
+					if(affected_mob.reagents != null)
 						result = 0
-			else if(!affected_mob.reagents.has_reagent(C_list))
-				result = 0
+					else if(!affected_mob.reagents.has_reagent(C_id))
+						result = 0
+			else if(affected_mob.reagents != null)
+				if(!affected_mob.reagents.has_reagent(C_list))
+					result = 0
 
 	return result
 
@@ -123,10 +126,11 @@ var/list/diseases = typesof(/datum/disease) - /datum/disease
 			source = affected_mob
 		else //no source and no mob affected. Rogue disease. Break
 			return
-
-	if(affected_mob)
-		if(affected_mob.reagents.has_reagent("spaceacillin"))
-			return // Don't spread if we have spaceacillin in our system.
+	
+	if(affected_mob.reagents != null)
+		if(affected_mob)
+			if(affected_mob.reagents.has_reagent("spaceacillin"))
+				return // Don't spread if we have spaceacillin in our system.
 
 	var/check_range = airborne_range//defaults to airborne - range 2
 
@@ -143,7 +147,6 @@ var/list/diseases = typesof(/datum/disease) - /datum/disease
 
 
 /datum/disease/proc/process()
-
 	if(!holder)
 		active_diseases -= src
 		return
@@ -175,7 +178,8 @@ var/list/diseases = typesof(/datum/disease) - /datum/disease
 /datum/disease/proc/cure(var/resistance=1)//if resistance = 0, the mob won't develop resistance to disease
 	if(affected_mob)
 		if(resistance && !(type in affected_mob.resistances))
-			affected_mob.resistances += type
+			var/saved_type = "[type]"
+			affected_mob.resistances += text2path(saved_type)
 		/*if(istype(src, /datum/disease/alien_embryo))	//Get rid of the infection flag if it's a xeno embryo.
 			affected_mob.status_flags &= ~(XENO_HOST)*/
 		affected_mob.viruses -= src		//remove the datum from the list
@@ -184,13 +188,6 @@ var/list/diseases = typesof(/datum/disease) - /datum/disease
 
 
 /datum/disease/New(var/process=1, var/datum/disease/D)//process = 1 - adding the object to global list. List is processed by master controller.
-	if(requires == 1)
-		if(ishuman(affected_mob))
-			var/mob/living/carbon/human/H = affected_mob
-			if(!H.getlimb(required_limb))
-				cure(1)
-				return
-
 	cure_list = list(cure_id) // to add more cures, add more vars to this list in the actual disease's New()
 	if(process)				 // Viruses in list are considered active.
 		active_diseases += src
@@ -204,8 +201,6 @@ var/list/diseases = typesof(/datum/disease) - /datum/disease
 /datum/disease/proc/Copy(var/process = 0)
 	return new type(process, src)
 
-/datum/disease/proc/GetDiseaseID()
-	return src.type
 /*
 /datum/disease/Del()
 	active_diseases.Remove(src)

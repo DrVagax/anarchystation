@@ -4,7 +4,7 @@
 
 
 /obj/machinery/bot/medbot
-	name = "\improper Medibot"
+	name = "Medibot"
 	desc = "A little medical robot. He looks somewhat underwhelmed."
 	icon = 'icons/obj/aibots.dmi'
 	icon_state = "medibot0"
@@ -15,7 +15,7 @@
 	maxhealth = 20
 	req_access =list(access_medical)
 	var/stunned = 0 //It can be stunned by tasers. Delicate circuits.
-//	var/emagged = 0
+//var/emagged = 0
 	var/list/botcard_access = list(access_medical)
 	var/obj/item/weapon/reagent_containers/glass/reagent_glass = null //Can be set to draw from this for reagents.
 	var/skin = null //Set to "tox", "ointment" or "o2" for the other two firstaid kits.
@@ -30,7 +30,6 @@
 	var/injection_amount = 15 //How much reagent do we inject at a time?
 	var/heal_threshold = 10 //Start healing when they have this much damage in a category
 	var/use_beaker = 0 //Use reagents in beaker instead of default treatment agents.
-
 	//Setting which reagents to use to treat what by default. By id.
 	var/treatment_brute = "tricordrazine"
 	var/treatment_oxy = "tricordrazine"
@@ -40,7 +39,7 @@
 	var/shut_up = 0 //self explanatory :)
 
 /obj/machinery/bot/medbot/mysterious
-	name = "\improper Mysterious Medibot"
+	name = "Mysterious Medibot"
 	desc = "International Medibot of mystery."
 	skin = "bezerk"
 	treatment_oxy = "dexalinp"
@@ -232,7 +231,7 @@
 		src.icon_state = "medibot[src.on]"
 
 /obj/machinery/bot/medbot/process()
-	set background = BACKGROUND_ENABLED
+	set background = 1
 
 	if(!src.on)
 		src.stunned = 0
@@ -285,7 +284,7 @@
 				continue
 
 
-	if(src.patient && (get_dist(src,src.patient) <= 1))
+	if(src.patient && Adjacent(patient))
 		if(!src.currently_healing)
 			src.currently_healing = 1
 			src.frustration = 0
@@ -299,9 +298,8 @@
 
 	if(src.patient && src.path.len == 0 && (get_dist(src,src.patient) > 1))
 		spawn(0)
-			src.path = AStar(src.loc, get_turf(src.patient), /turf/proc/CardinalTurfsWithAccess, /turf/proc/Distance_cardinal, 0, 30,id=botcard)
-			if(!src.path)
-				src.path = list()
+			src.path = AStar(src.loc, get_turf(src.patient), /turf/proc/CardinalTurfsWithAccess, /turf/proc/Distance, 0, 30,id=botcard)
+			if (!path) path = list()
 			if(src.path.len == 0)
 				src.oldpatient = src.patient
 				src.patient = null
@@ -482,7 +480,7 @@
 /obj/machinery/bot/medbot/Bump(M as mob|obj) //Leave no door unopened!
 	if ((istype(M, /obj/machinery/door)) && (!isnull(src.botcard)))
 		var/obj/machinery/door/D = M
-		if (!istype(D, /obj/machinery/door/firedoor) && D.check_access(src.botcard))
+		if (!istype(D, /obj/machinery/door/firedoor) && D.check_access(src.botcard) && !istype(D,/obj/machinery/door/poddoor))
 			D.open()
 			src.frustration = 0
 	else if ((istype(M, /mob/living/)) && (!src.anchored))
@@ -554,7 +552,7 @@
 	del(S)
 	user.put_in_hands(A)
 	user << "<span class='notice'>You add the robot arm to the first aid kit.</span>"
-	user.unEquip(src, 1)
+	user.drop_from_inventory(src)
 	del(src)
 
 
@@ -588,6 +586,6 @@
 					var/obj/machinery/bot/medbot/S = new /obj/machinery/bot/medbot(T)
 					S.skin = src.skin
 					S.name = src.created_name
-					user.unEquip(src, 1)
+					user.drop_from_inventory(src)
 					del(src)
 

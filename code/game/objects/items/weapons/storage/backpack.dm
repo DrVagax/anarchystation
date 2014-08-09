@@ -1,9 +1,3 @@
-/* Backpacks
- * Contains:
- *		Backpack
- *		Backpack Types
- *		Satchel Types
- */
 
 /*
  * Backpack
@@ -15,13 +9,27 @@
 	icon_state = "backpack"
 	item_state = "backpack"
 	w_class = 4.0
+	flags = FPRINT|TABLEPASS
 	slot_flags = SLOT_BACK	//ERROOOOO
 	max_w_class = 3
 	max_combined_w_class = 21
 
 /obj/item/weapon/storage/backpack/attackby(obj/item/weapon/W as obj, mob/user as mob)
-	playsound(src.loc, "rustle", 50, 1, -5)
+	if (src.use_sound)
+		playsound(src.loc, src.use_sound, 50, 1, -5)
 	..()
+
+/obj/item/weapon/storage/backpack/equipped(var/mob/user, var/slot)
+	if (slot == slot_back && src.use_sound)
+		playsound(src.loc, src.use_sound, 50, 1, -5)
+	..(user, slot)
+
+/*
+/obj/item/weapon/storage/backpack/dropped(mob/user as mob)
+	if (loc == user && src.use_sound)
+		playsound(src.loc, src.use_sound, 50, 1, -5)
+	..(user)
+*/
 
 /*
  * Backpack Types
@@ -32,8 +40,8 @@
 	desc = "A backpack that opens into a localized pocket of Blue Space."
 	origin_tech = "bluespace=4"
 	icon_state = "holdingpack"
-	max_w_class = 5
-	max_combined_w_class = 35
+	max_w_class = 4
+	max_combined_w_class = 28
 
 	New()
 		..()
@@ -44,6 +52,11 @@
 			user << "\red The Bluespace generator isn't working."
 			return
 		if(istype(W, /obj/item/weapon/storage/backpack/holding) && !W.crit_fail)
+			user << "\red The Bluespace interfaces of the two devices conflict and malfunction."
+			del(W)
+			return
+			/* //BoH+BoH=Singularity, commented out.
+		if(istype(W, /obj/item/weapon/storage/backpack/holding) && !W.crit_fail)
 			investigate_log("has become a singularity. Caused by [user.key]","singulo")
 			user << "\red The Bluespace interfaces of the two devices catastrophically malfunction!"
 			del(W)
@@ -53,6 +66,7 @@
 			log_game("[key_name(user)] detonated a bag of holding")
 			del(src)
 			return
+			*/
 		..()
 
 	proc/failcheck(mob/user as mob)
@@ -81,7 +95,6 @@
 	name = "trophy rack"
 	desc = "It's useful for both carrying extra gear and proudly declaring your insanity."
 	icon_state = "cultpack"
-	item_state = "backpack"
 
 /obj/item/weapon/storage/backpack/clown
 	name = "Giggles von Honkerton"

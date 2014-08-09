@@ -39,8 +39,6 @@
 		onclose(user, "syndbeacon")
 
 	Topic(href, href_list)
-		if(..())
-			return
 		if(href_list["betraitor"])
 			if(charges < 1)
 				src.updateUsrDialog()
@@ -67,7 +65,7 @@
 					if(1 to 50)
 						objective = "Steal [pick("a hand teleporter", "the Captain's antique laser gun", "a jetpack", "the Captain's ID", "the Captain's jumpsuit")]."
 					if(51 to 60)
-						objective = "Destroy 70% or more of the station's plasma tanks."
+						objective = "Destroy 70% or more of the station's phoron tanks."
 					if(61 to 70)
 						objective = "Cut power to 80% or more of the station's tiles."
 					if(71 to 80)
@@ -87,11 +85,14 @@
 
 				M << "<B>You have joined the ranks of the Syndicate and become a traitor to the station!</B>"
 
+				message_admins("[N]/([N.ckey]) has accepted a traitor objective from a syndicate beacon.")
+
 				var/obj_count = 1
 				for(var/datum/objective/OBJ in M.mind.objectives)
 					M << "<B>Objective #[obj_count]</B>: [OBJ.explanation_text]"
 					obj_count++
 
+		src.add_fingerprint(usr)
 		src.updateUsrDialog()
 		return
 
@@ -101,29 +102,6 @@
 		spawn() explosion(src.loc, rand(3,8), rand(1,3), 1, 10)
 
 
-
-// SINGULO BEACON SPAWNER
-/obj/item/device/sbeacondrop
-	name = "suspicious beacon"
-	icon = 'icons/obj/radio.dmi'
-	icon_state = "beacon"
-	desc = "A label on it reads: <i>Warning: Activating this device will send a special beacon to your location</i>."
-	origin_tech = "bluespace=1;syndicate=7"
-	w_class = 2
-	var/droptype = /obj/machinery/singularity_beacon/syndicate
-
-
-/obj/item/device/sbeacondrop/attack_self(mob/user as mob)
-	if(user)
-		user << "\blue Locked In"
-		new droptype( user.loc )
-		playsound(src, 'sound/effects/pop.ogg', 100, 1, 1)
-		del(src)
-	return
-
-/obj/item/device/sbeacondrop/bomb
-	desc = "A label on it reads: <i>Warning: Activating this device will send a high-ordinance explosive to your location</i>."
-	droptype = /obj/machinery/syndicatebomb
 
 #define SCREWED 32
 

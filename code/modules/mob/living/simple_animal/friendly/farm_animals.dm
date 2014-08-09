@@ -14,15 +14,14 @@
 	see_in_dark = 6
 	meat_type = /obj/item/weapon/reagent_containers/food/snacks/meat
 	meat_amount = 4
-	response_help  = "pets"
-	response_disarm = "gently pushes aside"
-	response_harm   = "kicks"
+	response_help  = "pets the"
+	response_disarm = "gently pushes aside the"
+	response_harm   = "kicks the"
 	faction = "goat"
 	attacktext = "kicks"
 	health = 40
 	melee_damage_lower = 1
-	melee_damage_upper = 2
-	environment_smash = 0
+	melee_damage_upper = 5
 	var/datum/reagents/udder = null
 
 /mob/living/simple_animal/hostile/retaliate/goat/New()
@@ -61,7 +60,7 @@
 
 /mob/living/simple_animal/hostile/retaliate/goat/Retaliate()
 	..()
-	src.visible_message("\red [src] gets an evil-looking gleam in \his eye.")
+	src.visible_message("\red [src] gets an evil-looking gleam in their eye.")
 
 /mob/living/simple_animal/hostile/retaliate/goat/Move()
 	..()
@@ -78,7 +77,7 @@
 		var/obj/item/weapon/reagent_containers/glass/G = O
 		var/transfered = udder.trans_id_to(G, "milk", rand(5,10))
 		if(G.reagents.total_volume >= G.volume)
-			user << "\red [O] is full."
+			user << "\red The [O] is full."
 		if(!transfered)
 			user << "\red The udder is dry. Wait a bit longer..."
 	else
@@ -100,9 +99,9 @@
 	see_in_dark = 6
 	meat_type = /obj/item/weapon/reagent_containers/food/snacks/meat
 	meat_amount = 6
-	response_help  = "pets"
-	response_disarm = "gently pushes aside"
-	response_harm   = "kicks"
+	response_help  = "pets the"
+	response_disarm = "gently pushes aside the"
+	response_harm   = "kicks the"
 	attacktext = "kicks"
 	health = 50
 	var/datum/reagents/udder = null
@@ -118,7 +117,7 @@
 		var/obj/item/weapon/reagent_containers/glass/G = O
 		var/transfered = udder.trans_id_to(G, "milk", rand(5,10))
 		if(G.reagents.total_volume >= G.volume)
-			user << "\red [O] is full."
+			user << "\red The [O] is full."
 		if(!transfered)
 			user << "\red The udder is dry. Wait a bit longer..."
 	else
@@ -161,14 +160,14 @@
 	turns_per_move = 2
 	meat_type = /obj/item/weapon/reagent_containers/food/snacks/meat
 	meat_amount = 1
-	response_help  = "pets"
-	response_disarm = "gently pushes aside"
-	response_harm   = "kicks"
+	response_help  = "pets the"
+	response_disarm = "gently pushes aside the"
+	response_harm   = "kicks the"
 	attacktext = "kicks"
 	health = 1
-	ventcrawler = 2
 	var/amount_grown = 0
 	pass_flags = PASSTABLE | PASSGRILLE
+	small = 1
 
 /mob/living/simple_animal/chick/New()
 	..()
@@ -179,7 +178,7 @@
 	. =..()
 	if(!.)
 		return
-	if(!stat && !ckey)
+	if(!stat)
 		amount_grown += rand(1,2)
 		if(amount_grown >= 100)
 			new /mob/living/simple_animal/chicken(src.loc)
@@ -202,15 +201,15 @@ var/global/chicken_count = 0
 	turns_per_move = 3
 	meat_type = /obj/item/weapon/reagent_containers/food/snacks/meat
 	meat_amount = 2
-	response_help  = "pets"
-	response_disarm = "gently pushes aside"
-	response_harm   = "kicks"
+	response_help  = "pets the"
+	response_disarm = "gently pushes aside the"
+	response_harm   = "kicks the"
 	attacktext = "kicks"
 	health = 10
-	ventcrawler = 2
 	var/eggsleft = 0
 	var/body_color
 	pass_flags = PASSTABLE
+	small = 1
 
 /mob/living/simple_animal/chicken/New()
 	..()
@@ -223,7 +222,7 @@ var/global/chicken_count = 0
 	pixel_y = rand(0, 10)
 	chicken_count += 1
 
-/mob/living/simple_animal/chicken/Die()
+/mob/living/simple_animal/chicken/death()
 	..()
 	chicken_count -= 1
 
@@ -250,7 +249,7 @@ var/global/chicken_count = 0
 		var/obj/item/weapon/reagent_containers/food/snacks/egg/E = new(get_turf(src))
 		E.pixel_x = rand(-6,6)
 		E.pixel_y = rand(-6,6)
-		if(chicken_count < MAX_CHICKENS && prob(25))
+		if(chicken_count < MAX_CHICKENS && prob(10))
 			processing_objects.Add(E)
 
 /obj/item/weapon/reagent_containers/food/snacks/egg/var/amount_grown = 0

@@ -1,8 +1,7 @@
-// -------------------------
-//  SmartFridge.  Much todo
-// -------------------------
+/* SmartFridge.  Much todo
+*/
 /obj/machinery/smartfridge
-	name = "smartfridge"
+	name = "\improper SmartFridge"
 	icon = 'icons/obj/vending.dmi'
 	icon_state = "smartfridge"
 	layer = 2.9
@@ -12,86 +11,21 @@
 	idle_power_usage = 5
 	active_power_usage = 100
 	flags = NOREACT
-	var/global/max_n_of_items = 999 // Sorry but the BYOND infinite loop detector doesn't like things over 1000.
+	var/global/max_n_of_items = 999 // Sorry but the BYOND infinite loop detector doesn't look things over 1000.
 	var/icon_on = "smartfridge"
 	var/icon_off = "smartfridge-off"
+	var/icon_panel = "smartfridge-panel"
 	var/item_quants = list()
-/*
-/obj/machinery/smartfridge/power_change()
-	..()
-	update_icon()
-*/
-/obj/machinery/smartfridge/update_icon()
-	if(!stat)
-		icon_state = icon_on
-	else
-		icon_state = icon_off
-
-
-
-/*******************
-*   Item Adding
-********************/
-
-/obj/machinery/smartfridge/attackby(var/obj/item/O as obj, var/mob/user as mob)
-	if(default_unfasten_wrench(user, O))
-		power_change()
-		return
-	if(stat)
-		return 0
-
-	if(contents.len >= max_n_of_items)
-		user << "<span class='notice'>\The [src] is full.</span>"
-		return 0
-
-	if(accept_check(O))
-		load(O)
-		user.visible_message("<span class='notice'>[user] has added \the [O] to \the [src].", "<span class='notice'>You add \the [O] to \the [src].")
-		updateUsrDialog()
-		return 1
-
-	var/loaded = 0
-
-	if(istype(O, /obj/item/weapon/storage/bag))
-		var/obj/item/weapon/storage/P = O
-		for(var/obj/G in P.contents)
-			if(contents.len >= max_n_of_items)
-				break
-			if(accept_check(G))
-				load(G)
-				loaded++
-	else if(istype(O, /obj/item/weapon/tray))
-		var/obj/item/weapon/tray/T = O
-		for(var/obj/item/snack in T)
-			if(contents.len >= max_n_of_items)
-				break
-			if(accept_check(snack))
-				T.carrying -= snack
-				load(snack)
-				loaded++
-	else
-		user << "<span class='notice'>\The [src] smartly refuses [O].</span>"
-		updateUsrDialog()
-		return 0
-
-	// this is a little backwards but it avoids duplication.
-	// this code follows storage items and trays only.
-	if(loaded)
-		if(contents.len >= max_n_of_items)
-			user.visible_message("<span class='notice'>[user] loads \the [src] with \the [O].</span>", \
-							 "<span class='notice'>You fill \the [src] with \the [O].</span>")
-		else
-			user.visible_message("<span class='notice'>[user] loads \the [src] with \the [O].</span>", \
-								 "<span class='notice'>You load \the [src] with \the [O].</span>")
-		if(O.contents.len > 0)
-			user << "<span class='notice'>Some items are refused.</span>"
-	else
-		user << "There is nothing in [O] to put in [src]."
-		return 0
-
-	updateUsrDialog()
-	return 1
-
+	var/ispowered = 1 //starts powered
+	var/isbroken = 0
+	var/seconds_electrified = 0;
+	var/shoot_inventory = 0
+	var/locked = 0
+	var/panel_open = 0 //Hacking a smartfridge
+	var/wires = 7
+	var/const/WIRE_SHOCK = 1
+	var/const/WIRE_SHOOTINV = 2
+	var/const/WIRE_SCANID = 3 //Only used by the secure smartfridge, but required by the cut, mend and pulse procs.
 
 
 /obj/machinery/smartfridge/proc/accept_check(var/obj/item/O as obj)
@@ -99,250 +33,388 @@
 		return 1
 	return 0
 
-/obj/machinery/smartfridge/proc/load(var/obj/item/O as obj)
-	if(istype(O.loc,/mob))
-		var/mob/M = O.loc
-		if(!M.unEquip(O))
-			usr << "<span class='notice'>\the [O] is stuck to your hand, you cannot put it in \the [src]</span>"
-			return
-	else if(istype(O.loc,/obj/item/weapon/storage))
-		var/obj/item/weapon/storage/S = O.loc
-		S.remove_from_storage(O,src)
+/obj/machinery/smartfridge/seeds
+	name = "\improper MegaSeed Servitor"
+	desc = "When you need seeds fast!"
+	icon = 'icons/obj/vending.dmi'
+	icon_state = "seeds"
+	icon_on = "seeds"
+	icon_off = "seeds-off"
 
-	O.loc = src
-	var/n = O.name
+/obj/machinery/smartfridge/seeds/accept_check(var/obj/item/O as obj)
+	if(istype(O,/obj/item/seeds/))
+		return 1
+	return 0
 
-	if(item_quants[n])
-		item_quants[n]++
+/obj/machinery/smartfridge/secure/extract
+	name = "\improper Slime Extract Storage"
+	desc = "A refrigerated storage unit for slime extracts"
+	req_access_txt = "47"
+
+/obj/machinery/smartfridge/secure/extract/accept_check(var/obj/item/O as obj)
+	if(istype(O,/obj/item/slime_extract))
+		return 1
+	return 0
+
+/obj/machinery/smartfridge/secure/medbay
+	name = "\improper Refrigerated Medicine Storage"
+	desc = "A refrigerated storage unit for storing medicine and chemicals."
+	icon_state = "smartfridge" //To fix the icon in the map editor.
+	icon_on = "smartfridge_chem"
+	req_one_access_txt = "5;33"
+
+/obj/machinery/smartfridge/secure/medbay/accept_check(var/obj/item/O as obj)
+	if(istype(O,/obj/item/weapon/reagent_containers/glass/))
+		return 1
+	if(istype(O,/obj/item/weapon/storage/pill_bottle/))
+		return 1
+	if(istype(O,/obj/item/weapon/reagent_containers/pill/))
+		return 1
+	return 0
+
+/obj/machinery/smartfridge/secure/virology
+	name = "\improper Refrigerated Virus Storage"
+	desc = "A refrigerated storage unit for storing viral material."
+	req_access_txt = "39"
+	icon_state = "smartfridge_virology"
+	icon_on = "smartfridge_virology"
+	icon_off = "smartfridge_virology-off"
+
+/obj/machinery/smartfridge/secure/virology/accept_check(var/obj/item/O as obj)
+	if(istype(O,/obj/item/weapon/reagent_containers/glass/beaker/vial/))
+		return 1
+	if(istype(O,/obj/item/weapon/virusdish/))
+		return 1
+	return 0
+
+/obj/machinery/smartfridge/chemistry
+	name = "\improper Smart Chemical Storage"
+	desc = "A refrigerated storage unit for medicine and chemical storage."
+
+/obj/machinery/smartfridge/chemistry/accept_check(var/obj/item/O as obj)
+	if(istype(O,/obj/item/weapon/storage/pill_bottle) || istype(O,/obj/item/weapon/reagent_containers))
+		return 1
+	return 0
+
+/obj/machinery/smartfridge/chemistry/virology
+	name = "\improper Smart Virus Storage"
+	desc = "A refrigerated storage unit for volatile sample storage."
+
+
+/obj/machinery/smartfridge/drinks
+	name = "\improper Drink Showcase"
+	desc = "A refrigerated storage unit for tasty tasty alcohol."
+
+/obj/machinery/smartfridge/drinks/accept_check(var/obj/item/O as obj)
+	if(istype(O,/obj/item/weapon/reagent_containers/glass) || istype(O,/obj/item/weapon/reagent_containers/food/drinks) || istype(O,/obj/item/weapon/reagent_containers/food/condiment))
+		return 1
+
+/obj/machinery/smartfridge/process()
+	if(!src.ispowered)
+		return
+	if(src.seconds_electrified > 0)
+		src.seconds_electrified--
+	if(src.shoot_inventory && prob(2))
+		src.throw_item()
+
+/obj/machinery/smartfridge/power_change()
+	if( powered() )
+		src.ispowered = 1
+		stat &= ~NOPOWER
+		if(!isbroken)
+			icon_state = icon_on
 	else
-		item_quants[n] = 1
-	item_quants = sortAssoc(item_quants)
+		spawn(rand(0, 15))
+		src.ispowered = 0
+		stat |= NOPOWER
+		if(!isbroken)
+			icon_state = icon_off
+
+/*******************
+*   Item Adding
+********************/
+
+/obj/machinery/smartfridge/attackby(var/obj/item/O as obj, var/mob/user as mob)
+	if(istype(O, /obj/item/weapon/screwdriver))
+		panel_open = !panel_open
+		user << "You [panel_open ? "open" : "close"] the maintenance panel."
+		overlays.Cut()
+		if(panel_open)
+			overlays += image(icon, icon_panel)
+		nanomanager.update_uis(src)
+		return
+
+	if(istype(O, /obj/item/device/multitool)||istype(O, /obj/item/weapon/wirecutters))
+		if(panel_open)
+			attack_hand(user)
+		return
+
+	if(!src.ispowered)
+		user << "<span class='notice'>\The [src] is unpowered and useless.</span>"
+		return
+
+	if(accept_check(O))
+		if(contents.len >= max_n_of_items)
+			user << "<span class='notice'>\The [src] is full.</span>"
+			return 1
+		else
+			user.before_take_item(O)
+			O.loc = src
+			if(item_quants[O.name])
+				item_quants[O.name]++
+			else
+				item_quants[O.name] = 1
+			user.visible_message("<span class='notice'>[user] has added \the [O] to \the [src].", \
+								 "<span class='notice'>You add \the [O] to \the [src].")
+
+			nanomanager.update_uis(src)
+
+	else if(istype(O, /obj/item/weapon/storage/bag/plants))
+		var/obj/item/weapon/storage/bag/plants/P = O
+		var/plants_loaded = 0
+		for(var/obj/G in P.contents)
+			if(accept_check(G))
+				if(contents.len >= max_n_of_items)
+					user << "<span class='notice'>\The [src] is full.</span>"
+					return 1
+				else
+					P.remove_from_storage(G,src)
+					if(item_quants[G.name])
+						item_quants[G.name]++
+					else
+						item_quants[G.name] = 1
+					plants_loaded++
+		if(plants_loaded)
+
+			user.visible_message( \
+				"<span class='notice'>[user] loads \the [src] with \the [P].</span>", \
+				"<span class='notice'>You load \the [src] with \the [P].</span>")
+			if(P.contents.len > 0)
+				user << "<span class='notice'>Some items are refused.</span>"
+
+		nanomanager.update_uis(src)
+
+	else
+		user << "<span class='notice'>\The [src] smartly refuses [O].</span>"
+		return 1
+
+/obj/machinery/smartfridge/secure/attackby(var/obj/item/O as obj, var/mob/user as mob)
+	if (istype(O, /obj/item/weapon/card/emag))
+		emagged = 1
+		locked = -1
+		user << "You short out the product lock on [src]."
+		return
+
+	..()
 
 /obj/machinery/smartfridge/attack_paw(mob/user as mob)
-	return src.attack_hand(user)
+	return attack_hand(user)
 
 /obj/machinery/smartfridge/attack_ai(mob/user as mob)
 	return 0
 
 /obj/machinery/smartfridge/attack_hand(mob/user as mob)
-	user.set_machine(src)
-	interact(user)
+	if(!ispowered) return
+	if(seconds_electrified != 0)
+		if(shock(user, 100))
+			return
+
+	ui_interact(user)
 
 /*******************
 *   SmartFridge Menu
 ********************/
 
-/obj/machinery/smartfridge/interact(mob/user as mob)
-	if(stat)
+/obj/machinery/smartfridge/ui_interact(mob/user, ui_key = "main", var/datum/nanoui/ui = null)
+	user.set_machine(src)
+
+	var/is_secure = istype(src,/obj/machinery/smartfridge/secure)
+
+	var/data[0]
+	data["contents"] = null
+	data["wires"] = null
+	data["panel_open"] = panel_open
+	data["electrified"] = seconds_electrified > 0
+	data["shoot_inventory"] = shoot_inventory
+	data["locked"] = locked
+	data["secure"] = is_secure
+
+	var/list/items[0]
+	for (var/i=1 to length(item_quants))
+		var/K = item_quants[i]
+		var/count = item_quants[K]
+		if (count > 0)
+			items.Add(list(list("display_name" = html_encode(capitalize(K)), "vend" = i, "quantity" = count)))
+
+	if (items.len > 0)
+		data["contents"] = items
+
+	var/list/vendwires = null
+	if (is_secure)
+		vendwires = list(
+			"Violet" = 1,
+			"Orange" = 2,
+			"Green" = 3)
+	else
+		vendwires = list(
+			"Blue" = 1,
+			"Red" = 2,
+			"Black" = 3)
+
+	var/list/vendor_wires[0]
+	for (var/wire in vendwires)
+		var is_uncut = wires & APCWireColorToFlag[vendwires[wire]]
+		vendor_wires.Add(list(list("wire" = wire, "cut" = !is_uncut, "index" = vendwires[wire])))
+
+	if (vendor_wires.len > 0)
+		data["wires"] = vendor_wires
+
+	ui = nanomanager.try_update_ui(user, src, ui_key, ui, data)
+	if (!ui)
+		ui = new(user, src, ui_key, "smartfridge.tmpl", src.name, 400, 500)
+		ui.set_initial_data(data)
+		ui.open()
+
+/obj/machinery/smartfridge/Topic(href, href_list)
+	if (..()) return 0
+
+	var/mob/user = usr
+	var/datum/nanoui/ui = nanomanager.get_open_ui(user, src, "main")
+
+	src.add_fingerprint(user)
+
+	if (href_list["close"])
+		user.unset_machine()
+		ui.close()
 		return 0
 
-	var/dat = "<TT><b>Select an item:</b><br>"
+	if (href_list["vend"])
+		var/index = text2num(href_list["vend"])
+		var/amount = text2num(href_list["amount"])
+		var/K = item_quants[index]
+		var/count = item_quants[K]
 
-	if (contents.len == 0)
-		dat += "<font color = 'red'>No product loaded!</font>"
-	else
-		for (var/O in item_quants)
-			if(item_quants[O] > 0)
-				var/N = item_quants[O]
-				dat += "<FONT color = 'blue'><B>[capitalize(O)]</B>:"
-				dat += " [N] </font>"
-				dat += "<a href='byond://?src=\ref[src];vend=[O];amount=1'>Vend</A> "
-				if(N > 5)
-					dat += "(<a href='byond://?src=\ref[src];vend=[O];amount=5'>x5</A>)"
-					if(N > 10)
-						dat += "(<a href='byond://?src=\ref[src];vend=[O];amount=10'>x10</A>)"
-						if(N > 25)
-							dat += "(<a href='byond://?src=\ref[src];vend=[O];amount=25'>x25</A>)"
-				if(N > 1)
-					dat += "(<a href='?src=\ref[src];vend=[O];amount=[N]'>All</A>)"
+		// Sanity check, there are probably ways to press the button when it shouldn't be possible.
+		if(count > 0)
+			item_quants[K] = max(count - amount, 0)
 
-				dat += "<br>"
+			var/i = amount
+			for(var/obj/O in contents)
+				if (O.name == K)
+					O.loc = loc
+					i--
+					if (i <= 0)
+						return 1
 
-		dat += "</TT>"
-	user << browse("<HEAD><TITLE>[src] supplies</TITLE></HEAD><TT>[dat]</TT>", "window=smartfridge")
-	onclose(user, "smartfridge")
-	return dat
+		return 1
 
-/obj/machinery/smartfridge/Topic(var/href, var/list/href_list)
-	if(..())
-		return
-	usr.set_machine(src)
+	if (panel_open)
+		if (href_list["cutwire"])
+			if (!( istype(usr.get_active_hand(), /obj/item/weapon/wirecutters) ))
+				user << "You need wirecutters!"
+				return 1
 
-	var/N = href_list["vend"]
-	var/amount = text2num(href_list["amount"])
+			var/wire_index = text2num(href_list["cutwire"])
+			if (isWireColorCut(wire_index))
+				mend(wire_index)
+			else
+				cut(wire_index)
+			return 1
 
-	if(item_quants[N] <= 0) // Sanity check, there are probably ways to press the button when it shouldn't be possible.
-		return
+		if (href_list["pulsewire"])
+			if (!istype(usr.get_active_hand(), /obj/item/device/multitool))
+				usr << "You need a multitool!"
+				return 1
 
-	item_quants[N] = max(item_quants[N] - amount, 0)
+			var/wire_index = text2num(href_list["pulsewire"])
+			if (isWireColorCut(wire_index))
+				usr << "You can't pulse a cut wire."
+				return 1
 
-	var/i = amount
-	for(var/obj/O in contents)
-		if(O.name == N)
-			O.loc = src.loc
-			i--
-			if(i <= 0)
+			pulse(wire_index)
+			return 1
+
+	return 0
+
+/*************
+*	Hacking
+**************/
+
+/obj/machinery/smartfridge/proc/cut(var/wireColor)
+	var/wireFlag = APCWireColorToFlag[wireColor]
+	var/wireIndex = APCWireColorToIndex[wireColor]
+	src.wires &= ~wireFlag
+	switch(wireIndex)
+		if(WIRE_SHOCK)
+			src.seconds_electrified = -1
+		if (WIRE_SHOOTINV)
+			if(!src.shoot_inventory)
+				src.shoot_inventory = 1
+		if(WIRE_SCANID)
+			src.locked = 1
+
+/obj/machinery/smartfridge/proc/mend(var/wireColor)
+	var/wireFlag = APCWireColorToFlag[wireColor]
+	var/wireIndex = APCWireColorToIndex[wireColor]
+	src.wires |= wireFlag
+	switch(wireIndex)
+		if(WIRE_SHOCK)
+			src.seconds_electrified = 0
+		if (WIRE_SHOOTINV)
+			src.shoot_inventory = 0
+		if(WIRE_SCANID)
+			src.locked = 0
+
+/obj/machinery/smartfridge/proc/pulse(var/wireColor)
+	var/wireIndex = APCWireColorToIndex[wireColor]
+	switch(wireIndex)
+		if(WIRE_SHOCK)
+			src.seconds_electrified = 30
+		if(WIRE_SHOOTINV)
+			src.shoot_inventory = !src.shoot_inventory
+		if(WIRE_SCANID)
+			src.locked = -1
+
+/obj/machinery/smartfridge/proc/isWireColorCut(var/wireColor)
+	var/wireFlag = APCWireColorToFlag[wireColor]
+	return ((src.wires & wireFlag) == 0)
+
+/obj/machinery/smartfridge/proc/isWireCut(var/wireIndex)
+	var/wireFlag = APCIndexToFlag[wireIndex]
+	return ((src.wires & wireFlag) == 0)
+
+/obj/machinery/smartfridge/proc/throw_item()
+	var/obj/throw_item = null
+	var/mob/living/target = locate() in view(7,src)
+	if(!target)
+		return 0
+
+	for (var/O in item_quants)
+		if(item_quants[O] <= 0) //Try to use a record that actually has something to dump.
+			continue
+
+		item_quants[O]--
+		for(var/obj/T in contents)
+			if(T.name == O)
+				T.loc = src.loc
+				throw_item = T
 				break
-
-	src.updateUsrDialog()
-	return
-
-
-// ----------------------------
-//  Drying Rack 'smartfridge'
-// ----------------------------
-/obj/machinery/smartfridge/drying_rack
-	name = "drying rack"
-	icon = 'icons/obj/hydroponics.dmi'
-	icon_state = "drying_rack_on"
-	use_power = 1
-	idle_power_usage = 5
-	active_power_usage = 200
-	icon_on = "drying_rack_on"
-	icon_off = "drying_rack"
-	var/drying = 0
-
-/obj/machinery/smartfridge/drying_rack/interact(mob/user as mob)
-	var/dat = ..()
-	if(dat)
-		dat += "<br>"
-		dat += "<a href='byond://?src=\ref[src];dry=1'>Toggle Drying</A> "
-		user << browse("<HEAD><TITLE>[src] supplies</TITLE></HEAD><TT>[dat]</TT>", "window=smartfridge")
-	onclose(user, "smartfridge")
-
-/obj/machinery/smartfridge/drying_rack/Topic(var/href, var/list/href_list)
-	..()
-	if(href_list["dry"])
-		toggle_drying()
-	src.updateUsrDialog()
-
-/obj/machinery/smartfridge/drying_rack/power_change()
-	if(powered() && anchored)
-		stat &= ~NOPOWER
-	else
-		stat |= NOPOWER
-		toggle_drying(1)
-	update_icon()
-
-obj/machinery/smartfridge/drying_rack/load() //For updating the filled overlay
-	..()
-	update_icon()
-
-/obj/machinery/smartfridge/drying_rack/update_icon()
-	..()
-	overlays = 0
-	if(drying)
-		overlays += "drying_rack_drying"
-	if(contents.len)
-		overlays += "drying_rack_filled"
-
-/obj/machinery/smartfridge/drying_rack/process()
-	..()
-	if(drying)
-		if(rack_dry())//no need to update unless something got dried
-			update_icon()
-
-/obj/machinery/smartfridge/drying_rack/accept_check(var/obj/item/O as obj)
-	if(istype(O,/obj/item/weapon/reagent_containers/food/snacks/))
-		var/obj/item/weapon/reagent_containers/food/snacks/S = O
-		if(S.dried_type)
-			return 1
-	return 0
-
-/obj/machinery/smartfridge/drying_rack/proc/toggle_drying(var/forceoff = 0)
-	if(drying || forceoff)
-		drying = 0
-		use_power = 1
-	else
-		drying = 1
-		use_power = 2
-	update_icon()
-
-/obj/machinery/smartfridge/drying_rack/proc/rack_dry()
-	for(var/obj/item/weapon/reagent_containers/food/snacks/S in contents)
-		if(S.dried_type == S.type)//if the dried type is the same as the object's type, don't bother creating a whole new item...
-			S.color = "#ad7257"
-			S.dry = 1
-			S.loc = get_turf(src)
-		else
-			var/dried = S.dried_type
-			new dried(src.loc)
-			del S
-		return 1
-	return 0
-
-/obj/machinery/smartfridge/drying_rack/emp_act(severity)
-	..()
-	atmos_spawn_air(SPAWN_HEAT, 75)
-
-
-// ----------------------------
-//  Bar drink smartfridge
-// ----------------------------
-/obj/machinery/smartfridge/drinks
-	name = "drink showcase"
-	desc = "A refrigerated storage unit for tasty tasty alcohol."
-
-/obj/machinery/smartfridge/drinks/accept_check(var/obj/item/O as obj)
-	if(!istype(O,/obj/item/weapon/reagent_containers) || !O.reagents || !O.reagents.reagent_list.len)
+		break
+	if(!throw_item)
 		return 0
-	if(istype(O,/obj/item/weapon/reagent_containers/glass) || istype(O,/obj/item/weapon/reagent_containers/food/drinks) || istype(O,/obj/item/weapon/reagent_containers/food/condiment))
-		return 1
+	spawn(0)
+		throw_item.throw_at(target,16,3,src)
+	src.visible_message("\red <b>[src] launches [throw_item.name] at [target.name]!</b>")
+	return 1
 
+/************************
+*   Secure SmartFridges
+*************************/
 
-// -------------------------------------
-// Xenobiology Slime-Extract Smartfridge
-// -------------------------------------
-/obj/machinery/smartfridge/extract
-	name = "smart slime extract storage"
-	desc = "A refrigerated storage unit for slime extracts."
-
-/obj/machinery/smartfridge/extract/accept_check(var/obj/item/O as obj)
-	if(istype(O,/obj/item/slime_extract))
-		return 1
-	return 0
-
-// -----------------------------
-// Chemistry Medical Smartfridge
-// -----------------------------
-/obj/machinery/smartfridge/chemistry
-	name = "smart chemical storage"
-	desc = "A refrigerated storage unit for medicine storage."
-	var/list/spawn_meds = list(/obj/item/weapon/reagent_containers/pill/inaprovaline = 12,/obj/item/weapon/reagent_containers/pill/antitox = 1,
-								/obj/item/weapon/reagent_containers/glass/bottle/inaprovaline = 1, /obj/item/weapon/reagent_containers/glass/bottle/antitoxin = 1)
-
-/obj/machinery/smartfridge/chemistry/New()
-	..()
-	for(var/typekey in spawn_meds)
-		var/amount = spawn_meds[typekey]
-		if(isnull(amount)) amount = 1
-		while(amount)
-			var/obj/item/I = new typekey(src)
-			load(I)
-			amount--
-
-/obj/machinery/smartfridge/chemistry/accept_check(var/obj/item/O as obj)
-	if(istype(O,/obj/item/weapon/storage/pill_bottle))
-		if(O.contents.len)
-			for(var/obj/item/I in O)
-				if(!accept_check(I))
-					return 0
-			return 1
-		return 0
-	if(!istype(O,/obj/item/weapon/reagent_containers))
-		return 0
-	if(istype(O,/obj/item/weapon/reagent_containers/pill)) // empty pill prank ok
-		return 1
-	if(!O.reagents || !O.reagents.reagent_list.len) // other empty containers not accepted
-		return 0
-	if(istype(O,/obj/item/weapon/reagent_containers/syringe) || istype(O,/obj/item/weapon/reagent_containers/glass/bottle) || istype(O,/obj/item/weapon/reagent_containers/glass/beaker) || istype(O,/obj/item/weapon/reagent_containers/spray))
-		return 1
-	return 0
-
-// ----------------------------
-// Virology Medical Smartfridge
-// ----------------------------
-/obj/machinery/smartfridge/chemistry/virology
-	name = "smart virus storage"
-	desc = "A refrigerated storage unit for volatile sample storage."
-	spawn_meds = list(/obj/item/weapon/reagent_containers/syringe/antiviral = 4, /obj/item/weapon/reagent_containers/glass/bottle/cold = 1, /obj/item/weapon/reagent_containers/glass/bottle/flu_virion = 1, /obj/item/weapon/reagent_containers/glass/bottle/mutagen = 1, /obj/item/weapon/reagent_containers/glass/bottle/plasma = 1, /obj/item/weapon/reagent_containers/glass/bottle/synaptizine = 1)
+/obj/machinery/smartfridge/secure/Topic(href, href_list)
+	if(!ispowered) return 0
+	if (usr.contents.Find(src) || (in_range(src, usr) && istype(loc, /turf)))
+		if (!allowed(usr) && !emagged && locked != -1 && href_list["vend"])
+			usr << "\red Access denied."
+			return 0
+	return ..()

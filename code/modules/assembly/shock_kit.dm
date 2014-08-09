@@ -1,13 +1,12 @@
 /obj/item/assembly/shock_kit
 	name = "electrohelmet assembly"
 	desc = "This appears to be made from both an electropack and a helmet."
-	icon = 'icons/obj/assemblies.dmi'
 	icon_state = "shock_kit"
 	var/obj/item/clothing/head/helmet/part1 = null
 	var/obj/item/device/radio/electropack/part2 = null
 	var/status = 0
 	w_class = 5.0
-	flags = CONDUCT
+	flags = FPRINT | TABLEPASS| CONDUCT
 
 /obj/item/assembly/shock_kit/Del()
 	del(part1)

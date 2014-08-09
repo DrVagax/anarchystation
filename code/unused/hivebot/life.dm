@@ -2,7 +2,7 @@
 	set invisibility = 0
 	set background = 1
 
-	if (src.notransform)
+	if (src.monkeyizing)
 		return
 
 	if (src.stat != 2)
@@ -116,7 +116,7 @@
 
 		handle_regular_hud_updates()
 
-			if (src.stat == 2 || src.mutations & XRAY)
+			if (src.stat == 2 || XRAY in src.mutations)
 				src.sight |= SEE_TURFS
 				src.sight |= SEE_MOBS
 				src.sight |= SEE_OBJS
@@ -128,8 +128,6 @@
 				src.sight &= ~SEE_OBJS
 				src.see_in_dark = 8
 				src.see_invisible = SEE_INVISIBLE_LEVEL_TWO
-				if(see_override)
-					see_invisible = see_override
 
 			if (src.healths)
 				if (src.stat != 2)

@@ -35,6 +35,11 @@
 		return 1
 	return 0
 
+/proc/isslimeadult(A)
+	if(istype(A, /mob/living/carbon/slime/adult))
+		return 1
+	return 0
+
 /proc/isrobot(A)
 	if(istype(A, /mob/living/silicon/robot))
 		return 1
@@ -110,21 +115,17 @@ proc/isobserver(A)
 		return 1
 	return 0
 
-proc/isovermind(A)
-	if(istype(A, /mob/camera/blob))
-		return 1
-	return 0
-
 proc/isorgan(A)
-	if(istype(A, /obj/item/organ/limb))
+	if(istype(A, /datum/organ/external))
 		return 1
 	return 0
 
-/proc/isloyal(A) //Checks to see if the person contains a loyalty implant, then checks that the implant is actually inside of them
-	for(var/obj/item/weapon/implant/loyalty/L in A)
-		if(L && L.implanted)
-			return 1
-	return 0
+proc/hasorgans(A)
+	return ishuman(A)
+
+/proc/hsl2rgb(h, s, l)
+	return
+
 
 /proc/check_zone(zone)
 	if(!zone)	return "chest"
@@ -133,7 +134,7 @@ proc/isorgan(A)
 			zone = "head"
 		if("mouth")
 			zone = "head"
-		if("l_hand")
+/*		if("l_hand")
 			zone = "l_arm"
 		if("r_hand")
 			zone = "r_arm"
@@ -143,33 +144,78 @@ proc/isorgan(A)
 			zone = "r_leg"
 		if("groin")
 			zone = "chest"
+*/
 	return zone
 
+// Returns zone with a certain probability.
+// If the probability misses, returns "chest" instead.
+// If "chest" was passed in as zone, then on a "miss" will return "head", "l_arm", or "r_arm"
+// Do not use this if someone is intentionally trying to hit a specific body part.
+// Use get_zone_with_miss_chance() for that.
+/proc/ran_zone(zone, probability)
+	zone = check_zone(zone)
+	if(!probability)	probability = 90
+	if(probability == 100)	return zone
 
-/proc/ran_zone(zone, probability = 80)
+	if(zone == "chest")
+		if(prob(probability))	return "chest"
+		var/t = rand(1, 9)
+		switch(t)
+			if(1 to 3)	return "head"
+			if(4 to 6)	return "l_arm"
+			if(7 to 9)	return "r_arm"
 
+	if(prob(probability * 0.75))	return zone
+	return "chest"
+
+// Emulates targetting a specific body part, and miss chances
+// May return null if missed
+// miss_chance_mod may be negative.
+/proc/get_zone_with_miss_chance(zone, var/mob/target, var/miss_chance_mod = 0)
 	zone = check_zone(zone)
 
-	if(prob(probability))
-		return zone
-
-	var/t = rand(1, 17) // randomly pick a different zone, or maybe the same one
-	switch(t)
-		if(1)		 return "head"
-		if(2)		 return "chest"
-		if(3 to 6)	 return "l_arm"
-		if(7 to 10)	 return "r_arm"
-		if(10 to 13) return "l_leg"
-		if(14 to 17) return "r_leg"
+	// you can only miss if your target is standing and not restrained
+	if(!target.buckled && !target.lying)
+		var/miss_chance = 10
+		switch(zone)
+			if("head")
+				miss_chance = 40
+			if("l_leg")
+				miss_chance = 20
+			if("r_leg")
+				miss_chance = 20
+			if("l_arm")
+				miss_chance = 20
+			if("r_arm")
+				miss_chance = 20
+			if("l_hand")
+				miss_chance = 50
+			if("r_hand")
+				miss_chance = 50
+			if("l_foot")
+				miss_chance = 50
+			if("r_foot")
+				miss_chance = 50
+		miss_chance = max(miss_chance + miss_chance_mod, 0)
+		if(prob(miss_chance))
+			if(prob(70))
+				return null
+			else
+				var/t = rand(1, 10)
+				switch(t)
+					if(1)	return "head"
+					if(2)	return "l_arm"
+					if(3)	return "r_arm"
+					if(4) 	return "chest"
+					if(5) 	return "l_foot"
+					if(6)	return "r_foot"
+					if(7)	return "l_hand"
+					if(8)	return "r_hand"
+					if(9)	return "l_leg"
+					if(10)	return "r_leg"
 
 	return zone
 
-/proc/above_neck(zone)
-	var/list/zones = list("head", "mouth", "eyes")
-	if(zones.Find(zone))
-		return 1
-	else
-		return 0
 
 /proc/stars(n, pr)
 	if (pr == null)
@@ -192,6 +238,28 @@ proc/isorgan(A)
 		p++
 	return t
 
+proc/slur(phrase)
+	phrase = html_decode(phrase)
+	var/leng=lentext(phrase)
+	var/counter=lentext(phrase)
+	var/newphrase=""
+	var/newletter=""
+	while(counter>=1)
+		newletter=copytext(phrase,(leng-counter)+1,(leng-counter)+2)
+		if(rand(1,3)==3)
+			if(lowertext(newletter)=="o")	newletter="u"
+			if(lowertext(newletter)=="s")	newletter="ch"
+			if(lowertext(newletter)=="a")	newletter="ah"
+			if(lowertext(newletter)=="c")	newletter="k"
+		switch(rand(1,15))
+			if(1,3,5,8)	newletter="[lowertext(newletter)]"
+			if(2,4,6,15)	newletter="[uppertext(newletter)]"
+			if(7)	newletter+="'"
+			//if(9,10)	newletter="<b>[newletter]</b>"
+			//if(11,12)	newletter="<big>[newletter]</big>"
+			//if(13)	newletter="<small>[newletter]</small>"
+		newphrase+="[newletter]";counter-=1
+	return newphrase
 
 /proc/stutter(n)
 	var/te = html_decode(n)
@@ -215,23 +283,6 @@ proc/isorgan(A)
 		t = text("[t][n_letter]")//since the above is ran through for each letter, the text just adds up back to the original word.
 		p++//for each letter p is increased to find where the next letter will be.
 	return copytext(sanitize(t),1,MAX_MESSAGE_LEN)
-
-/proc/derpspeech(message, stuttering)
-	message = replacetext(message, " am ", " ")
-	message = replacetext(message, " is ", " ")
-	message = replacetext(message, " are ", " ")
-	message = replacetext(message, "you", "u")
-	message = replacetext(message, "help", "halp")
-	message = replacetext(message, "grief", "grife")
-	message = replacetext(message, "space", "spess")
-	message = replacetext(message, "carp", "crap")
-	message = replacetext(message, "reason", "raisin")
-	if(prob(50))
-		message = uppertext(message)
-		message += "[stutter(pick("!", "!!", "!!!"))]"
-	if(!stuttering && prob(15))
-		message = stutter(message)
-	return message
 
 
 proc/Gibberish(t, p)//t is the inputted message, and any value higher than 70 for p will cause letters to be replaced instead of added
@@ -282,37 +333,45 @@ It's fairly easy to fix if dealing with single letters but not so much with comp
 
 
 /proc/shake_camera(mob/M, duration, strength=1)
-	spawn(0)
-		if(!M || !M.client || M.shakecamera)
-			return
-		var/oldeye=M.client.eye
+	if(!M || !M.client || M.shakecamera)  
+		return
+	M.shakecamera = 1
+	spawn(1)
+		
+		var/atom/oldeye=M.client.eye
+		var/aiEyeFlag = 0
+		if(istype(oldeye, /mob/aiEye))
+			aiEyeFlag = 1
+
 		var/x
-		M.shakecamera = 1
 		for(x=0; x<duration, x++)
-			if(M && M.client)
+			if(aiEyeFlag)
+				M.client.eye = locate(dd_range(1,oldeye.loc.x+rand(-strength,strength),world.maxx),dd_range(1,oldeye.loc.y+rand(-strength,strength),world.maxy),oldeye.loc.z)
+			else
 				M.client.eye = locate(dd_range(1,M.loc.x+rand(-strength,strength),world.maxx),dd_range(1,M.loc.y+rand(-strength,strength),world.maxy),M.loc.z)
-				sleep(1)
-		if(M)
-			M.shakecamera = 0
-			if(M.client)
-				M.client.eye=oldeye
+			sleep(1)
+		M.client.eye=oldeye
+		M.shakecamera = 0
 
 
 /proc/findname(msg)
-	if(!istext(msg))
-		msg = "[msg]"
 	for(var/mob/M in mob_list)
-		if(M.real_name == msg)
-			return M
+		if (M.real_name == text("[msg]"))
+			return 1
 	return 0
 
 
-/mob/proc/abiotic(full_body = 0)
-	if(l_hand && !l_hand.flags&ABSTRACT || r_hand && !r_hand.flags&ABSTRACT)
+/mob/proc/abiotic(var/full_body = 0)
+	if(full_body && ((src.l_hand && !( src.l_hand.abstract )) || (src.r_hand && !( src.r_hand.abstract )) || (src.back || src.wear_mask)))
 		return 1
+
+	if((src.l_hand && !( src.l_hand.abstract )) || (src.r_hand && !( src.r_hand.abstract )))
+		return 1
+
 	return 0
 
 //converts intent-strings into numbers and back
+var/list/intents = list("help","disarm","grab","hurt")
 /proc/intent_numeric(argument)
 	if(istext(argument))
 		switch(argument)
@@ -325,7 +384,7 @@ It's fairly easy to fix if dealing with single letters but not so much with comp
 			if(0)			return "help"
 			if(1)			return "disarm"
 			if(2)			return "grab"
-			else			return "harm"
+			else			return "hurt"
 
 //change a mob's act-intent. Input the intent as a string such as "help" or use "right"/"left
 /mob/verb/a_intent_change(input as text)
@@ -334,83 +393,25 @@ It's fairly easy to fix if dealing with single letters but not so much with comp
 
 	if(ishuman(src) || isalienadult(src) || isbrain(src))
 		switch(input)
-			if("help", "disarm", "grab", "harm")
+			if("help","disarm","grab","hurt")
 				a_intent = input
 			if("right")
-				a_intent = intent_numeric((intent_numeric(a_intent) + 1) % 4)
+				a_intent = intent_numeric((intent_numeric(a_intent)+1) % 4)
 			if("left")
-				a_intent = intent_numeric((intent_numeric(a_intent) + 3) % 4)
-
+				a_intent = intent_numeric((intent_numeric(a_intent)+3) % 4)
 		if(hud_used && hud_used.action_intent)
-			hud_used.action_intent.icon_state = "[a_intent]"
+			hud_used.action_intent.icon_state = "intent_[a_intent]"
 
 	else if(isrobot(src) || ismonkey(src) || islarva(src))
 		switch(input)
 			if("help")
 				a_intent = "help"
-			if("harm")
-				a_intent = "harm"
+			if("hurt")
+				a_intent = "hurt"
 			if("right","left")
 				a_intent = intent_numeric(intent_numeric(a_intent) - 3)
-
 		if(hud_used && hud_used.action_intent)
-			if(a_intent == "harm")
+			if(a_intent == "hurt")
 				hud_used.action_intent.icon_state = "harm"
 			else
 				hud_used.action_intent.icon_state = "help"
-
-proc/is_blind(A)
-	if(istype(A, /mob/living/carbon))
-		var/mob/living/carbon/C = A
-		if(C.blinded != null)
-			return 1
-	return 0
-
-proc/is_special_character(mob/M) // returns 1 for special characters and 2 for heroes of gamemode //moved out of admins.dm because things other than admin procs were calling this.
-	if(!ticker || !ticker.mode)
-		return 0
-	if(!istype(M))
-		return 0
-	if(issilicon(M))
-		if(isrobot(M)) //For cyborgs, returns 1 if the cyborg has a law 0 and special_role. Returns 0 if the borg is merely slaved to an AI traitor.
-			var/mob/living/silicon/robot/R = M
-			if(R.emagged || R.syndicate) //Count as antags
-				return 1
-			if(R.mind && R.mind.special_role && R.laws && R.laws.zeroth).
-				if(R.connected_ai)
-					if(is_special_character(R.connected_ai) && R.connected_ai.laws && (R.connected_ai.laws.zeroth_borg == R.laws.zeroth || R.connected_ai.laws.zeroth == R.laws.zeroth))
-						return 0 //AI is the real traitor here, so the borg itself is not a traitor
-					return 1 //Slaved but also a traitor
-				return 1 //Unslaved, traitor
-		else if(isAI(M))
-			var/mob/living/silicon/ai/A = M
-			if(A.laws && A.laws.zeroth && A.mind && A.mind.special_role)
-				if(ticker.mode.config_tag == "malfunction" && M.mind in ticker.mode.malf_ai)//Malf law is a law 0
-					return 2
-				return 1
-		return 0
-	if(M.mind && M.mind.special_role)//If they have a mind and special role, they are some type of traitor or antagonist.
-		switch(ticker.mode.config_tag)
-			if("revolution")
-				if((M.mind in ticker.mode.head_revolutionaries) || (M.mind in ticker.mode.revolutionaries))
-					return 2
-			if("cult")
-				if(M.mind in ticker.mode.cult)
-					return 2
-			if("nuclear")
-				if(M.mind in ticker.mode.syndicates)
-					return 2
-			if("changeling")
-				if(M.mind in ticker.mode.changelings)
-					return 2
-			if("wizard")
-				if(M.mind in ticker.mode.wizards)
-					return 2
-			if("monkey")
-				if(M.viruses && (locate(/datum/disease/jungle_fever) in M.viruses))
-					return 2
-		return 1
-	return 0
-
-/mob/proc/has_mutation(var/mutation)
-	return mutation in src.mutations ? 1 : 0

@@ -2,7 +2,8 @@
 	set name = "cinematic"
 	set category = "Fun"
 	set desc = "Shows a cinematic."	// Intended for testing but I thought it might be nice for events on the rare occasion Feel free to comment it out if it's not wanted.
-	set hidden = 1
+	set hidden = 0
+	if(alert("Are you sure you want to run [cinematic]?","Confirmation","Yes","No")=="No") return
 	if(!ticker)	return
 	switch(cinematic)
 		if("explosion")

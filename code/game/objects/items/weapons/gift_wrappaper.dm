@@ -10,16 +10,55 @@
 /obj/item/weapon/a_gift
 	name = "gift"
 	desc = "PRESENTS!!!! eek!"
-	icon = 'icons/obj/storage.dmi'
-	icon_state = "giftcrate3"
+	icon = 'icons/obj/items.dmi'
+	icon_state = "gift1"
 	item_state = "gift1"
-
 
 /obj/item/weapon/a_gift/New()
 	..()
 	pixel_x = rand(-10,10)
 	pixel_y = rand(-10,10)
-	icon_state = "giftcrate[rand(1,5)]"
+	if(w_class > 0 && w_class < 4)
+		icon_state = "gift[w_class]"
+	else
+		icon_state = "gift[pick(1, 2, 3)]"
+	return
+
+/obj/item/weapon/gift/attack_self(mob/user as mob)
+	user.drop_item()
+	if(src.gift)
+		user.put_in_active_hand(gift)
+		src.gift.add_fingerprint(user)
+	else
+		user << "\blue The gift was empty!"
+	del(src)
+	return
+
+/obj/item/weapon/a_gift/ex_act()
+	del(src)
+	return
+
+/obj/effect/spresent/relaymove(mob/user as mob)
+	if (user.stat)
+		return
+	user << "\blue You cant move."
+
+/obj/effect/spresent/attackby(obj/item/weapon/W as obj, mob/user as mob)
+	..()
+
+	if (!istype(W, /obj/item/weapon/wirecutters))
+		user << "\blue I need wirecutters for that."
+		return
+
+	user << "\blue You cut open the present."
+
+	for(var/mob/M in src) //Should only be one but whatever.
+		M.loc = src.loc
+		if (M.client)
+			M.client.eye = M.client.mob
+			M.client.perspective = MOB_PERSPECTIVE
+
+	del(src)
 
 /obj/item/weapon/a_gift/attack_self(mob/M as mob)
 	var/gift_type = pick(/obj/item/weapon/sord,
@@ -34,7 +73,7 @@
 		/obj/item/weapon/pen/invisible,
 		/obj/item/weapon/lipstick/random,
 		/obj/item/weapon/grenade/smokebomb,
-		/obj/item/weapon/grown/corncob,
+		/obj/item/weapon/corncob,
 		/obj/item/weapon/contraband/poster,
 		/obj/item/weapon/book/manual/barman_recipes,
 		/obj/item/weapon/book/manual/chef_recipes,
@@ -43,6 +82,7 @@
 		/obj/item/weapon/beach_ball/holoball,
 		/obj/item/weapon/banhammer,
 		/obj/item/toy/balloon,
+		/obj/item/toy/blink,
 		/obj/item/toy/crossbow,
 		/obj/item/toy/gun,
 		/obj/item/toy/katana,
@@ -69,12 +109,11 @@
 	if(!ispath(gift_type,/obj/item))	return
 
 	var/obj/item/I = new gift_type(M)
-	M.unEquip(src, 1)
+	M.u_equip(src)
 	M.put_in_hands(I)
 	I.add_fingerprint(M)
 	del(src)
 	return
-
 
 /*
  * Wrapping Paper
@@ -84,7 +123,71 @@
 	desc = "You can use this to wrap items in."
 	icon = 'icons/obj/items.dmi'
 	icon_state = "wrap_paper"
+	var/amount = 20.0
+
+/obj/item/weapon/wrapping_paper/attackby(obj/item/weapon/W as obj, mob/user as mob)
+	..()
+	if (!( locate(/obj/structure/table, src.loc) ))
+		user << "\blue You MUST put the paper on a table!"
+	if (W.w_class < 4)
+		if ((istype(user.l_hand, /obj/item/weapon/wirecutters) || istype(user.r_hand, /obj/item/weapon/wirecutters)))
+			var/a_used = 2 ** (src.w_class - 1)
+			if (src.amount < a_used)
+				user << "\blue You need more paper!"
+				return
+			else
+				if(istype(W, /obj/item/smallDelivery) || istype(W, /obj/item/weapon/gift)) //No gift wrapping gifts!
+					return
+
+				src.amount -= a_used
+				user.drop_item()
+				var/obj/item/weapon/gift/G = new /obj/item/weapon/gift( src.loc )
+				G.size = W.w_class
+				G.w_class = G.size + 1
+				G.icon_state = text("gift[]", G.size)
+				G.gift = W
+				W.loc = G
+				G.add_fingerprint(user)
+				W.add_fingerprint(user)
+				src.add_fingerprint(user)
+			if (src.amount <= 0)
+				new /obj/item/weapon/c_tube( src.loc )
+				del(src)
+				return
+		else
+			user << "\blue You need scissors!"
+	else
+		user << "\blue The object is FAR too large!"
+	return
 
 
-/obj/item/weapon/wrapping_paper/attack_self(mob/user)
-	user << "<span class='notice'>You need to use it on a package that has already been wrapped!</span>"
+/obj/item/weapon/wrapping_paper/examine()
+	set src in oview(1)
+
+	..()
+	usr << text("There is about [] square units of paper left!", src.amount)
+	return
+
+/obj/item/weapon/wrapping_paper/attack(mob/target as mob, mob/user as mob)
+	if (!istype(target, /mob/living/carbon/human)) return
+	var/mob/living/carbon/human/H = target
+
+	if (istype(H.wear_suit, /obj/item/clothing/suit/straight_jacket) || H.stat)
+		if (src.amount > 2)
+			var/obj/effect/spresent/present = new /obj/effect/spresent (H.loc)
+			src.amount -= 2
+
+			if (H.client)
+				H.client.perspective = EYE_PERSPECTIVE
+				H.client.eye = present
+
+			H.loc = present
+
+			H.attack_log += text("\[[time_stamp()]\] <font color='orange'>Has been wrapped with [src.name]  by [user.name] ([user.ckey])</font>")
+			user.attack_log += text("\[[time_stamp()]\] <font color='red'>Used the [src.name] to wrap [H.name] ([H.ckey])</font>")
+			msg_admin_attack("[key_name(user)] used [src] to wrap [key_name(H)]")
+
+		else
+			user << "\blue You need more paper."
+	else
+		user << "They are moving around too much. A straightjacket would help."

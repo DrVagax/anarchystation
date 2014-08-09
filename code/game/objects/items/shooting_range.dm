@@ -37,7 +37,7 @@
 			var/obj/item/weapon/weldingtool/WT = W
 			if(WT.remove_fuel(0, user))
 				overlays.Cut()
-				usr << "You slice off [src]'s uneven chunks of aluminium and scorch marks."
+				usr << "You slice off [src]'s uneven chunks of aluminum and scorch marks."
 				return
 
 
@@ -72,11 +72,11 @@
 
 	syndicate
 		icon_state = "target_s"
-		desc = "A shooting target that looks like a syndicate scum."
+		desc = "A shooting target that looks like a hostile agent."
 		hp = 2600 // i guess syndie targets are sturdier?
 	alien
 		icon_state = "target_q"
-		desc = "A shooting target that looks like a xenomorphic alien."
+		desc = "A shooting target with a threatening silhouette."
 		hp = 2350 // alium onest too kinda
 
 /obj/item/target/bullet_act(var/obj/item/projectile/Proj)
@@ -114,7 +114,7 @@
 			bmark.pixel_x--
 			bmark.pixel_y--
 
-			if(Proj.damage >= 20 || istype(Proj, /obj/item/projectile/practice))
+			if(Proj.damage >= 20 || istype(Proj, /obj/item/projectile/beam/practice))
 				bmark.icon_state = "scorch"
 				bmark.dir = pick(NORTH,SOUTH,EAST,WEST) // random scorch design
 

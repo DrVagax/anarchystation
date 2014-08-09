@@ -480,16 +480,20 @@ Doing this because FindTurfs() isn't even used
 		if(stat > 1) stat=0
 		disabilities = initial(disabilities)
 		sdisabilities = initial(sdisabilities)
-		for(var/obj/item/organ/limb/e in src)
+		for(var/datum/organ/external/e in src)
 			e.brute_dam = 0.0
 			e.burn_dam = 0.0
 			e.bandaged = 0.0
 			e.wound_size = 0.0
 			e.max_damage = initial(e.max_damage)
+			e.broken = 0
+			e.destroyed = 0
+			e.perma_injury = 0
 			e.update_icon()
 		if(src.type == /mob/living/carbon/human)
 			var/mob/living/carbon/human/H = src
-			H.update_damage_overlays()
+			H.update_body()
+			H.UpdateDamageIcon()
 	else
 		alert("Debugging off")
 		return
@@ -508,10 +512,10 @@ Doing this because FindTurfs() isn't even used
 /mob/verb/revent(number as num)
 	set category = "Debug"
 	set name = "Change event %"
-	if(!src.authenticated || !src.holder)
+	if(!src.holder)
 		src << "Only administrators may use this command."
 		return
-	if(src.authenticated && src.holder)
+	if(src.holder)
 		eventchance = number
 		log_admin("[src.key] set the random event chance to [eventchance]%")
 		message_admins("[src.key] set the random event chance to [eventchance]%")
@@ -520,7 +524,7 @@ Doing this because FindTurfs() isn't even used
 /mob/verb/funbutton()
 	set category = "Admin"
 	set name = "Random Expl.(REMOVE ME)"
-	if(!src.authenticated || !src.holder)
+	if(!src.holder)
 		src << "Only administrators may use this command."
 		return
 	for(var/turf/T in world)
@@ -544,7 +548,7 @@ Doing this because FindTurfs() isn't even used
 /mob/verb/removeplasma()
 	set category = "Debug"
 	set name = "Stabilize Atmos."
-	if(!src.authenticated || !src.holder)
+	if(!src.holder)
 		src << "Only administrators may use this command."
 		return
 	spawn(0)
@@ -571,7 +575,7 @@ Doing this because FindTurfs() isn't even used
 /mob/verb/fire(turf/T as turf in world)
 	set category = "Special Verbs"
 	set name = "Create Fire"
-	if(!src.authenticated || !src.holder)
+	if(!src.holder)
 		src << "Only administrators may use this command."
 		return
 	world << "[usr.key] created fire"
@@ -582,7 +586,7 @@ Doing this because FindTurfs() isn't even used
 /mob/verb/co2(turf/T as turf in world)
 	set category = "Special Verbs"
 	set name = "Create CO2"
-	if(!src.authenticated || !src.holder)
+	if(!src.holder)
 		src << "Only administrators may use this command."
 		return
 	world << "[usr.key] created CO2"
@@ -592,7 +596,7 @@ Doing this because FindTurfs() isn't even used
 /mob/verb/n2o(turf/T as turf in world)
 	set category = "Special Verbs"
 	set name = "Create N2O"
-	if(!src.authenticated || !src.holder)
+	if(!src.holder)
 		src << "Only administrators may use this command."
 		return
 	world << "[usr.key] created N2O"
@@ -602,7 +606,7 @@ Doing this because FindTurfs() isn't even used
 /mob/verb/explosion(T as obj|mob|turf in world)
 	set category = "Special Verbs"
 	set name = "Create Explosion"
-	if(!src.authenticated || !src.holder)
+	if(!src.holder)
 		src << "Only administrators may use this command."
 		return
 	world << "[usr.key] created an explosion"

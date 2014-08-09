@@ -1,4 +1,4 @@
-#pretending we're C because otherwise ruby/rvm will initialize, even with "language: dm".
+#pretending we're C because otherwise ruby will initialize, even with "language: dm".
 language: c
 
 env:
@@ -17,4 +17,5 @@ install:
   - cd ..
 
 script:
-  - DreamMaker tgstation.dme
+  - (! grep -q 'step_[xy]' maps/tgstation2.dmm)
+  - DreamMaker baystation12.dme

@@ -2,28 +2,53 @@
 	var/angle
 	var/dx
 	var/dy
-	var/counter = 50		// to make the vars update during 1st call
+//	var/counter = 50		// to make the vars update during 1st call
 	var/rate
 	var/list/solars			// for debugging purposes, references solars_list at the constructor
+	var/nexttime = 3600		// Replacement for var/counter to force the sun to move every X IC minutes
+	var/lastAngleUpdate
 
 /datum/sun/New()
 
 	solars = solars_list
-	rate = rand(75,125)/100			// 75% - 125% of standard rotation
+	rate = rand(750,1250)/1000			// 75.0% - 125.0% of standard rotation
 	if(prob(50))
 		rate = -rate
+
+/hook/startup/proc/createSun()
+	sun = new /datum/sun()
+	return 1
 
 // calculate the sun's position given the time of day
 
 /datum/sun/proc/calc_position()
 
-	counter++
+/*	counter++
 	if(counter<50)		// count 50 pticks (50 seconds, roughly - about a 5deg change)
 		return
-	counter = 0
+	counter = 0 */
 
-	angle = ((rate*world.realtime/100)%360 + 360)%360		// gives about a 60 minute rotation time
-															// now 45 - 75 minutes, depending on rate
+	angle = ((rate*world.time/100)%360 + 360)%360
+
+	/*
+		Yields a 45 - 75 IC minute rotational period
+		Rotation rate can vary from 4.8 deg/min to 8 deg/min (288 to 480 deg/hr)
+	*/
+
+	if(lastAngleUpdate != angle)
+		for(var/obj/machinery/power/tracker/T in solars_list)
+			if(!T.powernet)
+				solars_list.Remove(T)
+				continue
+			T.set_angle(angle)
+	lastAngleUpdate=angle
+
+
+
+	if(nexttime > world.time)
+		return
+	nexttime = nexttime + 600	// 600 world.time ticks = 1 minute
+
 	// now calculate and cache the (dx,dy) increments for line drawing
 
 	var/s = sin(angle)
@@ -44,22 +69,13 @@
 		dy = c / abs(s)
 
 
-	for(var/obj/machinery/power/M in solars_list)
+	for(var/obj/machinery/power/solar/S in solars_list)
 
-		if(!M.powernet)
-			solars_list.Remove(M)
+		if(!S.powernet)
+			solars_list.Remove(S)
 			continue
-
-		// Solar Tracker
-		if(istype(M, /obj/machinery/power/tracker))
-			var/obj/machinery/power/tracker/T = M
-			T.set_angle(angle)
-
-		// Solar Panel
-		else if(istype(M, /obj/machinery/power/solar))
-			var/obj/machinery/power/solar/S = M
-			if(S.control)
-				occlusion(S)
+		if(S.control)
+			occlusion(S)
 
 
 

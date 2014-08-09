@@ -1,3 +1,8 @@
+/mob/living/silicon/robot/Process_Spaceslipping(var/prob_slip)
+	if(module && (istype(module,/obj/item/weapon/robot_module/construction) || istype(module,/obj/item/weapon/robot_module/drone)))
+		return 0
+	..(prob_slip)
+
 /mob/living/silicon/robot/Process_Spacemove()
 	if(module)
 		for(var/obj/item/weapon/tank/jetpack/J in module.modules)
@@ -12,4 +17,10 @@
 
 	tally = speed
 
+	if(module_active && istype(module_active,/obj/item/borg/combat/mobility))
+		tally-=3
+
 	return tally+config.robot_delay
+
+/mob/living/silicon/robot/Move()
+	..()

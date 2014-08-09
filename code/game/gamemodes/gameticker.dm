@@ -5,12 +5,14 @@ var/global/datum/controller/gameticker/ticker
 #define GAME_STATE_PLAYING		3
 #define GAME_STATE_FINISHED		4
 
+
 /datum/controller/gameticker
-	var/const/restart_timeout = 250
+	var/const/restart_timeout = 600
 	var/current_state = GAME_STATE_PREGAME
 
 	var/hide_mode = 0
 	var/datum/game_mode/mode = null
+	var/post_game = 0
 	var/event_time = null
 	var/event = 0
 
@@ -23,6 +25,8 @@ var/global/datum/controller/gameticker/ticker
 	var/Bible_name			// name of the bible
 	var/Bible_deity_name
 
+	var/random_players = 0 	// if set to nonzero, ALL players who latejoin or declare-ready join will have random appearances/genders
+
 	var/list/syndicate_coalition = list() // list of traitor-compatible factions
 	var/list/factions = list()			  // list of all factions
 	var/list/availablefactions = list()	  // list of factions with openings
@@ -34,29 +38,36 @@ var/global/datum/controller/gameticker/ticker
 	var/triai = 0//Global holder for Triumvirate
 
 /datum/controller/gameticker/proc/pregame()
-
-	login_music = pickweight(list('sound/ambience/title2.ogg' = 49, 'sound/ambience/title1.ogg' = 49, 'sound/ambience/clown.ogg' = 2)) // choose title music!
-	if(events.holiday == "April Fool's Day")
-		login_music = 'sound/ambience/clown.ogg'
-	for(var/client/C in clients)
-		C.playtitlemusic()
-
+	login_music = pick(\
+	/*'sound/music/halloween/skeletons.ogg',\
+	'sound/music/halloween/halloween.ogg',\
+	'sound/music/halloween/ghosts.ogg'/
+	'sound/music/space.ogg',\
+	'sound/music/traitor.ogg',\
+	'sound/music/title2.ogg',\
+	'sound/music/clouds.s3m',\*/
+	'sound/music/gamemenu.ogg')
 	do
-		if(config)
-			pregame_timeleft = config.lobby_countdown
-		else
-			error("configuration was null when retrieving the lobby_countdown value.")
-			pregame_timeleft = 120
+		pregame_timeleft = 180
 		world << "<B><FONT color='blue'>Welcome to the pre-game lobby!</FONT></B>"
 		world << "Please, setup your character and select ready. Game will start in [pregame_timeleft] seconds"
 		while(current_state == GAME_STATE_PREGAME)
-			sleep(10)
+			for(var/i=0, i<10, i++)
+				sleep(1)
+				vote.process()
 			if(going)
 				pregame_timeleft--
-
+			if(pregame_timeleft == config.vote_autogamemode_timeleft)
+				if(!vote.time_remaining)
+					vote.autogamemode()	//Quit calling this over and over and over and over.
+					while(vote.time_remaining)
+						for(var/i=0, i<10, i++)
+							sleep(1)
+							vote.process()
 			if(pregame_timeleft <= 0)
 				current_state = GAME_STATE_SETTING_UP
 	while (!setup())
+
 
 /datum/controller/gameticker/proc/setup()
 	//Create and announce mode
@@ -70,30 +81,27 @@ var/global/datum/controller/gameticker/ticker
 			world << "<B>Unable to choose playable game mode.</B> Reverting to pre-game lobby."
 			return 0
 		if(secret_force_mode != "secret")
-			for (var/datum/game_mode/M in runnable_modes)
-				if (M.config_tag && M.config_tag == secret_force_mode)
-					src.mode = M
-					break
-			if	(!src.mode)
-				message_admins("\blue Unable to force secret [secret_force_mode].", 1)
+			var/datum/game_mode/M = config.pick_mode(secret_force_mode)
+			if(M.can_start())
+				src.mode = config.pick_mode(secret_force_mode)
+		job_master.ResetOccupations()
 		if(!src.mode)
 			src.mode = pickweight(runnable_modes)
-
+		if(src.mode)
+			var/mtype = src.mode.type
+			src.mode = new mtype
 	else
 		src.mode = config.pick_mode(master_mode)
-		if (!src.mode.can_start())
-			world << "<B>Unable to start [mode.name].</B> Not enough players, [mode.required_players] players and [mode.required_enemies] eligible antagonists needed. Reverting to pre-game lobby."
-			del(mode)
-			current_state = GAME_STATE_PREGAME
-			job_master.ResetOccupations()
-			return 0
+	if (!src.mode.can_start())
+		world << "<B>Unable to start [mode.name].</B> Not enough players, [mode.required_players] players needed. Reverting to pre-game lobby."
+		del(mode)
+		current_state = GAME_STATE_PREGAME
+		job_master.ResetOccupations()
+		return 0
 
 	//Configure mode and assign player to special mode stuff
-	var/can_continue = 0
-	if (src.mode.pre_setup_before_jobs)	can_continue = src.mode.pre_setup()
-	job_master.DivideOccupations() 				//Distribute jobs
-	if (!src.mode.pre_setup_before_jobs)	can_continue = src.mode.pre_setup()
-
+	job_master.DivideOccupations() //Distribute jobs
+	var/can_continue = src.mode.pre_setup()//Setup special modes
 	if(!can_continue)
 		del(mode)
 		current_state = GAME_STATE_PREGAME
@@ -111,17 +119,18 @@ var/global/datum/controller/gameticker/ticker
 	else
 		src.mode.announce()
 
-	supply_shuttle.process() 		//Start the supply shuttle regenerating points -- TLE
-	master_controller.process()		//Start master_controller.process()
-	lighting_controller.process()	//Start processing DynamicAreaLighting updates
-
-	sleep(10)
-
 	create_characters() //Create player characters and transfer them
 	collect_minds()
 	equip_characters()
 	data_core.manifest()
 	current_state = GAME_STATE_PLAYING
+
+	callHook("roundstart")
+
+	//here to initialize the random events nicely at round start
+	setup_economy()
+
+	shuttle_controller.setup_shuttle_docks()
 
 	spawn(0)//Forking here so we dont have to wait for this to finish
 		mode.post_setup()
@@ -133,16 +142,28 @@ var/global/datum/controller/gameticker/ticker
 		world << "<FONT color='blue'><B>Enjoy the game!</B></FONT>"
 		world << sound('sound/AI/welcome.ogg') // Skie
 		//Holiday Round-start stuff	~Carn
-		if(events.holiday)
-			world << "<font color='blue'>and...</font>"
-			world << "<h4>Happy [events.holiday] Everybody!</h4>"
+		Holiday_Game_Start()
 
-	if(!admins.len)
-		send2irc("Server", "Round just started with no admins online!")
+	//start_events() //handles random events and space dust.
+	//new random event system is handled from the MC.
+
+	var/admins_number = 0
+	for(var/client/C)
+		if(C.holder)
+			admins_number++
+	if(admins_number == 0)
+		send2adminirc("Round has started with no admins online.")
+
+	supply_controller.process() 		//Start the supply shuttle regenerating points -- TLE
+	master_controller.process()		//Start master_controller.process()
+	lighting_controller.process()	//Start processing DynamicAreaLighting updates
+
+	for(var/obj/multiz/ladder/L in world) L.connect() //Lazy hackfix for ladders. TODO: move this to an actual controller. ~ Z
 
 	if(config.sql_enabled)
 		spawn(3000)
-			statistic_cycle() // Polls population totals regularly and stores them in an SQL DB -- TLE
+		statistic_cycle() // Polls population totals regularly and stores them in an SQL DB -- TLE
+
 	return 1
 
 /datum/controller/gameticker
@@ -163,20 +184,27 @@ var/global/datum/controller/gameticker/ticker
 		cinematic.screen_loc = "1,0"
 
 		var/obj/structure/stool/bed/temp_buckle = new(src)
+		//Incredibly hackish. It creates a bed within the gameticker (lol) to stop mobs running around
 		if(station_missed)
-			for(var/mob/M in mob_list)
+			for(var/mob/living/M in living_mob_list)
 				M.buckled = temp_buckle				//buckles the mob so it can't do anything
 				if(M.client)
 					M.client.screen += cinematic	//show every client the cinematic
 		else	//nuke kills everyone on z-level 1 to prevent "hurr-durr I survived"
-			for(var/mob/M in mob_list)
+			for(var/mob/living/M in living_mob_list)
 				M.buckled = temp_buckle
 				if(M.client)
 					M.client.screen += cinematic
-				if(M.stat != DEAD)
-					var/turf/T = get_turf(M)
-					if(T && T.z==1)
-						M.death(0) //no mercy
+
+				switch(M.z)
+					if(0)	//inside a crate or something
+						var/turf/T = get_turf(M)
+						if(T && T.z==1)				//we don't use M.death(0) because it calls a for(/mob) loop and
+							M.health = 0
+							M.stat = DEAD
+					if(1)	//on a z-level 1 turf.
+						M.health = 0
+						M.stat = DEAD
 
 		//Now animate the cinematic
 		switch(station_missed)
@@ -230,6 +258,9 @@ var/global/datum/controller/gameticker/ticker
 						flick("station_explode_fade_red", cinematic)
 						world << sound('sound/effects/explosionfar.ogg')
 						cinematic.icon_state = "summary_selfdes"
+				for(var/mob/living/M in living_mob_list)
+					if(M.loc.z == 1)
+						M.death()//No mercy
 		//If its actually the end of the round, wait for it to end.
 		//Otherwise if its a verb it will continue on afterwards.
 		sleep(300)
@@ -242,15 +273,14 @@ var/global/datum/controller/gameticker/ticker
 	proc/create_characters()
 		for(var/mob/new_player/player in player_list)
 			if(player.ready && player.mind)
-				joined_player_list += player.ckey
 				if(player.mind.assigned_role=="AI")
 					player.close_spawn_windows()
 					player.AIize()
+				else if(!player.mind.assigned_role)
+					continue
 				else
 					player.create_character()
 					del(player)
-			else
-				player.new_player_panel()
 
 
 	proc/collect_minds()
@@ -267,6 +297,7 @@ var/global/datum/controller/gameticker/ticker
 					captainless=0
 				if(player.mind.assigned_role != "MODE")
 					job_master.EquipRank(player, player.mind.assigned_role, 0)
+					EquipCustomItems(player)
 		if(captainless)
 			for(var/mob/M in player_list)
 				if(!istype(M,/mob/new_player))
@@ -281,13 +312,24 @@ var/global/datum/controller/gameticker/ticker
 
 		emergency_shuttle.process()
 
-		if(!mode.explosion_in_progress && mode.check_finished())
+		var/game_finished = 0
+		var/mode_finished = 0
+		if (config.continous_rounds)
+			game_finished = (emergency_shuttle.returned() || mode.station_was_nuked)
+			mode_finished = (!post_game && mode.check_finished())
+		else
+			game_finished = (mode.check_finished() || (emergency_shuttle.returned() && emergency_shuttle.evac == 1))
+			mode_finished = game_finished
+
+		if(!mode.explosion_in_progress && game_finished && (mode_finished || post_game))
 			current_state = GAME_STATE_FINISHED
 
 			spawn
 				declare_completion()
 
 			spawn(50)
+				callHook("roundend")
+
 				if (mode.station_was_nuked)
 					feedback_set_details("end_proper","nuke")
 					if(!delay_end)
@@ -303,10 +345,22 @@ var/global/datum/controller/gameticker/ticker
 
 				if(!delay_end)
 					sleep(restart_timeout)
-					kick_clients_in_lobby("\red The round came to an end with you in the lobby.", 1) //second parameter ensures only afk clients are kicked
-					world.Reboot()
+					if(!delay_end)
+						world.Reboot()
+					else
+						world << "\blue <B>An admin has delayed the round end</B>"
 				else
 					world << "\blue <B>An admin has delayed the round end</B>"
+
+		else if (mode_finished)
+			post_game = 1
+
+			mode.cleanup()
+
+			//call a transfer shuttle vote
+			spawn(50)
+				world << "\red The round has ended!"
+				vote.autotransfer()
 
 		return 1
 
@@ -319,32 +373,37 @@ var/global/datum/controller/gameticker/ticker
 /datum/controller/gameticker/proc/declare_completion()
 
 	for (var/mob/living/silicon/ai/aiPlayer in mob_list)
-		if (aiPlayer.stat != 2 && aiPlayer.mind)
-			world << "<b>[aiPlayer.name] (Played by: [aiPlayer.mind.key])'s laws at the end of the game were:</b>"
-			aiPlayer.show_laws(1)
-		else if (aiPlayer.mind) //if the dead ai has a mind, use its key instead
-			world << "<b>[aiPlayer.name] (Played by: [aiPlayer.mind.key])'s laws when it was deactivated were:</b>"
-			aiPlayer.show_laws(1)
+		if (aiPlayer.stat != 2)
+			world << "<b>[aiPlayer.name] (Played by: [aiPlayer.key])'s laws at the end of the game were:</b>"
+		else
+			world << "<b>[aiPlayer.name] (Played by: [aiPlayer.key])'s laws when it was deactivated were:</b>"
+		aiPlayer.show_laws(1)
 
 		if (aiPlayer.connected_robots.len)
-			var/robolist = "<b>[aiPlayer.real_name]'s loyal minions were:</b> "
-			var/vsrobolist = "\red <b>[aiPlayer.real_name]'s disloyal minions were:</b> \black"
+			var/robolist = "<b>The AI's loyal minions were:</b> "
 			for(var/mob/living/silicon/robot/robo in aiPlayer.connected_robots)
-				if (is_special_character(robo) && robo.mind)
-					vsrobolist += "[robo.name][robo.stat?" (Deactivated) (Played by: [robo.mind.key]), ":" (Played by: [robo.mind.key]), "]"
-					continue
-				robolist += "[robo.name][robo.stat?" (Deactivated) (Played by: [robo.mind.key]), ":" (Played by: [robo.mind.key]), "]"
+				robolist += "[robo.name][robo.stat?" (Deactivated) (Played by: [robo.key]), ":" (Played by: [robo.key]), "]"
 			world << "[robolist]"
-			world << "[vsrobolist]"
+
+	var/dronecount = 0
+
 	for (var/mob/living/silicon/robot/robo in mob_list)
+
+		if(istype(robo,/mob/living/silicon/robot/drone))
+			dronecount++
+			continue
+
 		if (!robo.connected_ai)
 			if (robo.stat != 2)
-				world << "<b>[robo.name] (Played by: [robo.mind.key]) survived as an AI-less borg! Its laws were:</b>"
+				world << "<b>[robo.name] (Played by: [robo.key]) survived as an AI-less borg! Its laws were:</b>"
 			else
-				world << "<b>[robo.name] (Played by: [robo.mind.key]) was unable to survive the rigors of being a cyborg without an AI. Its laws were:</b>"
+				world << "<b>[robo.name] (Played by: [robo.key]) was unable to survive the rigors of being a cyborg without an AI. Its laws were:</b>"
 
 			if(robo) //How the hell do we lose robo between here and the world messages directly above this?
 				robo.laws.show_laws(world)
+
+	if(dronecount)
+		world << "<b>There [dronecount>1 ? "were" : "was"] [dronecount] industrious maintenance [dronecount>1 ? "drones" : "drone"] this round."
 
 	mode.declare_completion()//To declare normal completion.
 

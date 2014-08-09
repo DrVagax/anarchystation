@@ -1,7 +1,7 @@
 /*
 Ideas for the subtle effects of hallucination:
 
-Light up oxygen/plasma indicators (done)
+Light up oxygen/phoron indicators (done)
 Cause health to look critical/dead, even when standing (done)
 Characters silently watching you
 Brief flashes of fire/space/bombs/c4/dangerous shit (done)
@@ -11,13 +11,13 @@ Gunshots/explosions/opening doors/less rare audio (done)
 
 */
 
-mob/living/carbon/
-	var/image/halimage
-	var/image/halbody
-	var/obj/halitem
-	var/hal_screwyhud = 0 //1 - critical, 2 - dead, 3 - oxygen indicator, 4 - toxin indicator
-	var/handling_hal = 0
-	var/hal_crit = 0
+mob/living/carbon/var
+	image/halimage
+	image/halbody
+	obj/halitem
+	hal_screwyhud = 0 //1 - critical, 2 - dead, 3 - oxygen indicator, 4 - toxin indicator
+	handling_hal = 0
+	hal_crit = 0
 
 mob/living/carbon/proc/handle_hallucinations()
 	if(handling_hal) return
@@ -77,7 +77,9 @@ mob/living/carbon/proc/handle_hallucinations()
 								halitem.name = "Flashbang"
 						if(client) client.screen += halitem
 						spawn(rand(100,250))
-							del halitem
+							if(client)
+								client.screen -= halitem
+							halitem = null
 			if(26 to 40)
 				//Flashes of danger
 				//src << "Danger Flash"
@@ -229,7 +231,7 @@ proc/check_panel(mob/M)
 	var/image/stand_icon = null
 	var/image/currentimage = null
 	var/icon/base = null
-	var/skin_tone
+	var/s_tone
 	var/mob/living/clone = null
 	var/image/left
 	var/image/right
@@ -250,7 +252,7 @@ proc/check_panel(mob/M)
 
 		return
 
-	Crossed(var/mob/M, somenumber)
+	HasEntered(var/mob/M, somenumber)
 		if(M == my_target)
 			step_away(src,my_target,2)
 			if(prob(30))
@@ -300,7 +302,7 @@ proc/check_panel(mob/M)
 				if(prob(15))
 					if(weapon_name)
 						my_target << sound(pick('sound/weapons/genhit1.ogg', 'sound/weapons/genhit2.ogg', 'sound/weapons/genhit3.ogg'))
-						my_target.show_message("<span class='danger'>[my_target] has been attacked with [weapon_name] by [src.name]!</span>", 1)
+						my_target.show_message("\red <B>[my_target] has been attacked with [weapon_name] by [src.name] </B>", 1)
 						my_target.halloss += 8
 						if(prob(20)) my_target.eye_blurry += 3
 						if(prob(33))
@@ -330,7 +332,7 @@ proc/check_panel(mob/M)
 		del(O)
 	return
 
-var/list/non_fakeattack_weapons = list(/obj/item/weapon/gun/projectile, /obj/item/ammo_box/a357,\
+var/list/non_fakeattack_weapons = list(/obj/item/weapon/gun/projectile, /obj/item/ammo_magazine/a357,\
 	/obj/item/weapon/gun/energy/crossbow, /obj/item/weapon/melee/energy/sword,\
 	/obj/item/weapon/storage/box/syndicate, /obj/item/weapon/storage/box/emps,\
 	/obj/item/weapon/cartridge/syndicate, /obj/item/clothing/under/chameleon,\

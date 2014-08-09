@@ -1,31 +1,31 @@
+//replaces our stun baton code with /tg/station's code
 /obj/item/weapon/melee/baton
 	name = "stunbaton"
 	desc = "A stun baton for incapacitating people with."
 	icon_state = "stunbaton"
 	item_state = "baton"
 	slot_flags = SLOT_BELT
-	force = 10
+	force = 15
+	sharp = 0
+	edge = 0
 	throwforce = 7
 	w_class = 3
 	origin_tech = "combat=2"
 	attack_verb = list("beaten")
-	var/stunforce = 5
+	var/stunforce = 7
 	var/status = 0
-	var/obj/item/weapon/stock_parts/cell/high/bcell = null
+	var/obj/item/weapon/cell/high/bcell = null
 	var/hitcost = 1000
 
-	suicide_act(mob/user)
-		viewers(user) << "<span class='suicide'>[user] is putting the live [name] in \his mouth! It looks like \he's trying to commit suicide.</span>"
-		return (FIRELOSS)
+/obj/item/weapon/melee/baton/suicide_act(mob/user)
+	user.visible_message("<span class='suicide'>[user] is putting the live [name] in \his mouth! It looks like \he's trying to commit suicide.</span>")
+	return (FIRELOSS)
 
 /obj/item/weapon/melee/baton/New()
 	..()
 	update_icon()
 	return
 
-/obj/item/weapon/melee/baton/CheckParts()
-	bcell = locate(/obj/item/weapon/stock_parts/cell) in contents
-	update_icon()
 
 /obj/item/weapon/melee/baton/loaded/New() //this one starts with a cell pre-installed.
 	..()
@@ -59,7 +59,7 @@
 		usr <<"<span class='warning'>The baton does not have a power source installed.</span>"
 
 /obj/item/weapon/melee/baton/attackby(obj/item/weapon/W, mob/user)
-	if(istype(W, /obj/item/weapon/stock_parts/cell))
+	if(istype(W, /obj/item/weapon/cell))
 		if(!bcell)
 			user.drop_item()
 			W.loc = src
@@ -95,38 +95,57 @@
 			user << "<span class='warning'>[src] is out of charge.</span>"
 	add_fingerprint(user)
 
+
 /obj/item/weapon/melee/baton/attack(mob/M, mob/user)
 	if(status && (CLUMSY in user.mutations) && prob(50))
-		user << "<span class='danger'>You accidentally hit yourself with [src]!</span>"
-		user.Weaken(stunforce*3)
+		user << "span class='danger'>You accidentally hit yourself with the [src]!</span>"
+		user.Weaken(30)
 		deductcharge(hitcost)
 		return
+
 
 	if(isrobot(M))
 		..()
 		return
-	if(!isliving(M))
+
+	var/mob/living/carbon/human/H = M
+
+	if(user.a_intent == "hurt")
+		if(!..()) return
+		H.visible_message("<span class='danger'>[M] has been beaten with the [src] by [user]!</span>")
+
+		user.attack_log += "\[[time_stamp()]\]<font color='red'> Beat [H.name] ([H.ckey]) with [src.name]</font>"
+		H.attack_log += "\[[time_stamp()]\]<font color='orange'> Beaten by [user.name] ([user.ckey]) with [src.name]</font>"
+		msg_admin_attack("[user.name] ([user.ckey]) beat [H.name] ([H.ckey]) with [src.name] (<A HREF='?_src_=holder;adminplayerobservecoodjump=1;X=[user.x];Y=[user.y];Z=[user.z]'>JMP</a>)")
+
+		playsound(src.loc, "swing_hit", 50, 1, -1)
+
+	else if(!status)
+		H.visible_message("<span class='warning'>[H] has been prodded with [src] by [user]. Luckily it was off.</span>")
 		return
 
-	var/mob/living/L = M
-
-	if(user.a_intent == "harm")
-		..()
-
-	if(!status)
-		L.visible_message("<span class='warning'>[L] has been prodded with [src] by [user]. Luckily it was off.</span>")
-		return
+	var/stunroll = (rand(1,100))
 
 	if(status)
-		user.lastattacked = L
-		L.lastattacker = user
+		user.lastattacked = H
+		H.lastattacker = user
+		if(user == H) // Attacking yourself can't miss
+			stunroll = 100
+		if(stunroll < 40)
+			H.visible_message("\red <B>[user] misses [H] with \the [src]!")
+			msg_admin_attack("[key_name(user)] attempted to stun [key_name(H)] with the [src].")
+			return
+		H.Stun(stunforce)
+		H.Weaken(stunforce)
+		H.apply_effect(STUTTER, stunforce)
 
-		L.Stun(stunforce)
-		L.Weaken(stunforce)
-		L.apply_effect(STUTTER, stunforce)
-
-		L.visible_message("<span class='danger'>[L] has been stunned with [src] by [user]!</span>")
+		H.visible_message("<span class='danger'>[H] has been stunned with [src] by [user]!</span>")
 		playsound(loc, 'sound/weapons/Egloves.ogg', 50, 1, -1)
+
+		msg_admin_attack("[key_name(user)] stunned [key_name(H)] with the [src].")
+
+		user.attack_log += "\[[time_stamp()]\]<font color='red'> Stunned [H.name] ([H.ckey]) with [src.name]</font>"
+		H.attack_log += "\[[time_stamp()]\]<font color='orange'> Stunned by [user.name] ([user.ckey]) with [src.name]</font>"
 
 		if(isrobot(loc))
 			var/mob/living/silicon/robot/R = loc
@@ -134,12 +153,6 @@
 				R.cell.use(hitcost)
 		else
 			deductcharge(hitcost)
-
-		if(ishuman(L))
-			var/mob/living/carbon/human/H = L
-			H.forcesay(hit_appends)
-
-		add_logs(user, L, "stunned")
 
 /obj/item/weapon/melee/baton/emp_act(severity)
 	if(bcell)

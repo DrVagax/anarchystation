@@ -48,7 +48,7 @@
 
 /obj/machinery/gravity_generator/proc/locatelocalareas()
 	for(var/area/A in range(src,effectiverange))
-		if(istype(A, /area/space))
+		if(A.name == "Space")
 			continue // No (de)gravitizing space.
 		if(A.master && !( A.master in localareas) )
 			localareas += A.master
@@ -113,10 +113,14 @@
 
 
 /obj/machinery/computer/gravity_control_computer/Topic(href, href_list)
-	set background = BACKGROUND_ENABLED
+	set background = 1
+	..()
 
-	if(..())
-		return
+	if ( (get_dist(src, usr) > 1 ))
+		if (!istype(usr, /mob/living/silicon))
+			usr.unset_machine()
+			usr << browse(null, "window=air_alarm")
+			return
 
 	if(href_list["gentoggle"])
 		if(gravity_generator:on)
@@ -124,17 +128,17 @@
 
 			for(var/area/A in gravity_generator:localareas)
 				var/obj/machinery/gravity_generator/G
-				for(G in world)
+				for(G in machines)
 					if((A.master in G.localareas) && (G.on))
 						break
 				if(!G)
-					A.gravitychange(0)
+					A.gravitychange(0,A)
 
 
 		else
 			for(var/area/A in gravity_generator:localareas)
 				gravity_generator:on = 1
-				A.gravitychange(1)
+				A.gravitychange(1,A)
 
 		src.updateUsrDialog()
 		return

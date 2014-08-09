@@ -1,8 +1,6 @@
 
 //########################## CONTRABAND ;3333333333333333333 -Agouri ###################################################
 
-#define NUM_OF_POSTER_DESIGNS 21
-
 /obj/item/weapon/contraband
 	name = "contraband item"
 	desc = "You probably shouldn't be holding this."
@@ -12,147 +10,46 @@
 
 /obj/item/weapon/contraband/poster
 	name = "rolled-up poster"
-	desc = "The poster comes with its own automatic adhesive mechanism, for easy pinning to any vertical surface. Its vulgar themes have marked it as Contraband aboard Nanotrasen© Space Facilities."
+	desc = "The poster comes with its own automatic adhesive mechanism, for easy pinning to any vertical surface."
 	icon_state = "rolled_poster"
 	var/serial_number = 0
-	var/obj/structure/sign/poster/resulting_poster = null //The poster that will be created is initialised and stored through contraband/poster's constructor
 
 
-/obj/item/weapon/contraband/poster/New(turf/loc, given_serial = 0)
+/obj/item/weapon/contraband/poster/New(turf/loc, var/given_serial = 0)
 	if(given_serial == 0)
-		serial_number = rand(1, NUM_OF_POSTER_DESIGNS)
-		resulting_poster = new(serial_number)
+		serial_number = rand(1, poster_designs.len)
 	else
 		serial_number = given_serial
-		//We don't give it a resulting_poster because if we called it with a given_serial it means that we're rerolling an already used poster.
 	name += " - No. [serial_number]"
 	..(loc)
-
-
-/*/obj/item/weapon/contraband/poster/attack(mob/M as mob, mob/user as mob)
-	src.add_fingerprint(user)
-	if(resulting_poster)
-		resulting_poster.add_fingerprint(user)
-	..()*/
-
-/*/obj/item/weapon/contraband/poster/attack(atom/A, mob/user as mob) //This shit is handled through the wall's attackby()
-	if(istype(A, /turf/simulated/wall))
-		if(resulting_poster == null)
-			return
-		else
-			var/turf/simulated/wall/W = A
-			var/check = 0
-			var/stuff_on_wall = 0
-			for(var/obj/O in W.contents) //Let's see if it already has a poster on it or too much stuff
-				if(istype(O,/obj/structure/sign/poster))
-					check = 1
-					break
-				stuff_on_wall++
-				if(stuff_on_wall == 3)
-					check = 1
-					break
-
-			if(check)
-				user << "<span class='notice'>The wall is far too cluttered to place a poster!</span>"
-				return
-
-			resulting_poster.loc = W //Looks like it's uncluttered enough. Place the poster
-			W.contents += resulting_poster
-
-			del(src)*/
-
-
 
 //############################## THE ACTUAL DECALS ###########################
 
 obj/structure/sign/poster
 	name = "poster"
-	desc = "A large piece of space-resistant printed paper. It's considered contraband."
+	desc = "A large piece of space-resistant printed paper. "
 	icon = 'icons/obj/contraband.dmi'
 	anchored = 1
 	var/serial_number	//Will hold the value of src.loc if nobody initialises it
 	var/ruined = 0
 
 
-obj/structure/sign/poster/New(serial)
+obj/structure/sign/poster/New(var/serial)
+
 	serial_number = serial
 
 	if(serial_number == loc)
-		serial_number = rand(1, NUM_OF_POSTER_DESIGNS)	//This is for the mappers that want individual posters without having to use rolled posters.
+		serial_number = rand(1, poster_designs.len)	//This is for the mappers that want individual posters without having to use rolled posters.
 
-	icon_state = "poster[serial_number]"
-
-	switch(serial_number)
-		if(1)
-			name += " - Free Tonto"
-			desc += " A framed shred of a much larger flag, colors bled together and faded from age."
-		if(2)
-			name += " - Atmosia Declaration of Independence"
-			desc += " A relic of a failed rebellion"
-		if(3)
-			name += " - Fun Police"
-			desc += " A poster condemning the station's security forces."
-		if(4)
-			name += " - Lusty Xeno"
-			desc += " A heretical poster depicting the titular star of an equally heretical book."
-		if(5)
-			name += " - Syndicate Recruitment Poster"
-			desc += " See the galaxy! Shatter corrupt megacorporations! Join today!"
-		if(6)
-			name += " - Clown"
-			desc += " Honk."
-		if(7)
-			name += " - Smoke"
-			desc += " A poster depicting a carton of cigarettes."
-		if(8)
-			name += " - Grey Tide"
-			desc += " A rebellious poster symbolizing assistant solidarity."
-		if(9)
-			name += " - Missing Gloves"
-			desc += " This poster is about the uproar that followed Nanotrasen's financial cuts towards insulated-glove purchases."
-		if(10)
-			name += " - Hacking Guide"
-			desc += " This poster details the internal workings of the common Nanotrasen airlock."
-		if(11)
-			name += " - RIP Badger"
-			desc += " This poster commemorates the day hundreds of badgers worldwide were sacrificed for the greater good."
-		if(12)
-			name += " - Ambrosia Vulgaris"
-			desc += " This poster is lookin' pretty trippy man."
-		if(13)
-			name += " - Donut Corp."
-			desc += " This poster is an advertisement for Donut Corp."
-		if(14)
-			name += " - EAT"
-			desc += " This poster is advising that you eat."
-		if(15)
-			name += " - Tools"
-			desc += " This poster is an advertisement for tools."
-		if(16)
-			name += " - Power"
-			desc += " A poster all about power."
-		if(17)
-			name += " - Power to the People"
-			desc += " Screw those EDF guys!"
-		if(18)
-			name += " - Communist state"
-			desc += " All hail the Communist party!"
-		if(19)
-			name += " - Lamarr"
-			desc += " This poster depicts Lamarr. Probably made by the research director."
-		if(20)
-			name += " - Borg Fancy"
-			desc += " Being fancy can be for any borg, Just need a suit."
-		if(21)
-			name += " - Borg Fancy v2"
-			desc += " Borg Fancy, Now only taking the most fancy."
-		else
-			name = "This shit just bugged. Report it to Agouri - polyxenitopalidou@gmail.com"
-			desc = "Why are you still here?"
+	var/designtype = poster_designs[serial_number]
+	var/datum/poster/design=new designtype
+	name += " - [design.name]"
+	desc += " [design.desc]"
+	icon_state = design.icon_state // poster[serial_number]
 	..()
 
-obj/structure/sign/poster/attackby(obj/item/I, mob/user)
-	if(istype(I, /obj/item/weapon/wirecutters))
+obj/structure/sign/poster/attackby(obj/item/weapon/W as obj, mob/user as mob)
+	if(istype(W, /obj/item/weapon/wirecutters))
 		playsound(loc, 'sound/items/Wirecutter.ogg', 100, 1)
 		if(ruined)
 			user << "<span class='notice'>You remove the remnants of the poster.</span>"
@@ -163,7 +60,7 @@ obj/structure/sign/poster/attackby(obj/item/I, mob/user)
 		return
 
 
-/obj/structure/sign/poster/attack_hand(mob/user)
+/obj/structure/sign/poster/attack_hand(mob/user as mob)
 	if(ruined)
 		return
 	var/temp_loc = user.loc
@@ -181,16 +78,19 @@ obj/structure/sign/poster/attackby(obj/item/I, mob/user)
 		if("No")
 			return
 
-/obj/structure/sign/poster/proc/roll_and_drop(turf/location)
+/obj/structure/sign/poster/proc/roll_and_drop(turf/newloc)
 	var/obj/item/weapon/contraband/poster/P = new(src, serial_number)
-	P.resulting_poster = src
-	P.loc = location
-	loc = P
+	P.loc = newloc
+	src.loc = P
+	del(src)
 
 
-//seperated to reduce code duplication. Moved here for ease of reference and to unclutter r_wall/attackby()
-/turf/simulated/wall/proc/place_poster(obj/item/weapon/contraband/poster/P, mob/user)
-	if(!P.resulting_poster)	return
+//separated to reduce code duplication. Moved here for ease of reference and to unclutter r_wall/attackby()
+/turf/simulated/wall/proc/place_poster(var/obj/item/weapon/contraband/poster/P, var/mob/user)
+
+	if(!istype(src,/turf/simulated/wall))
+		user << "\red You can't place this here!"
+		return
 
 	var/stuff_on_wall = 0
 	for(var/obj/O in contents) //Let's see if it already has a poster on it or too much stuff
@@ -202,10 +102,10 @@ obj/structure/sign/poster/attackby(obj/item/I, mob/user)
 			user << "<span class='notice'>The wall is far too cluttered to place a poster!</span>"
 			return
 
-	user << "<span class='notice'>You start placing the poster on the wall...</span>"	//Looks like it's uncluttered enough. Place the poster.
+	user << "<span class='notice'>You start placing the poster on the wall...</span>" //Looks like it's uncluttered enough. Place the poster.
 
 	//declaring D because otherwise if P gets 'deconstructed' we lose our reference to P.resulting_poster
-	var/obj/structure/sign/poster/D = P.resulting_poster
+	var/obj/structure/sign/poster/D = new(P.serial_number)
 
 	var/temp_loc = user.loc
 	flick("poster_being_set",D)
@@ -216,8 +116,15 @@ obj/structure/sign/poster/attackby(obj/item/I, mob/user)
 	sleep(17)
 	if(!D)	return
 
-	if(istype(src,/turf/simulated/wall) && user && user.loc == temp_loc)	//Let's check if everything is still there
+	if(istype(src,/turf/simulated/wall) && user && user.loc == temp_loc)//Let's check if everything is still there
 		user << "<span class='notice'>You place the poster!</span>"
 	else
 		D.roll_and_drop(temp_loc)
 	return
+
+/datum/poster
+	// Name suffix. Poster - [name]
+	var/name=""
+	// Description suffix
+	var/desc=""
+	var/icon_state=""

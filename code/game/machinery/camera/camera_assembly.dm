@@ -6,11 +6,10 @@
 	w_class = 2
 	anchored = 0
 
-	m_amt = 700
-	g_amt = 300
+	matter = list("metal" = 700,"glass" = 300)
 
 	//	Motion, EMP-Proof, X-Ray
-	var/list/obj/item/possible_upgrades = list(/obj/item/device/assembly/prox_sensor, /obj/item/stack/sheet/mineral/plasma, /obj/item/weapon/reagent_containers/food/snacks/grown/carrot)
+	var/list/obj/item/possible_upgrades = list(/obj/item/device/assembly/prox_sensor, /obj/item/stack/sheet/mineral/phoron, /obj/item/weapon/reagent_containers/food/snacks/grown/carrot)
 	var/list/upgrades = list()
 	var/state = 0
 	var/busy = 0
@@ -28,7 +27,7 @@
 
 		if(0)
 			// State 0
-			if(istype(W, /obj/item/weapon/wrench) && isturf(src.loc))
+			if(iswrench(W) && isturf(src.loc))
 				playsound(src.loc, 'sound/items/Ratchet.ogg', 50, 1)
 				user << "You wrench the assembly into place."
 				anchored = 1
@@ -39,14 +38,14 @@
 
 		if(1)
 			// State 1
-			if(istype(W, /obj/item/weapon/weldingtool))
+			if(iswelder(W))
 				if(weld(W, user))
 					user << "You weld the assembly securely into place."
 					anchored = 1
 					state = 2
 				return
 
-			else if(istype(W, /obj/item/weapon/wrench))
+			else if(iswrench(W))
 				playsound(src.loc, 'sound/items/Ratchet.ogg', 50, 1)
 				user << "You unattach the assembly from it's place."
 				anchored = 0
@@ -56,14 +55,14 @@
 
 		if(2)
 			// State 2
-			if(istype(W, /obj/item/stack/cable_coil))
-				var/obj/item/stack/cable_coil/C = W
+			if(iscoil(W))
+				var/obj/item/weapon/cable_coil/C = W
 				if(C.use(2))
 					user << "You add wires to the assembly."
 					state = 3
 				return
 
-			else if(istype(W, /obj/item/weapon/weldingtool))
+			else if(iswelder(W))
 
 				if(weld(W, user))
 					user << "You unweld the assembly from it's place."
@@ -74,7 +73,7 @@
 
 		if(3)
 			// State 3
-			if(istype(W, /obj/item/weapon/screwdriver))
+			if(isscrewdriver(W))
 				playsound(src.loc, 'sound/items/Screwdriver.ogg', 50, 1)
 
 				var/input = strip_html(input(usr, "Which networks would you like to connect this camera to? Seperate networks with a comma. No Spaces!\nFor example: SS13,Security,Secret ", "Set Network", "SS13"))
@@ -87,6 +86,9 @@
 					usr << "No network found please hang up and try your call again."
 					return
 
+				var/temptag = "[get_area(src)] ([rand(1, 999)])"
+				input = strip_html(input(usr, "How would you like to name the camera?", "Set Camera Name", temptag))
+
 				state = 4
 				var/obj/machinery/camera/C = new(src.loc)
 				src.loc = C
@@ -94,9 +96,12 @@
 
 				C.auto_turn()
 
-				C.network = tempnetwork
-				var/area/A = get_area_master(src)
-				C.c_tag = "[A.name] ([rand(1, 999)]"
+				C.network = uniquelist(tempnetwork)
+				tempnetwork = difflist(C.network,RESTRICTED_CAMERA_NETWORKS)
+				if(!tempnetwork.len)//Camera isn't on any open network - remove its chunk from AI visibility.
+					cameranet.removeCamera(C)
+
+				C.c_tag = input
 
 				for(var/i = 5; i >= 0; i -= 1)
 					var/direct = input(user, "Direction?", "Assembling Camera", null) in list("LEAVE IT", "NORTH", "EAST", "SOUTH", "WEST" )
@@ -108,9 +113,9 @@
 							break
 				return
 
-			else if(istype(W, /obj/item/weapon/wirecutters))
+			else if(iswirecutter(W))
 
-				new/obj/item/stack/cable_coil(get_turf(src), 2)
+				new/obj/item/weapon/cable_coil(get_turf(src), 2)
 				playsound(src.loc, 'sound/items/Wirecutter.ogg', 50, 1)
 				user << "You cut the wires from the circuits."
 				state = 2
@@ -120,12 +125,12 @@
 	if(is_type_in_list(W, possible_upgrades) && !is_type_in_list(W, upgrades)) // Is a possible upgrade and isn't in the camera already.
 		user << "You attach the [W] into the assembly inner circuits."
 		upgrades += W
-		user.drop_item()
+		user.drop_item(W)
 		W.loc = src
 		return
 
 	// Taking out upgrades
-	else if(istype(W, /obj/item/weapon/crowbar) && upgrades.len)
+	else if(iscrowbar(W) && upgrades.len)
 		var/obj/U = locate(/obj) in upgrades
 		if(U)
 			user << "You unattach an upgrade from the assembly."

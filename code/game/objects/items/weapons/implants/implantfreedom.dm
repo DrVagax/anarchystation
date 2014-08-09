@@ -9,8 +9,8 @@
 
 
 	New()
-		src.activation_emote = "shrug"
-		src.uses = 4
+		src.activation_emote = pick("blink", "blink_r", "eyebrow", "chuckle", "twitch_s", "frown", "nod", "blush", "giggle", "grin", "groan", "shrug", "smile", "pale", "sniff", "whimper", "wink")
+		src.uses = rand(1, 5)
 		..()
 		return
 
@@ -23,7 +23,7 @@
 			if (source.handcuffed)
 				var/obj/item/weapon/W = source.handcuffed
 				source.handcuffed = null
-				source.update_inv_handcuffed(0)
+				source.update_inv_handcuffed()
 				if (source.client)
 					source.client.screen -= W
 				if (W)
@@ -34,7 +34,7 @@
 			if (source.legcuffed)
 				var/obj/item/weapon/W = source.legcuffed
 				source.legcuffed = null
-				source.update_inv_legcuffed(0)
+				source.update_inv_legcuffed()
 				if (source.client)
 					source.client.screen -= W
 				if (W)

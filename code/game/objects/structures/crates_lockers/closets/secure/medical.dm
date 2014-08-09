@@ -1,5 +1,5 @@
 /obj/structure/closet/secure_closet/medical1
-	name = "medicine closet"
+	name = "Medicine Closet"
 	desc = "Filled with medical junk."
 	icon_state = "medical1"
 	icon_closed = "medical"
@@ -13,6 +13,7 @@
 	New()
 		..()
 		sleep(2)
+		new /obj/item/weapon/storage/box/autoinjectors(src)
 		new /obj/item/weapon/storage/box/syringes(src)
 		new /obj/item/weapon/reagent_containers/dropper(src)
 		new /obj/item/weapon/reagent_containers/dropper(src)
@@ -27,7 +28,7 @@
 
 
 /obj/structure/closet/secure_closet/medical2
-	name = "anesthetic closet"
+	name = "Anesthetic"
 	desc = "Used to knock people out."
 	icon_state = "medical1"
 	icon_closed = "medical"
@@ -52,7 +53,7 @@
 
 
 /obj/structure/closet/secure_closet/medical3
-	name = "medical doctor's locker"
+	name = "Medical Doctor's Locker"
 	req_access = list(access_surgery)
 	icon_state = "securemed1"
 	icon_closed = "securemed"
@@ -73,29 +74,37 @@
 		switch(pick("blue", "green", "purple"))
 			if ("blue")
 				new /obj/item/clothing/under/rank/medical/blue(src)
+				new /obj/item/clothing/head/surgery/blue(src)
 			if ("green")
 				new /obj/item/clothing/under/rank/medical/green(src)
+				new /obj/item/clothing/head/surgery/green(src)
 			if ("purple")
 				new /obj/item/clothing/under/rank/medical/purple(src)
+				new /obj/item/clothing/head/surgery/purple(src)
 		switch(pick("blue", "green", "purple"))
 			if ("blue")
 				new /obj/item/clothing/under/rank/medical/blue(src)
+				new /obj/item/clothing/head/surgery/blue(src)
 			if ("green")
 				new /obj/item/clothing/under/rank/medical/green(src)
+				new /obj/item/clothing/head/surgery/green(src)
 			if ("purple")
 				new /obj/item/clothing/under/rank/medical/purple(src)
+				new /obj/item/clothing/head/surgery/purple(src)
 		new /obj/item/clothing/under/rank/medical(src)
-		new /obj/item/clothing/suit/labcoat(src)
+		new /obj/item/clothing/under/rank/nurse(src)
+		new /obj/item/clothing/under/rank/orderly(src)
+		new /obj/item/clothing/suit/storage/labcoat(src)
+		new /obj/item/clothing/suit/storage/fr_jacket(src)
 		new /obj/item/clothing/shoes/white(src)
 //		new /obj/item/weapon/cartridge/medical(src)
 		new /obj/item/device/radio/headset/headset_med(src)
-		new /obj/item/weapon/storage/belt/medical(src)
 		return
 
 
 
 /obj/structure/closet/secure_closet/CMO
-	name = "chief medical officer's locker"
+	name = "Chief Medical Officer's Locker"
 	req_access = list(access_cmo)
 	icon_state = "cmosecure1"
 	icon_closed = "cmosecure"
@@ -113,13 +122,23 @@
 			new /obj/item/weapon/storage/backpack/satchel_med(src)
 		new /obj/item/clothing/suit/bio_suit/cmo(src)
 		new /obj/item/clothing/head/bio_hood/cmo(src)
+		new /obj/item/clothing/shoes/white(src)
+		switch(pick("blue", "green", "purple"))
+			if ("blue")
+				new /obj/item/clothing/under/rank/medical/blue(src)
+				new /obj/item/clothing/head/surgery/blue(src)
+			if ("green")
+				new /obj/item/clothing/under/rank/medical/green(src)
+				new /obj/item/clothing/head/surgery/green(src)
+			if ("purple")
+				new /obj/item/clothing/under/rank/medical/purple(src)
+				new /obj/item/clothing/head/surgery/purple(src)
 		new /obj/item/clothing/under/rank/chief_medical_officer(src)
-		new /obj/item/clothing/suit/labcoat/cmo(src)
+		new /obj/item/clothing/suit/storage/labcoat/cmo(src)
 		new /obj/item/weapon/cartridge/cmo(src)
 		new /obj/item/clothing/gloves/latex(src)
 		new /obj/item/clothing/shoes/brown	(src)
 		new /obj/item/device/radio/headset/heads/cmo(src)
-		new /obj/item/weapon/storage/belt/medical(src)
 		new /obj/item/device/flash(src)
 		new /obj/item/weapon/reagent_containers/hypospray(src)
 		return
@@ -127,7 +146,7 @@
 
 
 /obj/structure/closet/secure_closet/animal
-	name = "animal control"
+	name = "Animal Control"
 	req_access = list(access_surgery)
 
 
@@ -143,7 +162,7 @@
 
 
 /obj/structure/closet/secure_closet/chemical
-	name = "chemical closet"
+	name = "Chemical Closet"
 	desc = "Store dangerous chemicals in here."
 	icon_state = "medical1"
 	icon_closed = "medical"
@@ -162,7 +181,7 @@
 		return
 
 /obj/structure/closet/secure_closet/medical_wall
-	name = "first aid closet"
+	name = "First Aid Closet"
 	desc = "It's a secure wall-mounted storage unit for first aid supplies."
 	icon_state = "medical_wall_locked"
 	icon_closed = "medical_wall_unlocked"

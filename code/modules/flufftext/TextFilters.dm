@@ -62,7 +62,7 @@ proc/NewStutter(phrase,stunned)
 proc/Stagger(mob/M,d) //Technically not a filter, but it relates to drunkenness.
 	step(M, pick(d,turn(d,90),turn(d,-90)))
 
-proc/Ellipsis(original_msg, chance = 50, keep_words)
+proc/Ellipsis(original_msg, chance = 50)
 	if(chance <= 0) return "..."
 	if(chance >= 100) return original_msg
 
@@ -75,9 +75,8 @@ proc/Ellipsis(original_msg, chance = 50, keep_words)
 	for(var/w in words)
 		if(prob(chance))
 			new_words += "..."
-			if(!keep_words)
-				continue
-		new_words += w
+		else
+			new_words += w
 
 	new_msg = list2text(new_words," ")
 

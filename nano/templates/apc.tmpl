@@ -61,10 +61,11 @@
 				Power cell removed.
 			</div>
 		{{else}}
+			
+			{{:~displayBar(powerCellStatus, 0, 100, powerCellStatus >= 50 ? 'good' : powerCellStatus >= 25 ? 'average' : 'bad')}}
 			<div class="itemContent" style="width: 60px">		
 				{{:~round(powerCellStatus*10)/10}}%
 			</div>	
-			{{:~displayBar(powerCellStatus, 0, 100, powerCellStatus >= 50 ? 'good' : powerCellStatus >= 25 ? 'average' : 'bad')}}
 		{{/if}}
 	</div>
 
@@ -157,7 +158,6 @@
 		</div>
 	</div>
 
-
 	{{if siliconUser}}
 		<h3>System Overrides</h3>
 
@@ -165,12 +165,8 @@
 			{{:~link('Overload Lighting Circuit', 'lightbulb', {'overload' : 1})}}
 			{{if malfStatus == 1}}
 				{{:~link('Override Programming', 'script', {'malfhack' : 1})}}
-			{{else malfStatus == 2}}
-				{{:~link('Shunt Core Processes', 'arrowreturn-1-s', {'occupyapc' : 1})}}
-			{{else malfStatus == 3}}
-				{{:~link('Return to Main Core', 'arrowreturn-1-w', {'deoccupyapc' : 1})}}
-			{{else malfStatus == 4}}
-				{{:~link('Shunt Core Processes', 'arrowreturn-1-s', {'occupyapc' : 1}, 'linkOff')}}
+			{{else malfStatus > 1}}
+				<div class='notice'>APC Hacked</div>
 			{{/if}}
 		</div>
 	{{/if}}

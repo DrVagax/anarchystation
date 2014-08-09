@@ -4,19 +4,18 @@
 	icon_state = "electropack0"
 	item_state = "electropack"
 	frequency = 1449
-	flags = CONDUCT
+	flags = FPRINT | CONDUCT | TABLEPASS
 	slot_flags = SLOT_BACK
 	w_class = 5.0
-	g_amt = 2500
-	m_amt = 10000
+
+	matter = list("metal" = 10000,"glass" = 2500)
+
 	var/code = 2
 
-/obj/item/device/radio/electropack/attack_hand(mob/user)
-	if(iscarbon(user))
-		var/mob/living/carbon/C = user
-		if(src == C.back)
-			user << "<span class='notice'>You need help taking this off!</span>"
-			return
+/obj/item/device/radio/electropack/attack_hand(mob/user as mob)
+	if(src == user.back)
+		user << "<span class='notice'>You need help taking this off!</span>"
+		return
 	..()
 
 /obj/item/device/radio/electropack/attackby(obj/item/weapon/W as obj, mob/user as mob)
@@ -28,22 +27,18 @@
 		var/obj/item/assembly/shock_kit/A = new /obj/item/assembly/shock_kit( user )
 		A.icon = 'icons/obj/assemblies.dmi'
 
-		if(!user.unEquip(W))
-			user << "<span class='notice'>\the [W] is stuck to your hand, you cannot attach it to \the [src]!</span>"
-			return
+		user.drop_from_inventory(W)
 		W.loc = A
 		W.master = A
 		A.part1 = W
 
-		user.unEquip(src)
+		user.drop_from_inventory(src)
 		loc = A
 		master = A
 		A.part2 = src
 
 		user.put_in_hands(A)
 		A.add_fingerprint(user)
-		if(src.flags & NODROP)
-			A.flags |= NODROP
 
 /obj/item/device/radio/electropack/Topic(href, href_list)
 	//..()
@@ -102,9 +97,9 @@
 		s.set_up(3, 1, M)
 		s.start()
 
-		M.Weaken(5)
+		M.Weaken(10)
 
-	if(master && !isWireCut(WIRE_SIGNAL))
+	if(master && wires & 1)
 		master.receive_signal()
 	return
 

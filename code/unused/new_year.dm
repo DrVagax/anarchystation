@@ -17,7 +17,7 @@
 	W.loc = src
 	if (user.client)
 		user.client.screen -= W
-	user.unEquip(W)
+	user.u_equip(W)
 	var/const/bottom_right_x = 115.0
 	var/const/bottom_right_y = 150.0
 	var/const/top_left_x = 15.0
@@ -53,8 +53,8 @@
 	var/det_time = 100.0
 	w_class = 2.0
 	item_state = "flashbang"
-	throw_speed = 3
-	throw_range = 7
+	throw_speed = 4
+	throw_range = 20
 	flags = FPRINT | TABLEPASS | CONDUCT
 	slot_flags = SLOT_BELT
 
@@ -95,7 +95,7 @@
 	playsound(src.loc, 'sound/effects/bang.ogg', 25, 1)
 	var/turf/T = get_turf(src)
 	if(T)
-		var/datum/effect/effect/system/harmless_smoke_spread/smoke = new
+		var/datum/effect/effect/system/smoke_spread/smoke = new
 		smoke.set_up(3, 0, src.loc)
 		smoke.attach(src)
 		smoke.start()

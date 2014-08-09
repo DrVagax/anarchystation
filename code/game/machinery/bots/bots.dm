@@ -56,7 +56,7 @@
 	src.visible_message("\red <B>[user] has slashed [src]!</B>")
 	playsound(src.loc, 'sound/weapons/slice.ogg', 25, 1, -1)
 	if(prob(10))
-		new /obj/effect/decal/cleanable/oil(src.loc)
+		new /obj/effect/decal/cleanable/blood/oil(src.loc)
 	healthcheck()
 
 
@@ -64,9 +64,9 @@
 	if(M.melee_damage_upper == 0)	return
 	src.health -= M.melee_damage_upper
 	src.visible_message("\red <B>[M] has [M.attacktext] [src]!</B>")
-	add_logs(M, src, "attacked", admin=0)
+	M.attack_log += text("\[[time_stamp()]\] <font color='red'>attacked [src.name]</font>")
 	if(prob(10))
-		new /obj/effect/decal/cleanable/oil(src.loc)
+		new /obj/effect/decal/cleanable/blood/oil(src.loc)
 	healthcheck()
 
 

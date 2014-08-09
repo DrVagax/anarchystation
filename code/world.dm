@@ -3,105 +3,57 @@
 	turf = /turf/space
 	area = /area
 	view = "15x15"
-	cache_lifespan = 1
+	cache_lifespan = 0	//stops player uploaded stuff from being kept in the rsc past the current session
 
-#define RECOMMENDED_VERSION 495
 
+
+#define RECOMMENDED_VERSION 501
 /world/New()
-#if (PRELOAD_RSC == 0)
-	external_rsc_urls = file2list("config/external_rsc_urls.txt","\n")
-	var/i=1
-	while(i<=external_rsc_urls.len)
-		if(external_rsc_urls[i])
-			i++
-		else
-			external_rsc_urls.Cut(i,i+1)
-#endif
 	//logs
 	var/date_string = time2text(world.realtime, "YYYY/MM-Month/DD-Day")
-//	if(revdata && istext(revdata.revision) && length(revdata.revision)>7)
-//		log = file("data/logs/runtime/[copytext(revdata.revision,1,8)].log")
-//	else
-//		log = file("data/logs/runtime/[time2text(world.realtime,"YYYY-MM")].log")		//funtimelog
 	href_logfile = file("data/logs/[date_string] hrefs.htm")
 	diary = file("data/logs/[date_string].log")
 	diaryofmeanpeople = file("data/logs/[date_string] Attack.log")
-	diary << "\n\nStarting up. [time2text(world.timeofday, "hh:mm.ss")]\n---------------------"
-	diaryofmeanpeople << "\n\nStarting up. [time2text(world.timeofday, "hh:mm.ss")]\n---------------------"
+	diary << "[log_end]\n[log_end]\nStarting up. [time2text(world.timeofday, "hh:mm.ss")][log_end]\n---------------------[log_end]"
+	diaryofmeanpeople << "[log_end]\n[log_end]\nStarting up. [time2text(world.timeofday, "hh:mm.ss")][log_end]\n---------------------[log_end]"
 	changelog_hash = md5('html/changelog.html')					//used for telling if the changelog has changed recently
 
 	if(byond_version < RECOMMENDED_VERSION)
-		world.log << "Your server's BYOND version does not meet the recommended requirements for /tg/station code. Please update BYOND."
-
-	make_datum_references_lists()	//initialises global lists for referencing frequently used datums (so that we only ever do it once)
+		world.log << "Your server's byond version does not meet the recommended requirements for this server. Please update BYOND"
 
 	load_configuration()
-	load_mode()
-	load_motd()
-	load_admins()
-	LoadBansjob()
-	if(config.usewhitelist)
-		load_whitelist()
-	jobban_loadbanfile()
-	appearance_loadbanfile()
-	jobban_updatelegacybans()
-	LoadBans()
-	investigate_reset()
 
 	if(config && config.server_name != null && config.server_suffix && world.port > 0)
 		// dumb and hardcoded but I don't care~
 		config.server_name += " #[(world.port % 1000) / 100]"
 
-	timezoneOffset = text2num(time2text(0,"hh")) * 36000
+	if(config && config.log_runtime)
+		log = file("data/logs/runtime/[time2text(world.realtime,"YYYY-MM-DD-(hh-mm-ss)")]-runtime.log")
 
-	makepowernets()
-
-	sun = new /datum/sun()
-	radio_controller = new /datum/controller/radio()
-	data_core = new /obj/effect/datacore()
-	paiController = new /datum/paiController()
-
-	if(config.sql_enabled)
-		if(!setup_database_connection())
-			world.log << "Your server failed to establish a connection with the database."
-		else
-			world.log << "Database connection established."
-
-	plmaster = new /obj/effect/overlay()
-	plmaster.icon = 'icons/effects/tile_effects.dmi'
-	plmaster.icon_state = "plasma"
-	plmaster.layer = FLY_LAYER
-	plmaster.mouse_opacity = 0
-
-	slmaster = new /obj/effect/overlay()
-	slmaster.icon = 'icons/effects/tile_effects.dmi'
-	slmaster.icon_state = "sleeping_agent"
-	slmaster.layer = FLY_LAYER
-	slmaster.mouse_opacity = 0
-
-	master_controller = new /datum/controller/game_controller()
-	spawn(-1)
-		master_controller.setup()
-		lighting_controller.Initialize()
+	callHook("startup")
+	//Emergency Fix
+	load_mods()
+	//end-emergency fix
 
 	src.update_status()
 
-	process_teleport_locs()			//Sets up the wizard teleport locations
-	process_ghost_teleport_locs()	//Sets up ghost teleport locations.
+	. = ..()
+
 	sleep_offline = 1
 
-	#ifdef MAP_NAME
-	map_name = "[MAP_NAME]"
-	#else
-	map_name = "Unknown"
-	#endif
+	master_controller = new /datum/controller/game_controller()
+	spawn(1)
+		master_controller.setup()
 
 	spawn(3000)		//so we aren't adding to the round-start lag
+		if(config.ToRban)
+			ToRban_autoupdate()
 		if(config.kick_inactive)
 			KickInactiveClients()
-	return
 
 #undef RECOMMENDED_VERSION
+
+	return
 
 //world/Topic(href, href_list[])
 //		world << "Received a Topic() call!"
@@ -114,13 +66,15 @@
 //		world << "End of Topic() call."
 //		..()
 
+var/world_topic_spam_protect_ip = "0.0.0.0"
+var/world_topic_spam_protect_time = world.timeofday
 
 /world/Topic(T, addr, master, key)
-	diary << "TOPIC: \"[T]\", from:[addr], master:[master], key:[key]"
+	diary << "TOPIC: \"[T]\", from:[addr], master:[master], key:[key][log_end]"
 
 	if (T == "ping")
 		var/x = 1
-		for (var/client/C in clients)
+		for (var/client/C)
 			x++
 		return x
 
@@ -133,7 +87,6 @@
 
 	else if (T == "status")
 		var/list/s = list()
-		// Please add new status indexes under the old ones, for the server banner (until that gets reworked)
 		s["version"] = game_version
 		s["mode"] = master_mode
 		s["respawn"] = config ? abandon_allowed : 0
@@ -141,45 +94,107 @@
 		s["vote"] = config.allow_vote_mode
 		s["ai"] = config.allow_ai
 		s["host"] = host ? host : null
-
+		s["players"] = list()
+		s["stationtime"] = worldtime2text()
+		var/n = 0
 		var/admins = 0
-		for(var/client/C in admins)
+
+		for(var/client/C in clients)
 			if(C.holder)
 				if(C.holder.fakekey)
 					continue	//so stealthmins aren't revealed by the hub
 				admins++
+			s["player[n]"] = C.key
+			n++
+		s["players"] = n
 
-		s["active_players"] = get_active_player_count()
-		s["players"] = clients.len
-		s["revision"] = revdata.revision
-		s["revision_date"] = revdata.date
 		s["admins"] = admins
-		s["gamestate"] = 1
-		if(ticker)
-			s["gamestate"] = ticker.current_state
-		s["map_name"] = map_name ? map_name : "Unknown"
 
 		return list2params(s)
 
+	else if(copytext(T,1,9) == "adminmsg")
+		/*
+			We got an adminmsg from IRC bot lets split the input then validate the input.
+			expected output:
+				1. adminmsg = ckey of person the message is to
+				2. msg = contents of message, parems2list requires
+				3. validatationkey = the key the bot has, it should match the gameservers commspassword in it's configuration.
+				4. sender = the ircnick that send the message.
+		*/
+
+
+		var/input[] = params2list(T)
+		if(input["key"] != config.comms_password)
+			if(world_topic_spam_protect_ip == addr && abs(world_topic_spam_protect_time - world.time) < 50)
+
+				spawn(50)
+					world_topic_spam_protect_time = world.time
+					return "Bad Key (Throttled)"
+
+			world_topic_spam_protect_time = world.time
+			world_topic_spam_protect_ip = addr
+
+			return "Bad Key"
+
+		var/client/C
+
+		for(var/client/K in clients)
+			if(K.ckey == input["adminmsg"])
+				C = K
+				break
+		if(!C)
+			return "No client with that name on server"
+
+		var/message =	"<font color='red'>IRC-Admin PM from <b><a href='?irc_msg=1'>[C.holder ? "IRC-" + input["sender"] : "Administrator"]</a></b>: [input["msg"]]</font>"
+		var/amessage =  "<font color='blue'>IRC-Admin PM from <a href='?irc_msg=1'>IRC-[input["sender"]]</a> to <b>[key_name(C)]</b> : [input["msg"]]</font>"
+
+		C.received_irc_pm = world.time
+		C.irc_admin = input["sender"]
+
+		C << 'sound/effects/adminhelp.ogg'
+		C << message
+
+
+		for(var/client/A in admins)
+			if(A != C)
+				A << amessage
+
+		return "Message Successful"
+
+	else if(copytext(T,1,6) == "notes")
+		/*
+			We got a request for notes from the IRC Bot
+			expected output:
+				1. notes = ckey of person the notes lookup is for
+				2. validationkey = the key the bot has, it should match the gameservers commspassword in it's configuration.
+		*/
+		var/input[] = params2list(T)
+		if(input["key"] != config.comms_password)
+			if(world_topic_spam_protect_ip == addr && abs(world_topic_spam_protect_time - world.time) < 50)
+
+				spawn(50)
+					world_topic_spam_protect_time = world.time
+					return "Bad Key (Throttled)"
+
+			world_topic_spam_protect_time = world.time
+			world_topic_spam_protect_ip = addr
+			return "Bad Key"
+
+		return show_player_info_irc(input["notes"])
+
+
+
+
 
 /world/Reboot(var/reason)
-#ifdef dellogging
-	var/log = file("data/logs/del.log")
-	log << time2text(world.realtime)
-	//mergeSort(del_counter, /proc/cmp_descending_associative)	//still testing the sorting procs. Use notepad++ to sort the resultant logfile for now.
-	for(var/index in del_counter)
-		var/count = del_counter[index]
-		if(count > 10)
-			log << "#[count]\t[index]"
-#endif
-	spawn(0)
+	/*spawn(0)
 		world << sound(pick('sound/AI/newroundsexy.ogg','sound/misc/apcdestroyed.ogg','sound/misc/bangindonk.ogg')) // random end sounds!! - LastyBatsy
-
+		*/
 	for(var/client/C in clients)
 		if(config.server)	//if you set a server location in config.txt, it sends you there instead of trying to reconnect to the same world address. -- NeoFite
 			C << link("byond://[config.server]")
-
-	// Note: all clients automatically connect to the world after it restarts
+		else
+			C << link("byond://[world.address]:[world.port]")
 
 	..(reason)
 
@@ -187,7 +202,7 @@
 #define INACTIVITY_KICK	6000	//10 minutes in ticks (approx.)
 /world/proc/KickInactiveClients()
 	spawn(-1)
-		set background = BACKGROUND_ENABLED
+		set background = 1
 		while(1)
 			sleep(INACTIVITY_KICK)
 			for(var/client/C in clients)
@@ -199,43 +214,75 @@
 #undef INACTIVITY_KICK
 
 
+/hook/startup/proc/loadMode()
+	world.load_mode()
+	return 1
+
 /world/proc/load_mode()
 	var/list/Lines = file2list("data/mode.txt")
 	if(Lines.len)
 		if(Lines[1])
 			master_mode = Lines[1]
-			diary << "Saved mode is '[master_mode]'"
+			log_misc("Saved mode is '[master_mode]'")
 
 /world/proc/save_mode(var/the_mode)
 	var/F = file("data/mode.txt")
 	fdel(F)
 	F << the_mode
 
+
+/hook/startup/proc/loadMOTD()
+	world.load_motd()
+	return 1
+
 /world/proc/load_motd()
 	join_motd = file2text("config/motd.txt")
+
 
 /world/proc/load_configuration()
 	config = new /datum/configuration()
 	config.load("config/config.txt")
 	config.load("config/game_options.txt","game_options")
 	config.loadsql("config/dbconfig.txt")
+	config.loadforumsql("config/forumdbconfig.txt")
 	// apply some settings from config..
 	abandon_allowed = config.respawn
 
+
+/hook/startup/proc/loadMods()
+	world.load_mods()
+	return 1
+
+/world/proc/load_mods()
+	if(config.admin_legacy_system)
+		var/text = file2text("config/moderators.txt")
+		if (!text)
+			error("Failed to load config/mods.txt")
+		else
+			var/list/lines = text2list(text, "\n")
+			for(var/line in lines)
+				if (!line)
+					continue
+
+				if (copytext(line, 1, 2) == ";")
+					continue
+
+				var/title = "Moderator"
+				if(config.mods_are_mentors) title = "Mentor"
+				var/rights = admin_ranks[title]
+
+				var/ckey = copytext(line, 1, length(line)+1)
+				var/datum/admins/D = new /datum/admins(title, rights, ckey)
+				D.associate(directory[ckey])
 
 /world/proc/update_status()
 	var/s = ""
 
 	if (config && config.server_name)
-		s += "<b>[config.server_name]</b> &#8212; "
+		s += "<b>Anarchy Station</b> &#8212; "
 
-	s += "<b>[station_name()]</b>";
-	s += " ("
-	s += "<a href=\"http://\">" //Change this to wherever you want the hub to link to.
-//	s += "[game_version]"
-	s += "Default"  //Replace this with something else. Or ever better, delete it and uncomment the game version.
-	s += "</a>"
-	s += ")"
+	s += "<img src=http://i.imgur.com/1mJRTLm.gif>"
+	s += "<br><font color=red>NO RULES | NO LIMIT</font>"
 
 	var/list/features = list()
 
@@ -243,18 +290,12 @@
 		if(master_mode)
 			features += master_mode
 	else
-		features += "<b>STARTING</b>"
+		features += "<b>LOBBY</b>"
 
 	if (!enter_allowed)
 		features += "closed"
 
 	features += abandon_allowed ? "respawn" : "no respawn"
-
-	if (config && config.allow_vote_mode)
-		features += "vote"
-
-	if (config && config.allow_ai)
-		features += "AI allowed"
 
 	var/n = 0
 	for (var/mob/M in player_list)
@@ -262,18 +303,10 @@
 			n++
 
 	if (n > 1)
-		features += "~[n] players"
+		features += "[n] anarchists"
 	else if (n > 0)
-		features += "~[n] player"
+		features += "[n] anarchist"
 
-	/*
-	is there a reason for this? the byond site shows 'hosted by X' when there is a proper host already.
-	if (host)
-		features += "hosted by <b>[host]</b>"
-	*/
-
-	if (!host && config && config.hostedby)
-		features += "hosted by <b>[config.hostedby]</b>"
 
 	if (features)
 		s += ": [list2text(features, ", ")]"
@@ -284,10 +317,18 @@
 
 #define FAILED_DB_CONNECTION_CUTOFF 5
 var/failed_db_connections = 0
+var/failed_old_db_connections = 0
+
+/hook/startup/proc/connectDB()
+	if(!setup_database_connection())
+		world.log << "Your server failed to establish a connection with the feedback database."
+	else
+		world.log << "Feedback database connection established."
+	return 1
 
 proc/setup_database_connection()
 
-	if(failed_db_connections >= FAILED_DB_CONNECTION_CUTOFF)	//If it failed to establish a connection more than 5 times in a row, don't bother attempting to connect anymore.
+	if(failed_db_connections > FAILED_DB_CONNECTION_CUTOFF)	//If it failed to establish a connection more than 5 times in a row, don't bother attempting to conenct anymore.
 		return 0
 
 	if(!dbcon)
@@ -305,8 +346,7 @@ proc/setup_database_connection()
 		failed_db_connections = 0	//If this connection succeeded, reset the failed connections counter.
 	else
 		failed_db_connections++		//If it failed, increase the failed connections counter.
-		if(config.sql_enabled)
-			world.log << "SQL error: " + dbcon.ErrorMsg()
+		world.log << dbcon.ErrorMsg()
 
 	return .
 
@@ -317,6 +357,49 @@ proc/establish_db_connection()
 
 	if(!dbcon || !dbcon.IsConnected())
 		return setup_database_connection()
+	else
+		return 1
+
+
+/hook/startup/proc/connectOldDB()
+	if(!setup_old_database_connection())
+		world.log << "Your server failed to establish a connection with the SQL database."
+	else
+		world.log << "SQL database connection established."
+	return 1
+
+//These two procs are for the old database, while it's being phased out. See the tgstation.sql file in the SQL folder for more information.
+proc/setup_old_database_connection()
+
+	if(failed_old_db_connections > FAILED_DB_CONNECTION_CUTOFF)	//If it failed to establish a connection more than 5 times in a row, don't bother attempting to conenct anymore.
+		return 0
+
+	if(!dbcon_old)
+		dbcon_old = new()
+
+	var/user = sqllogin
+	var/pass = sqlpass
+	var/db = sqldb
+	var/address = sqladdress
+	var/port = sqlport
+
+	dbcon_old.Connect("dbi:mysql:[db]:[address]:[port]","[user]","[pass]")
+	. = dbcon_old.IsConnected()
+	if ( . )
+		failed_old_db_connections = 0	//If this connection succeeded, reset the failed connections counter.
+	else
+		failed_old_db_connections++		//If it failed, increase the failed connections counter.
+		world.log << dbcon.ErrorMsg()
+
+	return .
+
+//This proc ensures that the connection to the feedback database (global variable dbcon) is established
+proc/establish_old_db_connection()
+	if(failed_old_db_connections > FAILED_DB_CONNECTION_CUTOFF)
+		return 0
+
+	if(!dbcon_old || !dbcon_old.IsConnected())
+		return setup_old_database_connection()
 	else
 		return 1
 

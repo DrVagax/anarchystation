@@ -1,11 +1,12 @@
 /obj/mecha/medical/odysseus
 	desc = "These exosuits are developed and produced by Vey-Med. (&copy; All rights reserved)."
-	name = "\improper Odysseus"
+	name = "Odysseus"
 	icon_state = "odysseus"
-	step_in = 3
+	initial_icon = "odysseus"
+	step_in = 2
 	max_temperature = 15000
 	health = 120
-	wreckage = /obj/structure/mecha_wreckage/odysseus
+	wreckage = /obj/effect/decal/mecha_wreckage/odysseus
 	internal_damage_threshold = 35
 	deflect_chance = 15
 	step_energy_drain = 6
@@ -59,7 +60,7 @@
 
 //TODO - Check documentation for client.eye and client.perspective...
 /obj/item/clothing/glasses/hud/health/mech
-	name = "integrated medical Hud"
+	name = "Integrated Medical Hud"
 
 
 	process_hud(var/mob/M)
@@ -86,8 +87,11 @@
 			for(var/datum/disease/D in patient.viruses)
 				if(!D.hidden[SCANNER])
 					foundVirus++
-			//if(patient.virus2)
-			//	foundVirus++
+
+			for (var/ID in patient.virus2)
+				if (ID in virusDB)
+					foundVirus = 1
+					break
 
 			holder = patient.hud_list[HEALTH_HUD]
 			if(patient.stat == 2)
@@ -104,6 +108,13 @@
 				holder.icon_state = "hudxeno"
 			else if(foundVirus)
 				holder.icon_state = "hudill"
+			else if(patient.has_brain_worms())
+				var/mob/living/simple_animal/borer/B = patient.has_brain_worms()
+				if(B.controlling)
+					holder.icon_state = "hudbrainworm"
+				else
+					holder.icon_state = "hudhealthy"
 			else
 				holder.icon_state = "hudhealthy"
+
 			C.images += holder

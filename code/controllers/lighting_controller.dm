@@ -5,14 +5,13 @@ datum/controller/lighting
 	var/processing_interval = 5	//setting this too low will probably kill the server. Don't be silly with it!
 	var/process_cost = 0
 	var/iteration = 0
-	var/max_cpu_use = 98		//this is just to prevent it queueing up when the server is dying. Not a solution, just damage control while I rethink a lot of this and try out ideas.
 
-	var/lighting_states = 6
+	var/lighting_states = 7
 
 	var/list/lights = list()
 	var/lights_workload_max = 0
 
-//	var/list/changed_lights()		//TODO: possibly implement this to reduce on overheads? Also, Look into static-lights idea.
+//	var/list/changed_lights()		//TODO: possibly implement this to reduce on overheads?
 
 	var/list/changed_turfs = list()
 	var/changed_turfs_workload_max = 0
@@ -34,9 +33,9 @@ datum/controller/lighting/New()
 datum/controller/lighting/proc/process()
 	processing = 1
 	spawn(0)
-		set background = BACKGROUND_ENABLED
+		set background = 1
 		while(1)
-			if(processing && (world.cpu <= max_cpu_use))
+			if(processing)
 				iteration++
 				var/started = world.timeofday
 
@@ -68,7 +67,7 @@ datum/controller/lighting/proc/process()
 datum/controller/lighting/proc/Initialize(var/z_level)
 	processing = 0
 	spawn(-1)
-		set background = BACKGROUND_ENABLED
+		set background = 1
 		for(var/i=1, i<=lights.len, i++)
 			var/datum/light_source/L = lights[i]
 			if(L.check())
@@ -117,7 +116,7 @@ datum/controller/lighting/proc/Recover()
 	var/msg = "## DEBUG: [time2text(world.timeofday)] lighting_controller restarted. Reports:\n"
 	for(var/varname in lighting_controller.vars)
 		switch(varname)
-			if("tag","type","parent_type","vars")	continue
+			if("tag","bestF","type","parent_type","vars")	continue
 			else
 				var/varval1 = lighting_controller.vars[varname]
 				var/varval2 = vars[varname]

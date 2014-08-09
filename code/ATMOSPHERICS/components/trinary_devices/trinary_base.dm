@@ -72,7 +72,7 @@ obj/machinery/atmospherics/trinary
 		..()
 
 	initialize()
-		src.disconnect(src)
+		if(node1 && node2 && node3) return
 
 		var/node1_connect = turn(dir, -180)
 		var/node2_connect = turn(dir, -90)

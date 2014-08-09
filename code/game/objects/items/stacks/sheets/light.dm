@@ -6,33 +6,30 @@
 	w_class = 3.0
 	force = 3.0
 	throwforce = 5.0
-	throw_speed = 3
-	throw_range = 7
-	flags = CONDUCT
+	throw_speed = 5
+	throw_range = 20
+	flags = FPRINT | TABLEPASS | CONDUCT
 	max_amount = 60
 
 /obj/item/stack/light_w/attackby(var/obj/item/O as obj, var/mob/user as mob)
 	..()
 	if(istype(O,/obj/item/weapon/wirecutters))
-		var/obj/item/stack/cable_coil/CC = new (user.loc)
+		var/obj/item/weapon/cable_coil/CC = new/obj/item/weapon/cable_coil(user.loc)
 		CC.amount = 5
-		CC.add_fingerprint(user)
 		amount--
-		var/obj/item/stack/sheet/glass/G = new (user.loc)
-		G.add_fingerprint(user)
+		new/obj/item/stack/sheet/glass(user.loc)
 		if(amount <= 0)
-			user.unEquip(src, 1)
+			user.drop_from_inventory(src)
 			del(src)
 
 	if(istype(O,/obj/item/stack/sheet/metal))
 		var/obj/item/stack/sheet/metal/M = O
 		M.amount--
 		if(M.amount <= 0)
-			user.unEquip(M, 1)
+			user.drop_from_inventory(M)
 			del(M)
 		amount--
-		var/obj/item/stack/tile/light/L = new (user.loc)
-		L.add_fingerprint(user)
+		new/obj/item/stack/tile/light(user.loc)
 		if(amount <= 0)
-			user.unEquip(src, 1)
+			user.drop_from_inventory(src)
 			del(src)

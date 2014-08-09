@@ -4,7 +4,7 @@ proc/createRandomZlevel()
 
 	var/list/potentialRandomZlevels = list()
 	world << "\red \b Searching for away missions..."
-	var/list/Lines = file2list("_maps/RandomZLevels/fileList.txt")
+	var/list/Lines = file2list("maps/RandomZLevels/fileList.txt")
 	if(!Lines.len)	return
 	for (var/t in Lines)
 		if (!t)
@@ -21,15 +21,17 @@ proc/createRandomZlevel()
 	//	var/value = null
 
 		if (pos)
-			name = lowertext(copytext(t, 1, pos))
+            // No, don't do lowertext here, that breaks paths on linux
+			name = copytext(t, 1, pos)
 		//	value = copytext(t, pos + 1)
 		else
-			name = lowertext(t)
+            // No, don't do lowertext here, that breaks paths on linux
+			name = t
 
 		if (!name)
 			continue
 
-		potentialRandomZlevels.Add(t)
+		potentialRandomZlevels.Add(name)
 
 
 	if(potentialRandomZlevels.len)
@@ -38,8 +40,7 @@ proc/createRandomZlevel()
 		var/map = pick(potentialRandomZlevels)
 		var/file = file(map)
 		if(isfile(file))
-			maploader.load_map(file)
-			world.log << "away mission loaded: [map]"
+			maploader.load_map(file, load_speed = 100)
 
 		for(var/obj/effect/landmark/L in landmarks_list)
 			if (L.name != "awaystart")

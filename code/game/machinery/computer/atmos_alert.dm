@@ -2,9 +2,9 @@
 
 
 /obj/machinery/computer/atmos_alert
-	name = "atmospheric alert console"
+	name = "Atmospheric Alert Computer"
 	desc = "Used to access the station's atmospheric sensors."
-	circuit = /obj/item/weapon/circuitboard/atmos_alert
+	circuit = "/obj/item/weapon/circuitboard/atmos_alert"
 	icon_state = "alert:0"
 	var/list/priority_alarms = list()
 	var/list/minor_alarms = list()
@@ -43,26 +43,19 @@
 /obj/machinery/computer/atmos_alert/attack_hand(mob/user)
 	if(..(user))
 		return
+	user << browse(return_text(),"window=computer")
 	user.set_machine(src)
-	//user << browse(return_text(),"window=computer")
-	//onclose(user, "computer")
-	var/datum/browser/popup = new(user, "computer", name)
-	popup.set_content(return_text())
-	popup.set_title_image(user.browse_rsc_icon(src.icon, src.icon_state))
-	popup.open()
+	onclose(user, "computer")
 
 /obj/machinery/computer/atmos_alert/process()
 	if(..())
 		src.updateDialog()
 
 /obj/machinery/computer/atmos_alert/update_icon()
-	if(stat & BROKEN)
-		icon_state = "alert:b"
+	..()
+	if(stat & (NOPOWER|BROKEN))
 		return
-	else if (stat & NOPOWER)
-		icon_state = "alert:O"
-		return
-	else if(priority_alarms.len)
+	if(priority_alarms.len)
 		icon_state = "alert:2"
 
 	else if(minor_alarms.len)
@@ -79,21 +72,22 @@
 
 	if(priority_alarms.len)
 		for(var/zone in priority_alarms)
-			priority_text += "<FONT color='red'><B>[format_text(zone)]</B></FONT>  <A href='?src=\ref[src];priority_clear=[ckey(zone)]'>X</A><BR>"
+			priority_text += "<FONT color='red'><B>[zone]</B></FONT>  <A href='?src=\ref[src];priority_clear=[ckey(zone)]'>X</A><BR>"
 	else
 		priority_text = "No priority alerts detected.<BR>"
 
 	if(minor_alarms.len)
 		for(var/zone in minor_alarms)
-			minor_text += "<B>[format_text(zone)]</B>  <A href='?src=\ref[src];minor_clear=[ckey(zone)]'>X</A><BR>"
+			minor_text += "<B>[zone]</B>  <A href='?src=\ref[src];minor_clear=[ckey(zone)]'>X</A><BR>"
 	else
 		minor_text = "No minor alerts detected.<BR>"
 
-	var/output = {"<h2>Priority Alerts:</h2>
+	var/output = {"<B>[name]</B><HR>
+<B>Priority Alerts:</B><BR>
 [priority_text]
 <BR>
 <HR>
-<h2>Minor Alerts:</h2>
+<B>Minor Alerts:</B><BR>
 [minor_text]
 <BR>"}
 
@@ -108,14 +102,12 @@
 		var/removing_zone = href_list["priority_clear"]
 		for(var/zone in priority_alarms)
 			if(ckey(zone) == removing_zone)
-				usr << "\green Priority Alert for area [] cleared."
 				priority_alarms -= zone
 
 	if(href_list["minor_clear"])
 		var/removing_zone = href_list["minor_clear"]
 		for(var/zone in minor_alarms)
 			if(ckey(zone) == removing_zone)
-				usr << "\green Minor Alert for area [] cleared."
 				minor_alarms -= zone
 	update_icon()
 	return

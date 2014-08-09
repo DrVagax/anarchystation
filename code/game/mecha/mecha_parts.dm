@@ -6,8 +6,8 @@
 	name = "mecha part"
 	icon = 'icons/mecha/mech_construct.dmi'
 	icon_state = "blank"
-	w_class = 20
-	flags = CONDUCT
+	w_class = 5
+	flags = FPRINT | TABLEPASS | CONDUCT
 	origin_tech = "programming=2;materials=2"
 	var/construction_time = 100
 	var/list/construction_cost = list("metal"=20000,"glass"=5000)
@@ -18,6 +18,7 @@
 	icon_state = "backbone"
 	var/datum/construction/construct
 	construction_cost = list("metal"=20000)
+	flags = FPRINT | CONDUCT
 
 	attackby(obj/item/W as obj, mob/user as mob)
 		if(!construct || !construct.action(W, user))
@@ -30,14 +31,14 @@
 /////////// Ripley
 
 /obj/item/mecha_parts/chassis/ripley
-	name = "\improper Ripley chassis"
+	name = "Ripley Chassis"
 
 	New()
 		..()
 		construct = new /datum/construction/mecha/ripley_chassis(src)
 
 /obj/item/mecha_parts/part/ripley_torso
-	name="\improper Ripley torso"
+	name="Ripley Torso"
 	desc="A torso part of Ripley APLU. Contains power unit, processing core and life support systems."
 	icon_state = "ripley_harness"
 	origin_tech = "programming=2;materials=2;biotech=2;engineering=2"
@@ -45,7 +46,7 @@
 	construction_cost = list("metal"=40000,"glass"=15000)
 
 /obj/item/mecha_parts/part/ripley_left_arm
-	name="\improper Ripley left arm"
+	name="Ripley Left Arm"
 	desc="A Ripley APLU left arm. Data and power sockets are compatible with most exosuit tools."
 	icon_state = "ripley_l_arm"
 	origin_tech = "programming=2;materials=2;engineering=2"
@@ -53,7 +54,7 @@
 	construction_cost = list("metal"=25000)
 
 /obj/item/mecha_parts/part/ripley_right_arm
-	name="\improper Ripley right arm"
+	name="Ripley Right Arm"
 	desc="A Ripley APLU right arm. Data and power sockets are compatible with most exosuit tools."
 	icon_state = "ripley_r_arm"
 	origin_tech = "programming=2;materials=2;engineering=2"
@@ -61,7 +62,7 @@
 	construction_cost = list("metal"=25000)
 
 /obj/item/mecha_parts/part/ripley_left_leg
-	name="\improper Ripley left leg"
+	name="Ripley Left Leg"
 	desc="A Ripley APLU left leg. Contains somewhat complex servodrives and balance maintaining systems."
 	icon_state = "ripley_l_leg"
 	origin_tech = "programming=2;materials=2;engineering=2"
@@ -69,7 +70,7 @@
 	construction_cost = list("metal"=30000)
 
 /obj/item/mecha_parts/part/ripley_right_leg
-	name="\improper Ripley right leg"
+	name="Ripley Right Leg"
 	desc="A Ripley APLU right leg. Contains somewhat complex servodrives and balance maintaining systems."
 	icon_state = "ripley_r_leg"
 	origin_tech = "programming=2;materials=2;engineering=2"
@@ -79,7 +80,7 @@
 ///////// Gygax
 
 /obj/item/mecha_parts/chassis/gygax
-	name = "\improper Gygax chassis"
+	name = "Gygax Chassis"
 	construction_cost = list("metal"=25000)
 
 	New()
@@ -87,7 +88,7 @@
 		construct = new /datum/construction/mecha/gygax_chassis(src)
 
 /obj/item/mecha_parts/part/gygax_torso
-	name="\improper Gygax torso"
+	name="Gygax Torso"
 	desc="A torso part of Gygax. Contains power unit, processing core and life support systems. Has an additional equipment slot."
 	icon_state = "gygax_harness"
 	origin_tech = "programming=2;materials=2;biotech=3;engineering=3"
@@ -95,7 +96,7 @@
 	construction_cost = list("metal"=50000,"glass"=20000)
 
 /obj/item/mecha_parts/part/gygax_head
-	name="\improper Gygax head"
+	name="Gygax Head"
 	desc="A Gygax head. Houses advanced surveilance and targeting sensors."
 	icon_state = "gygax_head"
 	origin_tech = "programming=2;materials=2;magnets=3;engineering=3"
@@ -103,7 +104,7 @@
 	construction_cost = list("metal"=20000,"glass"=10000)
 
 /obj/item/mecha_parts/part/gygax_left_arm
-	name="\improper Gygax left arm"
+	name="Gygax Left Arm"
 	desc="A Gygax left arm. Data and power sockets are compatible with most exosuit tools and weapons."
 	icon_state = "gygax_l_arm"
 	origin_tech = "programming=2;materials=2;engineering=3"
@@ -111,7 +112,7 @@
 	construction_cost = list("metal"=30000)
 
 /obj/item/mecha_parts/part/gygax_right_arm
-	name="\improper Gygax right arm"
+	name="Gygax Right Arm"
 	desc="A Gygax right arm. Data and power sockets are compatible with most exosuit tools and weapons."
 	icon_state = "gygax_r_arm"
 	origin_tech = "programming=2;materials=2;engineering=3"
@@ -119,22 +120,21 @@
 	construction_cost = list("metal"=30000)
 
 /obj/item/mecha_parts/part/gygax_left_leg
-	name="\improper Gygax left leg"
+	name="Gygax Left Leg"
 	icon_state = "gygax_l_leg"
 	origin_tech = "programming=2;materials=2;engineering=3"
 	construction_time = 200
 	construction_cost = list("metal"=35000)
 
 /obj/item/mecha_parts/part/gygax_right_leg
-	name="\improper Gygax right leg"
+	name="Gygax Right Leg"
 	icon_state = "gygax_r_leg"
 	origin_tech = "programming=2;materials=2;engineering=3"
 	construction_time = 200
 	construction_cost = list("metal"=35000)
 
 /obj/item/mecha_parts/part/gygax_armour
-	gender = PLURAL
-	name="\improper Gygax armour plates"
+	name="Gygax Armour Plates"
 	icon_state = "gygax_armour"
 	origin_tech = "materials=6;combat=4;engineering=5"
 	construction_time = 600
@@ -144,7 +144,7 @@
 //////////// Durand
 
 /obj/item/mecha_parts/chassis/durand
-	name = "\improper Durand chassis"
+	name = "Durand Chassis"
 	construction_cost = list("metal"=25000)
 
 	New()
@@ -152,50 +152,49 @@
 		construct = new /datum/construction/mecha/durand_chassis(src)
 
 /obj/item/mecha_parts/part/durand_torso
-	name="\improper Durand torso"
+	name="Durand Torso"
 	icon_state = "durand_harness"
 	origin_tech = "programming=2;materials=3;biotech=3;engineering=3"
 	construction_time = 300
 	construction_cost = list("metal"=55000,"glass"=20000,"silver"=10000)
 
 /obj/item/mecha_parts/part/durand_head
-	name="\improper Durand head"
+	name="Durand Head"
 	icon_state = "durand_head"
 	origin_tech = "programming=2;materials=3;magnets=3;engineering=3"
 	construction_time = 200
 	construction_cost = list("metal"=25000,"glass"=10000,"silver"=3000)
 
 /obj/item/mecha_parts/part/durand_left_arm
-	name="\improper Durand left arm"
+	name="Durand Left Arm"
 	icon_state = "durand_l_arm"
 	origin_tech = "programming=2;materials=3;engineering=3"
 	construction_time = 200
 	construction_cost = list("metal"=35000,"silver"=3000)
 
 /obj/item/mecha_parts/part/durand_right_arm
-	name="\improper Durand right arm"
+	name="Durand Right Arm"
 	icon_state = "durand_r_arm"
 	origin_tech = "programming=2;materials=3;engineering=3"
 	construction_time = 200
 	construction_cost = list("metal"=35000,"silver"=3000)
 
 /obj/item/mecha_parts/part/durand_left_leg
-	name="\improper Durand left leg"
+	name="Durand Left Leg"
 	icon_state = "durand_l_leg"
 	origin_tech = "programming=2;materials=3;engineering=3"
 	construction_time = 200
 	construction_cost = list("metal"=40000,"silver"=3000)
 
 /obj/item/mecha_parts/part/durand_right_leg
-	name="\improper Durand right leg"
+	name="Durand Right Leg"
 	icon_state = "durand_r_leg"
 	origin_tech = "programming=2;materials=3;engineering=3"
 	construction_time = 200
 	construction_cost = list("metal"=40000,"silver"=3000)
 
 /obj/item/mecha_parts/part/durand_armour
-	gender = PLURAL
-	name="\improper Durand armour plates"
+	name="Durand Armour Plates"
 	icon_state = "durand_armour"
 	origin_tech = "materials=5;combat=4;engineering=5"
 	construction_time = 600
@@ -206,7 +205,7 @@
 ////////// Firefighter
 
 /obj/item/mecha_parts/chassis/firefighter
-	name = "Firefighter chassis"
+	name = "Firefighter Chassis"
 
 	New()
 		..()
@@ -233,56 +232,10 @@
 	icon_state = "ripley_r_leg"
 */
 
-////////// HONK
-
-/obj/item/mecha_parts/chassis/honker
-	name = "\improper H.O.N.K chassis"
-
-	New()
-		..()
-		construct = new /datum/construction/mecha/honker_chassis(src)
-
-/obj/item/mecha_parts/part/honker_torso
-	name="\improper H.O.N.K torso"
-	icon_state = "honker_harness"
-	construction_time = 300
-	construction_cost = list("metal"=35000,"glass"=10000,"bananium"=10000)
-
-/obj/item/mecha_parts/part/honker_head
-	name="\improper H.O.N.K head"
-	icon_state = "honker_head"
-	construction_time = 200
-	construction_cost = list("metal"=15000,"glass"=5000,"bananium"=5000)
-
-/obj/item/mecha_parts/part/honker_left_arm
-	name="\improper H.O.N.K left arm"
-	icon_state = "honker_l_arm"
-	construction_time = 200
-	construction_cost = list("metal"=20000,"bananium"=5000)
-
-/obj/item/mecha_parts/part/honker_right_arm
-	name="\improper H.O.N.K right arm"
-	icon_state = "honker_r_arm"
-	construction_time = 200
-	construction_cost = list("metal"=20000,"bananium"=5000)
-
-/obj/item/mecha_parts/part/honker_left_leg
-	name="\improper H.O.N.K left leg"
-	icon_state = "honker_l_leg"
-	construction_time = 200
-	construction_cost = list("metal"=20000,"bananium"=5000)
-
-/obj/item/mecha_parts/part/honker_right_leg
-	name="\improper H.O.N.K right leg"
-	icon_state = "honker_r_leg"
-	construction_time = 200
-	construction_cost = list("metal"=20000,"bananium"=5000)
-
-
 ////////// Phazon
 
 /obj/item/mecha_parts/chassis/phazon
-	name = "\improper Phazon chassis"
+	name = "Phazon Chassis"
 	origin_tech = "materials=7"
 
 	New()
@@ -290,66 +243,66 @@
 		construct = new /datum/construction/mecha/phazon_chassis(src)
 
 /obj/item/mecha_parts/part/phazon_torso
-	name="\improper Phazon torso"
+	name="Phazon Torso"
 	icon_state = "phazon_harness"
 	construction_time = 300
-	construction_cost = list("metal"=35000,"glass"=10000,"plasma"=20000)
+	construction_cost = list("metal"=35000,"glass"=10000,"phoron"=20000)
 	origin_tech = "programming=5;materials=7;bluespace=6;powerstorage=6"
 
 /obj/item/mecha_parts/part/phazon_head
-	name="\improper Phazon head"
+	name="Phazon Head"
 	icon_state = "phazon_head"
 	construction_time = 200
-	construction_cost = list("metal"=15000,"glass"=5000,"plasma"=10000)
+	construction_cost = list("metal"=15000,"glass"=5000,"phoron"=10000)
 	origin_tech = "programming=4;materials=5;magnets=6"
 
 /obj/item/mecha_parts/part/phazon_left_arm
-	name="\improper Phazon left arm"
+	name="Phazon Left Arm"
 	icon_state = "phazon_l_arm"
 	construction_time = 200
-	construction_cost = list("metal"=20000,"plasma"=10000)
+	construction_cost = list("metal"=20000,"phoron"=10000)
 	origin_tech = "materials=5;bluespace=2;magnets=2"
 
 /obj/item/mecha_parts/part/phazon_right_arm
-	name="\improper Phazon right arm"
+	name="Phazon Right Arm"
 	icon_state = "phazon_r_arm"
 	construction_time = 200
-	construction_cost = list("metal"=20000,"plasma"=10000)
+	construction_cost = list("metal"=20000,"phoron"=10000)
 	origin_tech = "materials=5;bluespace=2;magnets=2"
 
 /obj/item/mecha_parts/part/phazon_left_leg
-	name="\improper Phazon left leg"
+	name="Phazon Left Leg"
 	icon_state = "phazon_l_leg"
 	construction_time = 200
-	construction_cost = list("metal"=20000,"plasma"=10000)
+	construction_cost = list("metal"=20000,"phoron"=10000)
 	origin_tech = "materials=5;bluespace=3;magnets=3"
 
 /obj/item/mecha_parts/part/phazon_right_leg
-	name="\improper Phazon right leg"
+	name="Phazon Right Leg"
 	icon_state = "phazon_r_leg"
 	construction_time = 200
-	construction_cost = list("metal"=20000,"plasma"=10000)
+	construction_cost = list("metal"=20000,"phoron"=10000)
 	origin_tech = "materials=5;bluespace=3;magnets=3"
 
 ///////// Odysseus
 
 
 /obj/item/mecha_parts/chassis/odysseus
-	name = "\improper Odysseus chassis"
+	name = "Odysseus Chassis"
 
 	New()
 		..()
 		construct = new /datum/construction/mecha/odysseus_chassis(src)
 
 /obj/item/mecha_parts/part/odysseus_head
-	name="\improper Odysseus head"
+	name="Odysseus Head"
 	icon_state = "odysseus_head"
 	construction_time = 100
 	construction_cost = list("metal"=2000,"glass"=10000)
 	origin_tech = "programming=3;materials=2"
 
 /obj/item/mecha_parts/part/odysseus_torso
-	name="\improper Odysseus torso"
+	name="Odysseus Torso"
 	desc="A torso part of Odysseus. Contains power unit, processing core and life support systems."
 	icon_state = "odysseus_torso"
 	origin_tech = "programming=2;materials=2;biotech=2;engineering=2"
@@ -357,7 +310,7 @@
 	construction_cost = list("metal"=25000)
 
 /obj/item/mecha_parts/part/odysseus_left_arm
-	name="\improper Odysseus left arm"
+	name="Odysseus Left Arm"
 	desc="An Odysseus left arm. Data and power sockets are compatible with most exosuit tools."
 	icon_state = "odysseus_l_arm"
 	origin_tech = "programming=2;materials=2;engineering=2"
@@ -365,7 +318,7 @@
 	construction_cost = list("metal"=10000)
 
 /obj/item/mecha_parts/part/odysseus_right_arm
-	name="\improper Odysseus right arm"
+	name="Odysseus Right Arm"
 	desc="An Odysseus right arm. Data and power sockets are compatible with most exosuit tools."
 	icon_state = "odysseus_r_arm"
 	origin_tech = "programming=2;materials=2;engineering=2"
@@ -373,7 +326,7 @@
 	construction_cost = list("metal"=10000)
 
 /obj/item/mecha_parts/part/odysseus_left_leg
-	name="\improper Odysseus left leg"
+	name="Odysseus Left Leg"
 	desc="An Odysseus left leg. Contains somewhat complex servodrives and balance maintaining systems."
 	icon_state = "odysseus_l_leg"
 	origin_tech = "programming=2;materials=2;engineering=2"
@@ -381,7 +334,7 @@
 	construction_cost = list("metal"=15000)
 
 /obj/item/mecha_parts/part/odysseus_right_leg
-	name="\improper Odysseus right leg"
+	name="Odysseus Right Leg"
 	desc="A Odysseus right leg. Contains somewhat complex servodrives and balance maintaining systems."
 	icon_state = "odysseus_r_leg"
 	origin_tech = "programming=2;materials=2;engineering=2"
@@ -399,85 +352,85 @@
 ///////// Circuitboards
 
 /obj/item/weapon/circuitboard/mecha
-	name = "exosuit circuit board"
+	name = "Exosuit Circuit board"
 	icon = 'icons/obj/module.dmi'
 	icon_state = "std_mod"
 	item_state = "electronic"
 	board_type = "other"
-	flags = CONDUCT
+	flags = FPRINT | TABLEPASS | CONDUCT
 	force = 5.0
 	w_class = 2.0
-	throwforce = 0
+	throwforce = 5.0
 	throw_speed = 3
-	throw_range = 7
+	throw_range = 15
 
 	ripley
 		origin_tech = "programming=3"
 
 	ripley/peripherals
-		name = "circuit board (Ripley Peripherals Control module)"
+		name = "Circuit board (Ripley Peripherals Control module)"
 		icon_state = "mcontroller"
 
 	ripley/main
-		name = "circuit board (Ripley Central Control module)"
+		name = "Circuit board (Ripley Central Control module)"
 		icon_state = "mainboard"
 
 	gygax
 		origin_tech = "programming=4"
 
 	gygax/peripherals
-		name = "circuit board (Gygax Peripherals Control module)"
+		name = "Circuit board (Gygax Peripherals Control module)"
 		icon_state = "mcontroller"
 
 	gygax/targeting
-		name = "circuit board (Gygax Weapon Control and Targeting module)"
+		name = "Circuit board (Gygax Weapon Control and Targeting module)"
 		icon_state = "mcontroller"
 		origin_tech = "programming=4;combat=4"
 
 	gygax/main
-		name = "circuit board (Gygax Central Control module)"
+		name = "Circuit board (Gygax Central Control module)"
 		icon_state = "mainboard"
 
 	durand
 		origin_tech = "programming=4"
 
 	durand/peripherals
-		name = "circuit board (Durand Peripherals Control module)"
+		name = "Circuit board (Durand Peripherals Control module)"
 		icon_state = "mcontroller"
 
 	durand/targeting
-		name = "circuit board (Durand Weapon Control and Targeting module)"
+		name = "Circuit board (Durand Weapon Control and Targeting module)"
 		icon_state = "mcontroller"
 		origin_tech = "programming=4;combat=4"
 
 	durand/main
-		name = "circuit board (Durand Central Control module)"
+		name = "Circuit board (Durand Central Control module)"
 		icon_state = "mainboard"
 
 	honker
 		origin_tech = "programming=4"
 
 	honker/peripherals
-		name = "circuit board (H.O.N.K Peripherals Control module)"
+		name = "Circuit board (H.O.N.K Peripherals Control module)"
 		icon_state = "mcontroller"
 
 	honker/targeting
-		name = "circuit board (H.O.N.K Weapon Control and Targeting module)"
+		name = "Circuit board (H.O.N.K Weapon Control and Targeting module)"
 		icon_state = "mcontroller"
 
 	honker/main
-		name = "circuit board (H.O.N.K Central Control module)"
+		name = "Circuit board (H.O.N.K Central Control module)"
 		icon_state = "mainboard"
 
 	odysseus
 		origin_tech = "programming=3"
 
 	odysseus/peripherals
-		name = "circuit board (Odysseus Peripherals Control module)"
+		name = "Circuit board (Odysseus Peripherals Control module)"
 		icon_state = "mcontroller"
 
 	odysseus/main
-		name = "circuit board (Odysseus Central Control module)"
+		name = "Circuit board (Odysseus Central Control module)"
 		icon_state = "mainboard"
 
 

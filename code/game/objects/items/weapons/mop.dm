@@ -4,10 +4,11 @@
 	icon = 'icons/obj/janitor.dmi'
 	icon_state = "mop"
 	force = 3.0
-	throwforce = 5.0
-	throw_speed = 3
-	throw_range = 7
+	throwforce = 10.0
+	throw_speed = 5
+	throw_range = 10
 	w_class = 3.0
+	flags = FPRINT | TABLEPASS
 	attack_verb = list("mopped", "bashed", "bludgeoned", "whacked")
 	var/mopping = 0
 	var/mopcount = 0
@@ -18,10 +19,11 @@
 
 
 obj/item/weapon/mop/proc/clean(turf/simulated/A)
-	if(reagents.has_reagent("water", 1) || reagents.has_reagent("holywater", 1))
+	if(reagents.has_reagent("water", 1))
 		A.clean_blood()
+		A.dirt = 0
 		for(var/obj/effect/O in A)
-			if(istype(O,/obj/effect/decal/cleanable) || istype(O,/obj/effect/overlay))
+			if(istype(O,/obj/effect/rune) || istype(O,/obj/effect/decal/cleanable) || istype(O,/obj/effect/overlay))
 				del(O)
 	reagents.reaction(A, TOUCH, 10)	//10 is the multiplier for the reaction effect. probably needed to wet the floor properly.
 	reagents.remove_any(1)			//reaction() doesn't use up the reagents
@@ -29,7 +31,7 @@ obj/item/weapon/mop/proc/clean(turf/simulated/A)
 
 /obj/item/weapon/mop/afterattack(atom/A, mob/user, proximity)
 	if(!proximity) return
-	if(istype(A, /obj/effect/rune) ||istype(A, /turf/simulated) || istype(A, /obj/effect/decal/cleanable) || istype(A, /obj/effect/overlay))
+	if(istype(A, /turf/simulated) || istype(A, /obj/effect/decal/cleanable) || istype(A, /obj/effect/overlay) || istype(A, /obj/effect/rune))
 		if(reagents.total_volume < 1)
 			user << "<span class='notice'>Your mop is dry!</span>"
 			return
@@ -46,16 +48,3 @@ obj/item/weapon/mop/proc/clean(turf/simulated/A)
 	if(istype(I, /obj/item/weapon/mop) || istype(I, /obj/item/weapon/soap))
 		return
 	..()
-
-
-/obj/item/weapon/mop/proc/janicart_insert(mob/user, obj/structure/janitorialcart/J)
-	J.put_in_cart(src, user)
-	J.mymop=src
-	J.update_icon()
-
-/obj/item/weapon/mop/cyborg
-
-/obj/item/weapon/mop/cyborg/janicart_insert(mob/user, obj/structure/janitorialcart/J)
-	return
-
-

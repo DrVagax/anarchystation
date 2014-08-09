@@ -80,7 +80,7 @@
 							if(C)
 								M.buckled = C
 							else
-								new/obj/item/stack/cable_coil/cut(M.loc)
+								new/obj/item/weapon/cable_coil/cut(M.loc)
 						else
 							step(M,movedir)
 					else
@@ -97,7 +97,7 @@
 		G.affecting.Move(src.loc)
 		del(G)
 		return
-	else if(istype(I, /obj/item/stack/cable_coil))	// if cable, see if a mob is present
+	else if(istype(I, /obj/item/weapon/cable_coil))	// if cable, see if a mob is present
 		var/mob/M = locate() in src.loc
 		if(M)
 			if (M == user)
@@ -139,7 +139,21 @@
 // attack with hand, move pulled object onto conveyor
 
 /obj/machinery/conveyor/attack_hand(mob/user as mob)
-	user.Move_Pulled(src)
+	if ((!( user.canmove ) || user.restrained() || !( user.pulling )))
+		return
+	if (user.pulling.anchored)
+		return
+	if ((user.pulling.loc != user.loc && get_dist(user, user.pulling) > 1))
+		return
+	if (ismob(user.pulling))
+		var/mob/M = user.pulling
+		M.stop_pulling()
+		step(user.pulling, get_dir(user.pulling.loc, src))
+		user.stop_pulling()
+	else
+		step(user.pulling, get_dir(user.pulling.loc, src))
+		user.stop_pulling()
+	return
 
 
 // make the conveyor broken

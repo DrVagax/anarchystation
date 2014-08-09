@@ -108,12 +108,19 @@
 
 		playSpecials(curturf,effectin,soundin)
 
+		var/obj/structure/stool/bed/chair/C = null
+		if(isliving(teleatom))
+			var/mob/living/L = teleatom
+			if(L.buckled)
+				C = L.buckled
 		if(force_teleport)
 			teleatom.forceMove(destturf)
 			playSpecials(destturf,effectout,soundout)
 		else
 			if(teleatom.Move(destturf))
 				playSpecials(destturf,effectout,soundout)
+		if(C)
+			C.forceMove(destturf)
 
 		destarea.Entered(teleatom)
 
@@ -135,7 +142,7 @@
 /datum/teleport/instant/science
 
 	setEffects(datum/effect/effect/system/aeffectin,datum/effect/effect/system/aeffectout)
-		if(aeffectin==null || aeffectout==null)
+		if(!aeffectin || !aeffectout)
 			var/datum/effect/effect/system/spark_spread/aeffect = new
 			aeffect.set_up(5, 1, teleatom)
 			effectin = effectin || aeffect
@@ -170,7 +177,7 @@
 				teleatom.visible_message("\red <B>The [teleatom] bounces off of the portal!</B>")
 			return 0
 
-		if(destination.z == 2) //centcom z-level
+		if(destination.z == 2) //centcomm z-level
 			if(istype(teleatom, /obj/mecha))
 				var/obj/mecha/MM = teleatom
 				MM.occupant << "\red <B>The mech would not survive the jump to a location so far away!</B>"
@@ -180,6 +187,6 @@
 				return 0
 
 
-		if(destination.z == 7) //Away mission z-levels
+		if(destination.z > 7) //Away mission z-levels
 			return 0
 		return 1

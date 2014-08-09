@@ -17,10 +17,10 @@
 /obj/machinery/r_n_d/server/New()
 	..()
 	component_parts = list()
-	component_parts += new /obj/item/weapon/circuitboard/rdserver(null)
-	component_parts += new /obj/item/weapon/stock_parts/scanning_module(null)
-	component_parts += new /obj/item/stack/cable_coil(null, 1)
-	component_parts += new /obj/item/stack/cable_coil(null, 1)
+	component_parts += new /obj/item/weapon/circuitboard/rdserver(src)
+	component_parts += new /obj/item/weapon/stock_parts/scanning_module(src)
+	component_parts += new /obj/item/weapon/cable_coil(src)
+	component_parts += new /obj/item/weapon/cable_coil(src)
 	RefreshParts()
 	src.initialize(); //Agouri
 
@@ -54,20 +54,16 @@
 		if(0 to T0C)
 			health = min(100, health + 1)
 		if(T0C to (T20C + 20))
-			health = Clamp(health, 0, 100)
+			health = between(0, health, 100)
 		if((T20C + 20) to (T0C + 70))
 			health = max(0, health - 1)
 	if(health <= 0)
-		/*griefProtection() This seems to get called twice before running any code that deletes/damages the server or it's files anwyay.
-							refreshParts and the hasReq procs that get called by this are laggy and do not need to be called by every server on the map every tick */
-		var/updateRD = 0
+		griefProtection() //I dont like putting this in process() but it's the best I can do without re-writing a chunk of rd servers.
 		files.known_designs = list()
 		for(var/datum/tech/T in files.known_tech)
 			if(prob(1))
-				updateRD++
 				T.level--
-		if(updateRD)
-			files.RefreshResearch()
+		files.RefreshResearch()
 	if(delay)
 		delay--
 	else
@@ -95,9 +91,9 @@
 
 
 
-//Backup files to centcom to help admins recover data after greifer attacks
+//Backup files to centcomm to help admins recover data after greifer attacks
 /obj/machinery/r_n_d/server/proc/griefProtection()
-	for(var/obj/machinery/r_n_d/server/centcom/C in world)
+	for(var/obj/machinery/r_n_d/server/centcom/C in machines)
 		for(var/datum/tech/T in files.known_tech)
 			C.files.AddTech2Known(T)
 		for(var/datum/design/D in files.known_designs)
@@ -123,29 +119,45 @@
 					removed.temperature = min((removed.temperature*heat_capacity + heating_power)/heat_capacity, 1000)
 
 				env.merge(removed)
-				air_update_turf()
 
 /obj/machinery/r_n_d/server/attackby(var/obj/item/O as obj, var/mob/user as mob)
 	if (disabled)
 		return
 	if (shocked)
 		shock(user,50)
-	if (default_deconstruction_screwdriver(user, "server_o", "server", O))
+	if (istype(O, /obj/item/weapon/screwdriver))
+		if (!opened)
+			opened = 1
+			icon_state = "server_o"
+			user << "You open the maintenance hatch of [src]."
+		else
+			opened = 0
+			icon_state = "server"
+			user << "You close the maintenance hatch of [src]."
 		return
-	if(exchange_parts(user, O))
-		return
-	if (panel_open)
+	if (opened)
 		if(istype(O, /obj/item/weapon/crowbar))
 			griefProtection()
-			default_deconstruction_crowbar(O)
+			playsound(src.loc, 'sound/items/Crowbar.ogg', 50, 1)
+			var/obj/machinery/constructable_frame/machine_frame/M = new /obj/machinery/constructable_frame/machine_frame(src.loc)
+			M.state = 2
+			M.icon_state = "box_1"
+			for(var/obj/I in component_parts)
+				if(I.reliability != 100 && crit_fail)
+					I.crit_fail = 1
+				I.loc = src.loc
+			del(src)
 			return 1
 
-/obj/machinery/r_n_d/server/attack_hand(mob/user as mob) // I guess only exists to stop ninjas or hell does it even work I dunno.  See also ninja gloves.
+/obj/machinery/r_n_d/server/attack_hand(mob/user as mob)
 	if (disabled)
 		return
 	if (shocked)
 		shock(user,50)
 	return
+
+
+
 
 /obj/machinery/r_n_d/server/centcom
 	name = "Centcom Central R&D Database"
@@ -155,7 +167,7 @@
 	..()
 	var/list/no_id_servers = list()
 	var/list/server_ids = list()
-	for(var/obj/machinery/r_n_d/server/S in world)
+	for(var/obj/machinery/r_n_d/server/S in machines)
 		switch(S.server_id)
 			if(-1)
 				continue
@@ -181,12 +193,12 @@
 /obj/machinery/computer/rdservercontrol
 	name = "R&D Server Controller"
 	icon_state = "rdcomp"
+	circuit = /obj/item/weapon/circuitboard/rdservercontrol
 	var/screen = 0
 	var/obj/machinery/r_n_d/server/temp_server
 	var/list/servers = list()
 	var/list/consoles = list()
 	var/badmin = 0
-	circuit = /obj/item/weapon/circuitboard/rdservercontrol
 
 /obj/machinery/computer/rdservercontrol/Topic(href, href_list)
 	if(..())
@@ -205,20 +217,20 @@
 		temp_server = null
 		consoles = list()
 		servers = list()
-		for(var/obj/machinery/r_n_d/server/S in world)
+		for(var/obj/machinery/r_n_d/server/S in machines)
 			if(S.server_id == text2num(href_list["access"]) || S.server_id == text2num(href_list["data"]) || S.server_id == text2num(href_list["transfer"]))
 				temp_server = S
 				break
 		if(href_list["access"])
 			screen = 1
-			for(var/obj/machinery/computer/rdconsole/C in world)
+			for(var/obj/machinery/computer/rdconsole/C in machines)
 				if(C.sync)
 					consoles += C
 		else if(href_list["data"])
 			screen = 2
 		else if(href_list["transfer"])
 			screen = 3
-			for(var/obj/machinery/r_n_d/server/S in world)
+			for(var/obj/machinery/r_n_d/server/S in machines)
 				if(S == src)
 					continue
 				servers += S
@@ -251,6 +263,7 @@
 		if(choice == "Continue")
 			for(var/datum/design/D in temp_server.files.known_designs)
 				if(D.id == href_list["reset_design"])
+					D.reliability_mod = 0
 					temp_server.files.known_designs -= D
 					break
 		temp_server.files.RefreshResearch()
@@ -259,7 +272,7 @@
 	return
 
 /obj/machinery/computer/rdservercontrol/attack_hand(mob/user as mob)
-	if(..())
+	if(stat & (BROKEN|NOPOWER))
 		return
 	user.set_machine(src)
 	var/dat = ""
@@ -268,7 +281,7 @@
 		if(0) //Main Menu
 			dat += "Connected Servers:<BR><BR>"
 
-			for(var/obj/machinery/r_n_d/server/S in world)
+			for(var/obj/machinery/r_n_d/server/S in machines)
 				if(istype(S, /obj/machinery/r_n_d/server/centcom) && !badmin)
 					continue
 				dat += "[S.name] || "
@@ -324,10 +337,8 @@
 		playsound(src.loc, 'sound/effects/sparks4.ogg', 75, 1)
 		emagged = 1
 		user << "\blue You you disable the security protocols"
-	else
-		..()
 	src.updateUsrDialog()
-	return
+	return ..()
 
 
 /obj/machinery/r_n_d/server/robotics

@@ -2,28 +2,15 @@
 
 /area/mine
 	icon_state = "mining"
+	music = 'sound/ambience/song_game.ogg'
 
 /area/mine/explored
 	name = "Mine"
 	icon_state = "explored"
-	music = null
-	always_unpowered = 1
-	requires_power = 1
-	poweralm = 0
-	power_environ = 0
-	power_equip = 0
-	power_light = 0
 
 /area/mine/unexplored
 	name = "Mine"
 	icon_state = "unexplored"
-	music = null
-	always_unpowered = 1
-	requires_power = 1
-	poweralm = 0
-	power_environ = 0
-	power_equip = 0
-	power_light = 0
 
 /area/mine/lobby
 	name = "Mining station"
@@ -63,10 +50,3 @@
 
 /area/mine/west_outpost
 	name = "West Mining Outpost"
-
-/area/mine/laborcamp
-	name = "Labor Camp"
-
-/area/mine/laborcamp/security
-	name = "Labor Camp Security"
-	icon_state = "security"

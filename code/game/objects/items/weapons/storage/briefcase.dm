@@ -2,23 +2,17 @@
 	name = "briefcase"
 	desc = "It's made of AUTHENTIC faux-leather and has a price-tag still attached. Its owner must be a real professional."
 	icon_state = "briefcase"
-	flags = CONDUCT
+	item_state = "briefcase"
+	flags = FPRINT | TABLEPASS| CONDUCT
 	force = 8.0
-	throw_speed = 2
+	throw_speed = 1
 	throw_range = 4
 	w_class = 4.0
 	max_w_class = 3
-	max_combined_w_class = 21
+	max_combined_w_class = 16
 
 /obj/item/weapon/storage/briefcase/New()
 	..()
-	new /obj/item/weapon/paper(src)
-	new /obj/item/weapon/paper(src)
-	new /obj/item/weapon/paper(src)
-	new /obj/item/weapon/paper(src)
-	new /obj/item/weapon/paper(src)
-	new /obj/item/weapon/paper(src)
-	new /obj/item/weapon/pen(src)
 
 /obj/item/weapon/storage/briefcase/attack(mob/living/M as mob, mob/living/user as mob)
 	//..()
@@ -29,7 +23,10 @@
 		user.Paralyse(2)
 		return
 
-	add_logs(user, M, "attacked", object="[src.name]")
+
+	M.attack_log += text("\[[time_stamp()]\] <font color='orange'>Has been attacked with [src.name] by [user.name] ([user.ckey])</font>")
+	user.attack_log += text("\[[time_stamp()]\] <font color='red'>Used the [src.name] to attack [M.name] ([M.ckey])</font>")
+	msg_admin_attack("[user.name] ([user.ckey]) attacked [M.name] ([M.ckey]) with [src.name] (INTENT: [uppertext(user.a_intent)]) (<A HREF='?_src_=holder;adminmoreinfo=\ref[user]'>?</A>)")
 
 	if (M.stat < 2 && M.health < 50 && prob(90))
 		var/mob/H = M

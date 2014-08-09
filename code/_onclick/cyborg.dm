@@ -15,9 +15,6 @@
 		build_click(src, client.buildmode, params, A)
 		return
 
-	if(stat || lockcharge || weakened || stunned || paralysis)
-		return
-
 	var/list/modifiers = params2list(params)
 	if(modifiers["middle"])
 		MiddleClickOn(A)
@@ -30,6 +27,9 @@
 		return
 	if(modifiers["ctrl"])
 		CtrlClickOn(A)
+		return
+
+	if(stat || lockcharge || weakened || stunned || paralysis)
 		return
 
 	if(next_move >= world.time)
@@ -48,6 +48,7 @@
 
 	// Cyborgs have no range-checking unless there is item use
 	if(!W)
+		A.add_hiddenprint(src)
 		A.attack_robot(src)
 		return
 

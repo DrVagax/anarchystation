@@ -1,0 +1,126 @@
+
+
+Starting up. 13:30.07
+---------------------
+[13:30:07]MISC: Adding game mode AutoTraitor (extend-a-traitormongous) to configuration.
+[13:30:07]MISC: Adding game mode traitor+changeling (traitorchan) to configuration.
+[13:30:07]MISC: Adding game mode traitor (traitor) to configuration.
+[13:30:07]MISC: Adding game mode changeling (changeling) to configuration.
+[13:30:07]MISC: Adding game mode cult (cult) to configuration.
+[13:30:07]MISC: Adding game mode extended (extended) to configuration.
+[13:30:07]MISC: Adding game mode heist (heist) to configuration.
+[13:30:07]MISC: Adding game mode AI malfunction (malfunction) to configuration.
+[13:30:07]MISC: Adding game mode meteor (meteor) to configuration.
+[13:30:07]MISC: Adding game mode mutiny (mutiny) to configuration.
+[13:30:07]MISC: Adding game mode ninja (ninja) to configuration.
+[13:30:07]MISC: Adding game mode nuclear emergency (nuclear) to configuration.
+[13:30:07]MISC: Adding game mode rp-revolution (rp-revolution) to configuration.
+[13:30:07]MISC: Adding game mode revolution (revolution) to configuration.
+[13:30:07]MISC: Adding game mode wizard (wizard) to configuration.
+[13:30:13]MISC: Failed to connect to database in load_admins(). Reverting to legacy system.
+[13:30:13]MISC: Database connection failed. Reverting to the legacy ban system.
+[13:30:14]DEBUG: Rebuilding Master Controller
+
+
+Starting up. 13:35.34
+---------------------
+[13:35:34]MISC: Adding game mode AutoTraitor (extend-a-traitormongous) to configuration.
+[13:35:34]MISC: Adding game mode traitor+changeling (traitorchan) to configuration.
+[13:35:34]MISC: Adding game mode traitor (traitor) to configuration.
+[13:35:34]MISC: Adding game mode changeling (changeling) to configuration.
+[13:35:34]MISC: Adding game mode cult (cult) to configuration.
+[13:35:34]MISC: Adding game mode extended (extended) to configuration.
+[13:35:34]MISC: Adding game mode heist (heist) to configuration.
+[13:35:34]MISC: Adding game mode AI malfunction (malfunction) to configuration.
+[13:35:34]MISC: Adding game mode meteor (meteor) to configuration.
+[13:35:34]MISC: Adding game mode mutiny (mutiny) to configuration.
+[13:35:34]MISC: Adding game mode ninja (ninja) to configuration.
+[13:35:34]MISC: Adding game mode nuclear emergency (nuclear) to configuration.
+[13:35:34]MISC: Adding game mode rp-revolution (rp-revolution) to configuration.
+[13:35:34]MISC: Adding game mode revolution (revolution) to configuration.
+[13:35:34]MISC: Adding game mode wizard (wizard) to configuration.
+[13:35:38]MISC: Failed to connect to database in load_admins(). Reverting to legacy system.
+[13:35:38]MISC: Database connection failed. Reverting to the legacy ban system.
+[13:35:39]DEBUG: Rebuilding Master Controller
+
+
+Starting up. 13:38.27
+---------------------
+[13:38:27]MISC: Adding game mode AutoTraitor (extend-a-traitormongous) to configuration.
+[13:38:27]MISC: Adding game mode traitor+changeling (traitorchan) to configuration.
+[13:38:27]MISC: Adding game mode traitor (traitor) to configuration.
+[13:38:27]MISC: Adding game mode changeling (changeling) to configuration.
+[13:38:27]MISC: Adding game mode cult (cult) to configuration.
+[13:38:27]MISC: Adding game mode extended (extended) to configuration.
+[13:38:27]MISC: Adding game mode heist (heist) to configuration.
+[13:38:27]MISC: Adding game mode AI malfunction (malfunction) to configuration.
+[13:38:27]MISC: Adding game mode meteor (meteor) to configuration.
+[13:38:27]MISC: Adding game mode mutiny (mutiny) to configuration.
+[13:38:27]MISC: Adding game mode ninja (ninja) to configuration.
+[13:38:27]MISC: Adding game mode nuclear emergency (nuclear) to configuration.
+[13:38:27]MISC: Adding game mode rp-revolution (rp-revolution) to configuration.
+[13:38:27]MISC: Adding game mode revolution (revolution) to configuration.
+[13:38:27]MISC: Adding game mode wizard (wizard) to configuration.
+[13:38:27]MISC: Unknown setting in configuration: 'metroid_delay'
+[13:38:30]ADMIN: Loading jobban_rank
+[13:38:30]ADMIN: jobban_keylist was empty
+[13:38:30]ADMIN: Loading Banlist
+[13:38:30]DEBUG: Rebuilding Master Controller
+[13:38:55]ACCESS: Login: DrVagax/(DrVagax) from 127.0.0.1-1872704441 || BYOND v506
+[13:39:29]ADMIN: DrVagax/(DrVagax) attempted to edit the admin permissions without sufficient rights.
+[13:39:44]ADMIN: HELP: DrVagax/(DrVagax): tyjrtyu - heard by 1 non-AFK admins.
+[13:40:10]ACCESS: Logout: DrVagax/(DrVagax)
+
+
+Starting up. 13:41.23
+---------------------
+[13:41:23]MISC: Adding game mode AutoTraitor (extend-a-traitormongous) to configuration.
+[13:41:23]MISC: Adding game mode traitor+changeling (traitorchan) to configuration.
+[13:41:23]MISC: Adding game mode traitor (traitor) to configuration.
+[13:41:23]MISC: Adding game mode changeling (changeling) to configuration.
+[13:41:23]MISC: Adding game mode cult (cult) to configuration.
+[13:41:23]MISC: Adding game mode extended (extended) to configuration.
+[13:41:23]MISC: Adding game mode heist (heist) to configuration.
+[13:41:23]MISC: Adding game mode AI malfunction (malfunction) to configuration.
+[13:41:23]MISC: Adding game mode meteor (meteor) to configuration.
+[13:41:23]MISC: Adding game mode mutiny (mutiny) to configuration.
+[13:41:23]MISC: Adding game mode ninja (ninja) to configuration.
+[13:41:23]MISC: Adding game mode nuclear emergency (nuclear) to configuration.
+[13:41:23]MISC: Adding game mode rp-revolution (rp-revolution) to configuration.
+[13:41:23]MISC: Adding game mode revolution (revolution) to configuration.
+[13:41:23]MISC: Adding game mode wizard (wizard) to configuration.
+[13:41:23]MISC: Unknown setting in configuration: 'metroid_delay'
+[13:41:27]ADMIN: Loading jobban_rank
+[13:41:27]ADMIN: jobban_keylist was empty
+[13:41:27]ADMIN: Loading Banlist
+[13:41:27]DEBUG: Rebuilding Master Controller
+[13:41:38]ACCESS: Login: DrVagax/(DrVagax) from 127.0.0.1-1872704441 || BYOND v506
+[13:42:12]MISC: Downloading updated ToR data...
+[13:42:15]ADMIN: DrVagax/(DrVagax) toggled guests game entering allowed.
+[13:42:33]ACCESS: Logout: *no key*/(DrVagax)
+[13:42:33]ACCESS: Login: DrVagax/(Dina Taggart) from 127.0.0.1-1872704441 || BYOND v506
+[13:42:56]ADMIN: DrVagax has started the game.
+[13:43:15]DEBUG: Next event in 43.312 minutes.
+[13:43:20]ADMIN: DrVagax/(Dina Taggart) has lifted restrictions on joining the round if they use AntagHUD
+[13:43:30]ADMIN: DrVagax/(Dina Taggart) has placed restrictions on joining the round if they use AntagHUD
+[13:43:42]ADMIN: DrVagax/(Dina Taggart) has lifted restrictions on joining the round if they use AntagHUD
+[13:43:46]ADMIN: DrVagax/(Dina Taggart) toggled deadchat.
+[13:43:47]ADMIN: DrVagax/(Dina Taggart) toggled deadchat.
+[13:44:13]OOC: (LOCAL) Dina Taggart/DrVagax : 5555
+[13:44:13]SAY: Experiment 97d/ : Eh?
+[13:44:47]ADMIN: DrVagax has changed the custom event text.
+[13:45:37]SAY: Ian/ : Bark!
+[13:46:20]ADMIN: DrVagax/(Dina Taggart) admin-called the emergency shuttle.
+[13:46:24]ADMIN: DrVagax/(Dina Taggart) admin-recalled the emergency shuttle.
+[13:46:35]MISC: Downloading updated ToR data...
+[13:46:40]ADMIN: DrVagax/(Dina Taggart) jumped to the Arrival Shuttle Hallway
+[13:47:58]ADMIN: DrVagax/(Dina Taggart) used secret toggleprisonstatus
+[13:48:02]ADMIN: DrVagax/(Dina Taggart) used secret deactivateprison
+[13:48:10]ADMIN: DrVagax/(Dina Taggart) used secret fakeguns
+[13:48:20]ADMIN: DrVagax/(Dina Taggart) used secret fakeguns
+[13:48:21]ADMIN: DrVagax/(Dina Taggart) used secret fakeguns
+[13:48:41]ADMIN: DrVagax/(Dina Taggart) used secret forcelaunchshuttle
+[13:48:51]ADMIN: DrVagax/(Dina Taggart) used secret list_job_debug
+[13:49:37]ADMIN: DrVagax/(Dina Taggart) launched the Special Operations shuttle
+[13:49:37]ADMIN: DrVagax/(Dina Taggart) used secret launchshuttle
+[13:50:22]ACCESS: Logout: DrVagax/(Dina Taggart)

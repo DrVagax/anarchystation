@@ -1,9 +1,8 @@
 /obj/machinery/door/airlock/alarmlock
 
-	name = "glass alarm airlock"
+	name = "Glass Alarm Airlock"
 	icon = 'icons/obj/doors/Doorglass.dmi'
 	opacity = 0
-	doortype = 7
 	glass = 1
 
 	var/datum/radio_frequency/air_connection

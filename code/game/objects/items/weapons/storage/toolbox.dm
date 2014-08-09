@@ -4,18 +4,20 @@
 	icon = 'icons/obj/storage.dmi'
 	icon_state = "red"
 	item_state = "toolbox_red"
-	flags = CONDUCT
-	force = 10.0
+	flags = FPRINT | TABLEPASS| CONDUCT
+	force = 5.0
 	throwforce = 10.0
-	throw_speed = 2
+	throw_speed = 1
 	throw_range = 7
 	w_class = 4.0
 	origin_tech = "combat=1"
 	attack_verb = list("robusted")
-	hitsound = 'sound/weapons/smash.ogg'
 
 	New()
 		..()
+		if (src.type == /obj/item/weapon/storage/toolbox)
+			world << "BAD: [src] ([src.type]) spawned at [src.x] [src.y] [src.z]"
+			del(src)
 
 /obj/item/weapon/storage/toolbox/emergency
 	name = "emergency toolbox"
@@ -30,7 +32,7 @@
 			new /obj/item/device/flashlight(src)
 		else
 			new /obj/item/device/flashlight/flare(src)
-		new /obj/item/device/radio/off(src)
+		new /obj/item/device/radio(src)
 
 /obj/item/weapon/storage/toolbox/mechanical
 	name = "mechanical toolbox"
@@ -58,20 +60,19 @@
 		new /obj/item/weapon/wirecutters(src)
 		new /obj/item/device/t_scanner(src)
 		new /obj/item/weapon/crowbar(src)
-		new /obj/item/stack/cable_coil(src,30,color)
-		new /obj/item/stack/cable_coil(src,30,color)
+		new /obj/item/weapon/cable_coil(src,30,color)
+		new /obj/item/weapon/cable_coil(src,30,color)
 		if(prob(5))
 			new /obj/item/clothing/gloves/yellow(src)
 		else
-			new /obj/item/stack/cable_coil(src,30,color)
+			new /obj/item/weapon/cable_coil(src,30,color)
 
 /obj/item/weapon/storage/toolbox/syndicate
 	name = "suspicious looking toolbox"
 	icon_state = "syndicate"
 	item_state = "toolbox_syndi"
 	origin_tech = "combat=1;syndicate=1"
-	force = 15.0
-	throwforce = 18.0
+	force = 7.0
 
 	New()
 		..()
@@ -80,6 +81,6 @@
 		new /obj/item/weapon/wrench(src)
 		new /obj/item/weapon/weldingtool(src)
 		new /obj/item/weapon/crowbar(src)
-		new /obj/item/stack/cable_coil(src,30,color)
+		new /obj/item/weapon/cable_coil(src,30,color)
 		new /obj/item/weapon/wirecutters(src)
 		new /obj/item/device/multitool(src)

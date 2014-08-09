@@ -3,8 +3,7 @@
 	desc = "Used to remotely activate devices."
 	icon_state = "signaller"
 	item_state = "signaler"
-	m_amt = 1000
-	g_amt = 200
+	matter = list("metal" = 1000, "glass" = 200, "waste" = 100)
 	origin_tech = "magnets=1"
 	wires = WIRE_RECEIVE | WIRE_PULSE | WIRE_RADIO_PULSE | WIRE_RADIO_RECEIVE
 
@@ -13,8 +12,9 @@
 	var/code = 30
 	var/frequency = 1457
 	var/delay = 0
-	var/datum/wires/connected = null
+	var/airlock_wire = null
 	var/datum/radio_frequency/radio_connection
+	var/deadman = 0
 
 	New()
 		..()
@@ -106,11 +106,6 @@
 		signal.encryption = code
 		signal.data["message"] = "ACTIVATE"
 		radio_connection.post_signal(src, signal)
-
-		var/time = time2text(world.realtime,"hh:mm:ss")
-		var/turf/T = get_turf(src)
-		lastsignalers.Add("[time] <B>:</B> [usr.key] used [src] @ location ([T.x],[T.y],[T.z]) <B>:</B> [format_frequency(frequency)]/[code]")
-
 		return
 /*
 		for(var/obj/item/device/assembly/signaler/S in world)
@@ -123,10 +118,14 @@
 
 
 	pulse(var/radio = 0)
-		if(src.connected && src.wires)
-			connected.Pulse(src)
+		if(istype(src.loc, /obj/machinery/door/airlock) && src.airlock_wire && src.wires)
+			var/obj/machinery/door/airlock/A = src.loc
+			A.pulse(src.airlock_wire)
+		else if(holder)
+			holder.process_activation(src, 1, 0)
 		else
-			return ..(radio)
+			..(radio)
+		return 1
 
 
 	receive_signal(datum/signal/signal)
@@ -134,8 +133,10 @@
 		if(signal.encryption != code)	return 0
 		if(!(src.wires & WIRE_RADIO_RECEIVE))	return 0
 		pulse(1)
-		for(var/mob/O in hearers(1, src.loc))
-			O.show_message(text("\icon[] *beep* *beep*", src), 3, "*beep* *beep*", 2)
+
+		if(!holder)
+			for(var/mob/O in hearers(1, src.loc))
+				O.show_message(text("\icon[] *beep* *beep*", src), 3, "*beep* *beep*", 2)
 		return
 
 
@@ -149,38 +150,23 @@
 		radio_connection = radio_controller.add_object(src, frequency, RADIO_CHAT)
 		return
 
-// Embedded signaller used in grenade construction.
-// It's necessary because the signaler doens't have an off state.
-// Generated during grenade construction.  -Sayu
-/obj/item/device/assembly/signaler/reciever
-	var/on = 0
+	process()
+		if(!deadman)
+			processing_objects.Remove(src)
+		var/mob/M = src.loc
+		if(!M || !ismob(M))
+			if(prob(5))
+				signal()
+			deadman = 0
+			processing_objects.Remove(src)
+		else if(prob(5))
+			M.visible_message("[M]'s finger twitches a bit over [src]'s signal button!")
+		return
 
-	proc/toggle_safety()
-		on = !on
-
-	activate()
-		toggle_safety()
-		return 1
-
-	describe()
-		return "The radio reciever is [on?"on":"off"]."
-
-	receive_signal(datum/signal/signal)
-		if(!on) return
-		return ..(signal)
-
-
-// Embedded signaller used in anomalies.
-/obj/item/device/assembly/signaler/anomaly
-	name = "anomaly core"
-	desc = "The neutralized core of an anomaly. It'd probably be valuable for research."
-	icon_state = "anomaly core"
-	item_state = "electronic"
-
-/obj/item/device/assembly/signaler/anomaly/receive_signal(datum/signal/signal)
-	..()
-	for(var/obj/effect/anomaly/A in orange(0, src))
-		A.anomalyNeutralize()
-
-/obj/item/device/assembly/signaler/anomaly/attack_self()
-	return
+	verb/deadman_it()
+		set src in usr
+		set name = "Threaten to push the button!"
+		set desc = "BOOOOM!"
+		deadman = 1
+		processing_objects.Add(src)
+		usr.visible_message("\red [usr] moves their finger over [src]'s signal button...")

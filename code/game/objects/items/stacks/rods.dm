@@ -3,13 +3,13 @@
 	desc = "Some rods. Can be used for building, or something."
 	singular_name = "metal rod"
 	icon_state = "rods"
-	flags = CONDUCT
+	flags = FPRINT | TABLEPASS| CONDUCT
 	w_class = 3.0
 	force = 9.0
-	throwforce = 10.0
-	throw_speed = 3
-	throw_range = 7
-	m_amt = 1875
+	throwforce = 15.0
+	throw_speed = 5
+	throw_range = 20
+	matter = list("metal" = 1875)
 	max_amount = 60
 	attack_verb = list("hit", "bludgeoned", "whacked")
 
@@ -64,6 +64,3 @@
 		F.add_fingerprint(usr)
 		use(2)
 	return
-
-/obj/item/stack/rods/cyborg/
-	m_amt = 0

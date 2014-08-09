@@ -1,6 +1,6 @@
 /obj/effect/landmark
 	name = "landmark"
-	icon = 'icons/mob/screen_gen.dmi'
+	icon = 'icons/mob/screen1.dmi'
 	icon_state = "x2"
 	anchored = 1.0
 	unacidable = 1
@@ -15,21 +15,45 @@
 		if("shuttle")
 			shuttle_z = z
 			del(src)
+
+		if("airtunnel_stop")
+			airtunnel_stop = x
+
+		if("airtunnel_start")
+			airtunnel_start = x
+
+		if("airtunnel_bottom")
+			airtunnel_bottom = y
+
 		if("monkey")
 			monkeystart += loc
 			del(src)
 		if("start")
 			newplayer_start += loc
 			del(src)
+
 		if("wizard")
 			wizardstart += loc
 			del(src)
+
 		if("JoinLate")
 			latejoin += loc
 			del(src)
+
+		if("JoinLateGateway")
+			latejoin_gateway += loc
+			del(src)
+
+		if("JoinLateCryo")
+			latejoin_cryo += loc
+			del(src)
+
+		//prisoners
 		if("prisonwarp")
 			prisonwarp += loc
 			del(src)
+	//	if("mazewarp")
+	//		mazewarp += loc
 		if("Holding Facility")
 			holdingfacility += loc
 		if("tdome1")
@@ -40,15 +64,21 @@
 			tdomeadmin	+= loc
 		if("tdomeobserve")
 			tdomeobserve += loc
+		//not prisoners
 		if("prisonsecuritywarp")
 			prisonsecuritywarp += loc
 			del(src)
+
 		if("blobstart")
 			blobstart += loc
 			del(src)
 
 		if("xeno_spawn")
 			xeno_spawn += loc
+			del(src)
+
+		if("ninjastart")
+			ninjastart += loc
 			del(src)
 
 	landmarks_list += src
@@ -60,7 +90,7 @@
 
 /obj/effect/landmark/start
 	name = "start"
-	icon = 'icons/mob/screen_gen.dmi'
+	icon = 'icons/mob/screen1.dmi'
 	icon_state = "x"
 	anchored = 1.0
 
@@ -95,7 +125,7 @@
 /obj/effect/landmark/costume/madscientist/New()
 	new /obj/item/clothing/under/gimmick/rank/captain/suit(src.loc)
 	new /obj/item/clothing/head/flatcap(src.loc)
-	new /obj/item/clothing/suit/labcoat/mad(src.loc)
+	new /obj/item/clothing/suit/storage/labcoat/mad(src.loc)
 	new /obj/item/clothing/glasses/gglasses(src.loc)
 	del(src)
 
@@ -109,7 +139,6 @@
 /obj/effect/landmark/costume/nyangirl/New()
 	new /obj/item/clothing/under/schoolgirl(src.loc)
 	new /obj/item/clothing/head/kitty(src.loc)
-	new /obj/item/clothing/glasses/sunglasses/blindfold(src.loc)
 	del(src)
 
 /obj/effect/landmark/costume/maid/New()
@@ -120,7 +149,7 @@
 	del(src)
 
 /obj/effect/landmark/costume/butler/New()
-	new /obj/item/clothing/tie/waistcoat(src.loc)
+	new /obj/item/clothing/suit/wcoat(src.loc)
 	new /obj/item/clothing/under/suit_jacket(src.loc)
 	new /obj/item/clothing/head/that(src.loc)
 	del(src)
@@ -139,7 +168,7 @@
 	del(src)
 
 /obj/effect/landmark/costume/prig/New()
-	new /obj/item/clothing/tie/waistcoat(src.loc)
+	new /obj/item/clothing/suit/wcoat(src.loc)
 	new /obj/item/clothing/glasses/monocle(src.loc)
 	var/CHOICE= pick( /obj/item/clothing/head/bowler, /obj/item/clothing/head/that)
 	new CHOICE(src.loc)
@@ -152,7 +181,6 @@
 /obj/effect/landmark/costume/plaguedoctor/New()
 	new /obj/item/clothing/suit/bio_suit/plaguedoctorsuit(src.loc)
 	new /obj/item/clothing/head/plaguedoctorhat(src.loc)
-	new /obj/item/clothing/mask/gas/plaguedoctor(src.loc)
 	del(src)
 
 /obj/effect/landmark/costume/nightowl/New()
@@ -191,7 +219,6 @@
 	del(src)
 
 /obj/effect/landmark/costume/marisawizard/fake/New()
-	new /obj/item/clothing/shoes/sandal/marisa(src.loc)
 	new /obj/item/clothing/head/wizard/marisa/fake(src.loc)
 	new/obj/item/clothing/suit/wizrobe/marisa/fake(src.loc)
 	del(src)
@@ -203,7 +230,6 @@
 	del(src)
 
 /obj/effect/landmark/costume/fakewizard/New()
-	new /obj/item/clothing/shoes/sandal(src.loc)
 	new /obj/item/clothing/suit/wizrobe/fake(src.loc)
 	new /obj/item/clothing/head/wizard/fake(src.loc)
 	new /obj/item/weapon/staff/(src.loc)
