@@ -842,18 +842,18 @@ datum
 			description = "Sterilizes wounds in preparation for surgery."
 			reagent_state = LIQUID
 			color = "#C8A5DC" // rgb: 200, 165, 220
-			
+
 			//makes you squeaky clean
 			reaction_mob(var/mob/living/M, var/method=TOUCH, var/volume)
 				if (method == TOUCH)
 					M.germ_level -= min(volume*20, M.germ_level)
-			
+
 			reaction_obj(var/obj/O, var/volume)
 				O.germ_level -= min(volume*20, O.germ_level)
-			
+
 			reaction_turf(var/turf/T, var/volume)
 				T.germ_level -= min(volume*20, T.germ_level)
-			
+
 	/*		reaction_mob(var/mob/living/M, var/method=TOUCH, var/volume)
 				src = null
 				if (method==TOUCH)
@@ -1332,7 +1332,7 @@ datum
 				if(!M) M = holder.my_atom
 				if(ishuman(M))
 					var/mob/living/carbon/human/H = M
-					
+
 					//Peridaxon is hard enough to get, it's probably fair to make this all internal organs
 					for(var/datum/organ/internal/I in H.internal_organs)
 						if(I.damage > 0)
@@ -1725,6 +1725,19 @@ datum
 					var/mob/M = holder.my_atom
 					M.status_flags &= ~FAKEDEATH
 				..()
+
+		excrement // fucking shit
+			name = "Poo" // you guessed it
+			id = "poop" // shit
+			description = "Shit, also known as doodoo, comes in many forms; liquid, solid, and \"jesus christ i'm never going to eat mexican again\"." // shit
+			reagent_state = LIQUID // diarrhea shit
+			color = "#985d3c" // shit
+
+			on_mob_life(var/mob/living/M)
+				if(!M) M = holder.my_atom
+				M.hallucination += 10
+				..()
+				return
 
 		toxin/mindbreaker
 			name = "Mindbreaker Toxin"
