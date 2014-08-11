@@ -623,6 +623,23 @@
 														else
 															continue
 													visible_message("\red <b>[src]</b> blows their ass off!", "\red Holy shit, your butt flies off in an arc!")
+													
+		if("vomit")
+			if(src.nutrition <= 50)
+				playsound(src.loc, 'sound/emote/throwup.ogg', 30, 1, 5)
+				message = "<B>[src]</B> [pick(
+				"attempts to vomit but nothing is coming up.",
+				"forces its fingers down the troat.",
+				"tries to vomit.")]"
+			else 
+				message = "<B>[src]</B> vomits on the floor."
+				playsound(src.loc, 'sound/emote/throwup.ogg', 30, 1, 5)
+				playsound(src.loc, 'sound/effects/splat.ogg', 50, 1, 5)
+				//sorry too lazy to make puke atm
+				new /obj/effect/decal/cleanable/poo(src.loc)
+				new /obj/item/weapon/reagent_containers/food/snacks/turd(src.loc)
+				src.nutrition -= 50
+
 
 		if ("help")
 			src << "blink, blink_r, blush, bow-(none)/mob, burp, choke, chuckle, clap, collapse, cough,\ncry, custom, deathgasp, drool, eyebrow, frown, gasp, giggle, groan, grumble, handshake, hug-(none)/mob, glare-(none)/mob,\ngrin, laugh, look-(none)/mob, moan, mumble, nod, pale, point-atom, raise, salute, shake, shiver, shrug,\nsigh, signal-#1-10, smile, sneeze, sniff, snore, stare-(none)/mob, tremble, twitch, twitch_s, whimper,\nwink, yawn"
