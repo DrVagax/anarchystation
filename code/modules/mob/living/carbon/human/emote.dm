@@ -527,7 +527,7 @@
 				if (M)
 					message = "<B>[src]</B> gives daps to [M]."
 				else
-					message = "<B>[src]</B> sadly can't find anybody to give daps to, and daps \himself. Shameful."
+					message = "<B>[src]</B> sadly can't find anybody to give daps to, and daps \himself. A shameful [src]."
 
 		if ("scream")
 			if (miming)
@@ -535,11 +535,94 @@
 				m_type = 1
 			else
 				if (!muzzled)
-					message = "<B>[src]</B> screams!"
-					m_type = 2
+					if(src.gender == MALE)
+						playsound(src.loc, 'sound/emote/scream_m.ogg', 35, 1, 5)
+						message = "<B>[src]</B> screams!"
+						m_type = 2
+					if(src.gender == FEMALE)
+						playsound(src.loc, 'sound/emote/scream_f.ogg', 35, 1, 5)
+						message = "<B>[src]</B> screams!"
+						m_type = 2
+					else if(src.gender == !MALE || !FEMALE) //fail safe or something
+						message = "<B>[src]</B> screams or something!"
+						m_type = 2
 				else
 					message = "<B>[src]</B> makes a very loud noise."
 					m_type = 2
+
+		if ("fart")
+			if(!src.butt)
+				src << "\red You don't have a butt!"
+				return
+			for(var/mob/M in range(0))
+				if(M != src)
+					visible_message("\red <b>[src]</b> farts in <b>[M]</b>'s face!")
+				else
+					continue
+			message = "<B>[src]</B> [pick(
+			"rears up and lets loose a fart of tremendous magnitude!",
+			"farts!",
+			"toots.",
+			"harvests methane from uranus at mach 3!",
+			"assists global warming!",
+			"farts and waves their hand dismissively.",
+			"farts and pretends nothing happened.",
+			"is a <b>farting</b> motherfucker!",
+			"<B><font color='red'>f</font><font color='blue'>a</font><font color='red'>r</font><font color='blue'>t</font><font color='red'>s</font></B>")]"
+			playsound(src.loc, 'sound/misc/fart.ogg', 50, 1, 5)
+
+		if ("poo") //not listed because poospam
+			if(!src.butt)
+				src << "\red You don't have a butt!"
+				return
+			if(src.nutrition <= 200)
+				src << "\red You're far too hungry to do that."
+				return
+			message = "<B>[src]</B> takes a shit on the floor."
+			playsound(src.loc, 'sound/misc/fart.ogg', 35, 1, 5)
+			playsound(src.loc, 'sound/effects/squishy.ogg', 50, 1, 5)
+			new /obj/effect/decal/cleanable/poo(src.loc)
+			new /obj/item/weapon/reagent_containers/food/snacks/turd(src.loc)
+			src.nutrition -= 200 // fuck off poospamming retards holy shit suck my 10 foot poodick
+
+		if("superfart") //not listed because secret!!
+			if(!src.butt)
+				src << "\red You don't have a butt!"
+				return
+			//src.butt = null
+			src.nutrition -= 250
+			playsound(src.loc, 'sound/misc/fart.ogg', 50, 1, 5)
+			spawn(1)
+				playsound(src.loc, 'sound/misc/fart.ogg', 50, 1, 5)
+				spawn(1)
+					playsound(src.loc, 'sound/misc/fart.ogg', 50, 1, 5)
+					spawn(1)
+						playsound(src.loc, 'sound/misc/fart.ogg', 50, 1, 5)
+						spawn(1)
+							playsound(src.loc, 'sound/misc/fart.ogg', 50, 1, 5)
+							spawn(1)
+								playsound(src.loc, 'sound/misc/fart.ogg', 50, 1, 5)
+								spawn(1)
+									playsound(src.loc, 'sound/misc/fart.ogg', 50, 1, 5)
+									spawn(1)
+										playsound(src.loc, 'sound/misc/fart.ogg', 50, 1, 5)
+										spawn(1)
+											playsound(src.loc, 'sound/misc/fart.ogg', 50, 1, 5)
+											spawn(1)
+												playsound(src.loc, 'sound/misc/fart.ogg', 50, 1, 5)
+												spawn(5) // wow this is actually pretty   damn
+													playsound(src.loc, 'sound/misc/fartmassive.ogg', 75, 1, 5)
+													new /obj/item/clothing/head/butt(src.loc)
+													new /obj/effect/decal/cleanable/poo(src.loc)
+													src.butt = null
+													for(var/mob/M in range(0))
+														if(M != src)
+															M.visible_message("\red <b>[src]</b> ass blasts <b>[M]</b>")
+															src.visible_message("\red <b>[src]</b> ass blasts <b>[M]</b>")
+															visible_message("\red <b>[src]</b>'s ass hits <b>[M]</b> in the face!")
+														else
+															continue
+													visible_message("\red <b>[src]</b> blows their ass off!", "\red Holy shit, your butt flies off in an arc!")
 
 		if ("help")
 			src << "blink, blink_r, blush, bow-(none)/mob, burp, choke, chuckle, clap, collapse, cough,\ncry, custom, deathgasp, drool, eyebrow, frown, gasp, giggle, groan, grumble, handshake, hug-(none)/mob, glare-(none)/mob,\ngrin, laugh, look-(none)/mob, moan, mumble, nod, pale, point-atom, raise, salute, shake, shiver, shrug,\nsigh, signal-#1-10, smile, sneeze, sniff, snore, stare-(none)/mob, tremble, twitch, twitch_s, whimper,\nwink, yawn"

@@ -2999,3 +2999,27 @@
 		..()
 		reagents.add_reagent("nutriment", 3)
 
+
+
+/obj/item/weapon/reagent_containers/food/snacks/turd
+	name = "turd"
+	desc = "After careful examination and analyzation, you have come to the conclusion that it's shit."
+	icon_state = "turd"
+	bitesize = 3
+	New()
+		..()
+		reagents.add_reagent("poop", 5)
+		reagents.add_reagent("nutriment", 1)
+
+	Bump(var/atom/A as anything)
+	/*	if(A.density == 1 && istype(A, /turf/simulated/wall))
+			..()
+			spawn(5)
+				new /obj/effect/decal/cleanable/poo(src.loc)
+				del(src)*/
+		if(A.density == 1)
+			new /obj/effect/decal/cleanable/poo(src.loc)
+			del(src)
+		if(istype(A, /mob/living))
+			new /obj/effect/decal/cleanable/poo(src.loc)
+			del(src)

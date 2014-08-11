@@ -7,6 +7,7 @@
 	var/list/hud_list[9]
 	var/datum/species/species //Contains icon generation and language information, set during New().
 	var/embedded_flag	  //To check if we've need to roll for damage on movement while an item is imbedded in us.
+	var/butt = 1
 
 /mob/living/carbon/human/dummy
 	real_name = "Test Dummy"
@@ -525,13 +526,13 @@
 //Now checks siemens_coefficient of the affected area by default
 /mob/living/carbon/human/electrocute_act(var/shock_damage, var/obj/source, var/base_siemens_coeff = 1.0, var/def_zone = null)
 	if(status_flags & GODMODE)	return 0	//godmode
-	
+
 	if (!def_zone)
 		def_zone = pick("l_hand", "r_hand")
-	
+
 	var/datum/organ/external/affected_organ = get_organ(check_zone(def_zone))
 	var/siemens_coeff = base_siemens_coeff * get_siemens_coefficient_organ(affected_organ)
-	
+
 	return ..(shock_damage, source, siemens_coeff, def_zone)
 
 

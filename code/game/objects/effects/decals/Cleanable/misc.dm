@@ -133,3 +133,14 @@
 	layer = 2
 	icon = 'icons/effects/tomatodecal.dmi'
 	random_icon_states = list("smashed_pie")
+
+/obj/effect/decal/cleanable/poo
+	name = "poo"
+	desc = "It's brown and disgusting."
+	gender = PLURAL
+	density = 0
+	anchored = 1
+	layer = 2
+	icon = 'icons/effects/blood.dmi'
+	icon_state = "poo1"
+	random_icon_states = list("poo1", "poo2", "poo3", "poo4", "poo5")
